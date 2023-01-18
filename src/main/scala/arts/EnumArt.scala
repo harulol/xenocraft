@@ -94,7 +94,7 @@ enum EnumArt(val cls: EnumClass, val isMaster: Boolean = false, name: Option[Str
    *
    * @return the effect.
    */
-  def effect: String = _effect.getOrElse("")
+  def effect: Option[String] = _effect
 
   case GROUND_BEAT extends EnumArt(EnumClass.SWORDFIGHTER, true)
   case SWORD_STRIKE extends EnumArt(EnumClass.SWORDFIGHTER)

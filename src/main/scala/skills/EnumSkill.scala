@@ -11,13 +11,13 @@ import java.io.InputStreamReader
  * Represents a type of the skill for enumerations.
  * One enum should only correspond to one skill.
  */
-enum EnumSkill(val cls: EnumClass, isMaster: Boolean = false, name: String = null):
+enum EnumSkill(val cls: EnumClass, val isMaster: Boolean = false, name: String = null):
 
   private val computedName = this.toString.split("_")
     .map { word =>
       word.length match
         case 1 | 2 => word.toLowerCase
-        case _     => word.toLowerCase.capitalize
+        case _ => word.toLowerCase.capitalize
     }
     .mkString(" ")
   private var _description: Option[String] = None

@@ -20,7 +20,7 @@ enum ClassRole(val colorCode: Char):
    * @return the colorized version
    */
   def colorize(s: String = this.toString) =
-    Strings.color(s"$colorCode$s")
+    Strings.color(s"&$colorCode$s")
 
   case ATTACKER extends ClassRole('c')
   case DEFENDER extends ClassRole('b')

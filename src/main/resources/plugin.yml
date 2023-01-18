@@ -3,3 +3,10 @@ main: dev.hawu.plugins.xenocraft.Xenocraft
 version: 1.0-SNAPSHOT
 authors: [ Noah, Mio ]
 description: The recreated version of the RPG Xenoblade 3.
+api-version: 1.16
+depend:
+  - HikariLibrary
+  - MultiJVMLang
+commands:
+  lookup:
+    description: The testing command for looking up stuff.
