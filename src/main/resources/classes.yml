@@ -1,0 +1,104 @@
+swordfighter:
+  wielder-name: "Noah"
+  wielder-title: "Noah"
+  weapon-name: "Truthsinger"
+zephyr:
+  wielder-name: "Mio"
+  wielder-title: "Mio"
+  weapon-name: "Sundancers"
+medic-gunner:
+  wielder-name: "Eunie"
+  wielder-title: "Eunie"
+  weapon-name: "Caduceus Gunrod"
+tactician:
+  wielder-name: "Taion"
+  wielder-title: "Taion"
+  weapon-name: "Spell Tags: Totality"
+heavy-guard:
+  wielder-name: "Lanz"
+  wielder-title: "Lanz"
+  weapon-name: "Adamant Shell"
+ogre:
+  wielder-name: "Sena"
+  wielder-title: "Sena"
+  weapon-name: "Meteor Smasher"
+flash-fencer:
+  wielder-name: "Ethel"
+  wielder-title: "Silvercoat Ethel"
+  weapon-name: "Dual Rapiers"
+war-medic:
+  wielder-name: "Valdi"
+  wielder-title: "Artificer Valdi"
+  weapon-name: "Relief Rifle"
+guardian-commander:
+  wielder-name: "Zeon"
+  wielder-title: "Dutiful Zeon"
+  weapon-name: "Gutsy Gladius"
+thaumaturge:
+  wielder-name: "Teach"
+  wielder-title: "Inscrutable Teach"
+  weapon-name: "Martial Linkstaff"
+yumsmith:
+  wielder-name: "Riku & Manana"
+  wielder-title: "Peerless Riku & Manana"
+  weapon-name: "Variable Arms"
+full-metal-jaguar:
+  wielder-name: "Gray"
+  wielder-title: "Ashenpelt Gray"
+  weapon-name: "Gun Drones"
+strategos:
+  wielder-name: "Isurd"
+  wielder-title: "Dawnhero Isurd"
+  weapon-name: "Disc Launcher"
+stalker:
+  wielder-name: "Juniper"
+  wielder-title: "Ghostbow Juniper"
+  weapon-name: "Luminescent Bow"
+lone-exile:
+  wielder-name: "Ashera"
+  wielder-title: "Undying Blade Ashera"
+  weapon-name: "Twinsaber"
+incursor:
+  wielder-name: "Alexandria"
+  wielder-title: "Craftmaiden Alexandria"
+  weapon-name: "Exponential Edge"
+lost-vanguard:
+  wielder-name: "Monica"
+  wielder-title: "City's Bulwark Monica"
+  weapon-name: "Defense Mace"
+signifier:
+  wielder-name: "Fiona"
+  wielder-title: "Proudbanner Fiona"
+  weapon-name: "War Standard"
+soulhacker:
+  wielder-name: "Triton"
+  wielder-title: "Defiant Triton"
+  weapon-name: "Mimic Knuckles"
+martial-artist:
+  wielder-name: "Ghondor"
+  wielder-title: "Wrathfist Ghondor"
+  weapon-name: "Turbo Cestus"
+troubadour:
+  wielder-name: "Miyabi"
+  wielder-title: "Glorysong Miyabi"
+  weapon-name: "Siken Ivy"
+seraph:
+  wielder-name: "Cammuravi"
+  wielder-title: "Smoldering Cammuravi"
+  weapon-name: "Heatshimmer Spear"
+machine-assassin:
+  wielder-name: "Segiri"
+  wielder-title: "No.7 Segiri"
+  weapon-name: "Doom Axes"
+lifesage:
+  wielder-name: "Nia"
+  wielder-title: "Nia, Queen of Agnus"
+  weapon-name: "Anima Sword"
+royal-summoner:
+  wielder-name: "Melia"
+  wielder-title: "Melia, Queen of Keves"
+  weapon-name: "Elemental Staff"
+noponic-champion:
+  wielder-name: "Ino"
+  wielder-title: "Artificial Blade Ino"
+  weapon-name: "Inosabers"
