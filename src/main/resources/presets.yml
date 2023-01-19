@@ -1,6 +1,42 @@
-noah: "An all-rounder fighter who does not specialize in anything. He fits fine with any positions. Furthermore, he can utilize two exclusive talent arts with any class."
-mio: "A fighter specialized in Agility, which grants you more chances at evading attacks. She is the best with evasion defender classes. She can utilize one exclusive talent art with any class."
-eunie: "A fighter specialized in Healing Power, which grants you more HP healed for the party. She performs best with pure healer builds."
-taion: "A fighter specialized in Dexterity, which grants you more chance at hitting the enemy. He excels with debuffer's builds."
-lanz: "A fighter specialized in HP, which grants you higher survivability. He fits best with pure tank builds."
-sena: "A fighter specialized in ATK, which grants you higher base damage. She fits greatly with glass cannon builds."
+noah:
+  base-hp: 6994
+  base-attack: 388
+  base-healing: 368
+  base-dexterity: 310
+  base-agility: 215
+  description: "An all-rounder fighter who does not specialize in anything. He fits fine with any positions. Furthermore, he can utilize two exclusive talent arts with any class."
+mio:
+  base-hp: 6754
+  base-attack: 361
+  base-healing: 341
+  base-dexterity: 306
+  base-agility: 234
+  description: "A fighter specialized in Agility, which grants you more chances at evading attacks. She is the best with evasion defender classes. She can utilize one exclusive talent art with any class."
+eunie:
+  base-hp: 6364
+  base-attack: 346
+  base-healing: 409
+  base-dexterity: 298
+  base-agility: 223
+  description: "A fighter specialized in Healing Power, which grants you more HP healed for the party. She performs best with pure healer builds."
+taion:
+  base-hp: 6371
+  base-attack: 368
+  base-healing: 381
+  base-dexterity: 325
+  base-agility: 197
+  description: "A fighter specialized in Dexterity, which grants you more chance at hitting the enemy. He excels with debuffer's builds."
+lanz:
+  base-hp: 7755
+  base-attack: 392
+  base-healing: 329
+  base-dexterity: 297
+  base-agility: 204
+  description: "A fighter specialized in HP, which grants you higher survivability. He fits best with pure tank builds."
+sena:
+  base-hp: 7125
+  base-attack: 398
+  base-healing: 346
+  base-dexterity: 282
+  base-agility: 216
+  description: "A fighter specialized in ATK, which grants you higher base damage. She fits greatly with glass cannon builds."
