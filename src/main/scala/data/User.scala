@@ -33,6 +33,32 @@ case class User(
   var talentArt: Option[ArtType] = None,
 ) extends ConfigurationSerializable:
 
+  var pctAttack = 0.0
+  var flatAttack = 0.0
+  var pctHp = 0.0
+  var flatHp = 0.0
+  var pctHealing = 0.0
+  var flatHealing = 0.0
+  var pctDexterity = 0.0
+  var flatDexterity = 0.0
+  var pctAgility = 0.0
+  var flatAgility = 0.0
+
+  var noncombatPctCrit = 0.0
+  var noncombatFlatCrit = 0.0
+  var combatPctCrit = 0.0
+  var combatFlatCrit = 0.0
+
+  var noncombatPctBlock = 0.0
+  var noncombatFlatBlock = 0.0
+  var combatPctBlock = 0.0
+  var combatFlatBlock = 0.0
+
+  var pctPhysDef = 0.0
+  var flatPhysDef = 0.0
+  var pctEtherDef = 0.0
+  var flatEtherDef = 0.0
+
   /**
    * Attempts to retrieve the player instance from the user.
    *
@@ -51,9 +77,9 @@ case class User(
     "uuid" -> uuid.toString,
     "class" -> cls.map(_.toString).orNull,
     "character" -> char.map(_.toString).orNull,
-    "masterArts" -> masterArts.map(_.toString).toList.asJava,
-    "arts" -> arts.map(_.toString).toList.asJava,
-    "gems" -> gems.map(_.toString).toList.asJava,
+    "masterArts" -> masterArts.map(art => if art != null then art.toString else null).toList.asJava,
+    "arts" -> arts.map(art => if art != null then art.toString else null).toList.asJava,
+    "gems" -> gems.map(gem => if gem != null then gem.toString else null).toList.asJava,
     "talentArt" -> talentArt.map(_.toString).orNull,
   ).asJava
 
@@ -70,9 +96,9 @@ object User:
     val char = tryGetting("character", Character.valueOf)
     val talentArt = tryGetting("talentArt", ArtType.valueOf)
 
-    val masterArts = tryGettingArray("masterArts", ArtType.valueOf).asInstanceOf[Array[ArtType]]
-    val arts = tryGettingArray("arts", ArtType.valueOf).asInstanceOf[Array[ArtType]]
-    val gems = tryGettingArray("gems", GemType.valueOf).asInstanceOf[Array[GemType]]
+    val masterArts = tryGettingArray("masterArts", ArtType.valueOf).toArray[ArtType]
+    val arts = tryGettingArray("arts", ArtType.valueOf).toArray[ArtType]
+    val gems = tryGettingArray("gems", GemType.valueOf).toArray[GemType]
 
     User(uuid, cls, char, masterArts, arts, gems, talentArt)
 
@@ -83,8 +109,8 @@ object User:
       case Success(value) => Some(value)
       case Failure(_) => None
 
-  private def tryGettingArray[T <: Any](key: String, f: String => T, size: Int = 3)(using map: util.Map[String, Any]): Array[Any] =
+  private def tryGettingArray[T](key: String, f: String => T, size: Int = 3)(using map: util.Map[String, Any]): List[T] =
     map.get(key).asInstanceOf[util.List[String]].asScala
       .take(size)
-      .map { s => if s == null then null else f.apply(s) }
-      .toArray
+      .map(s => if s != null then f(s) else null.asInstanceOf[T])
+      .toList

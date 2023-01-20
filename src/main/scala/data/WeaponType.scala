@@ -1,6 +1,8 @@
 package dev.hawu.plugins.xenocraft
 package data
 
+import org.bukkit.Material
+
 /**
  * Represents a type of Blade a class holder can have.
  *
@@ -11,6 +13,7 @@ package data
  * See [[ClassType]].
  */
 enum WeaponType(
+  val material: Material,
   val weaponAttack: Double,
   val weaponCrit: Double,
   val weaponBlock: Double,
@@ -18,12 +21,14 @@ enum WeaponType(
 ):
 
   case VEILED_SWORD extends WeaponType(
+    material = Material.IRON_SWORD,
     weaponAttack = 575,
     weaponCrit = 0.2,
     weaponBlock = 0.1,
     weaponStability = 0.08,
   )
   case TRUTHSINGER extends WeaponType(
+    material = Material.DIAMOND_SWORD,
     weaponAttack = 690,
     weaponCrit = 0.24,
     weaponBlock = 0.12,

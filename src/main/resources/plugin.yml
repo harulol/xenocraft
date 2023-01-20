@@ -8,5 +8,5 @@ depend:
   - HikariLibrary
   - MultiJVMLang
 commands:
-  lookup:
-    description: The testing command for looking up stuff.
+  stats:
+    description: Open a GUI for your own character stats.
