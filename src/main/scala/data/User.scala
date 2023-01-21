@@ -26,6 +26,7 @@ import scala.util.{Failure, Success, Try}
 case class User(
   uuid: UUID,
   var cls: Option[ClassType] = None,
+  var weapon: Option[WeaponType] = None,
   var char: Option[Character] = None,
   masterArts: Array[ArtType] = Array.ofDim(3),
   arts: Array[ArtType] = Array.ofDim(3),
@@ -73,9 +74,26 @@ case class User(
    */
   def offlinePlayer: OfflinePlayer = Bukkit.getOfflinePlayer(uuid)
 
+  /**
+   * Checks if the current user is having a combination of character
+   * and class that allows them to upgrade their blade.
+   *
+   * @return whether they can upgrade
+   */
+  def canChooseWeapon: Boolean =
+    char match
+      case Some(Character.NOAH) => cls.contains(ClassType.SWORDFIGHTER)
+      case Some(Character.MIO) => cls.contains(ClassType.ZEPHYR)
+      case Some(Character.EUNIE) => cls.contains(ClassType.MEDIC_GUNNER)
+      case Some(Character.TAION) => cls.contains(ClassType.TACTICIAN)
+      case Some(Character.LANZ) => cls.contains(ClassType.HEAVY_GUARD)
+      case Some(Character.SENA) => cls.contains(ClassType.OGRE)
+      case _ => false
+
   override def serialize(): util.Map[String, AnyRef] = Map(
     "uuid" -> uuid.toString,
     "class" -> cls.map(_.toString).orNull,
+    "weapon" -> weapon.map(_.toString).orNull,
     "character" -> char.map(_.toString).orNull,
     "masterArts" -> masterArts.map(art => if art != null then art.toString else null).toList.asJava,
     "arts" -> arts.map(art => if art != null then art.toString else null).toList.asJava,
@@ -93,6 +111,7 @@ object User:
 
     val uuid = UUID.fromString(map.get("uuid").toString)
     val cls = tryGetting("class", ClassType.valueOf)
+    val weapon = tryGetting("weapon", WeaponType.valueOf)
     val char = tryGetting("character", Character.valueOf)
     val talentArt = tryGetting("talentArt", ArtType.valueOf)
 
@@ -100,7 +119,7 @@ object User:
     val arts = tryGettingArray("arts", ArtType.valueOf).toArray[ArtType]
     val gems = tryGettingArray("gems", GemType.valueOf).toArray[GemType]
 
-    User(uuid, cls, char, masterArts, arts, gems, talentArt)
+    User(uuid, cls, weapon, char, masterArts, arts, gems, talentArt)
 
   private def tryGetting[T](key: String, f: String => T)(using map: util.Map[String, Any]): Option[T] =
     val result = Option(map.get(key)).map(_.toString)

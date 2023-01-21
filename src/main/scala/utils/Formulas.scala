@@ -17,7 +17,7 @@ object Formulas:
   def calculateAttack(user: User): Double =
     val baseAttack = user.char.map(_.baseAttack).getOrElse(0D)
     val classAttack = user.cls.map(_.classAttack).getOrElse(0D)
-    val weaponAttack = user.cls.map(_.weaponType.weaponAttack).getOrElse(0D)
+    val weaponAttack = user.weapon.map(_.weaponAttack).getOrElse(0D)
     (baseAttack * classAttack + weaponAttack) * (1 + user.pctAttack) + user.flatAttack
 
   /**
@@ -71,7 +71,7 @@ object Formulas:
    * @return the display critical rate value
    */
   def calculateDisplayCritRate(user: User): Double =
-    val weaponCrit = user.cls.map(_.weaponType.weaponCrit).getOrElse(0D)
+    val weaponCrit = user.weapon.map(_.weaponCrit).getOrElse(0D)
     weaponCrit * (1 + user.noncombatPctCrit) + user.noncombatFlatCrit
 
   /**
@@ -81,7 +81,7 @@ object Formulas:
    * @return the display block rate value
    */
   def calculateDisplayBlockRate(user: User): Double =
-    val weaponBlock = user.cls.map(_.weaponType.weaponBlock).getOrElse(0D)
+    val weaponBlock = user.weapon.map(_.weaponBlock).getOrElse(0D)
     weaponBlock * (1 + user.noncombatPctBlock) + user.noncombatFlatBlock
 
   /**

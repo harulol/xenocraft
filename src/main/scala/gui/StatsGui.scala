@@ -1,10 +1,11 @@
 package dev.hawu.plugins.xenocraft
 package gui
 
-import dev.hawu.plugins.api.Strings
 import dev.hawu.plugins.api.gui.pagination.GuiPaginator
+import dev.hawu.plugins.api.gui.templates.CloseInventoryComponent
 import dev.hawu.plugins.api.gui.{GuiComponent, GuiModel}
-import dev.hawu.plugins.api.items.ItemStackBuilder
+import dev.hawu.plugins.api.items.{BukkitMaterial, ItemStackBuilder}
+import dev.hawu.plugins.api.{Strings, Tasks}
 import dev.hawu.plugins.xenocraft.UserMap.{save, user}
 import dev.hawu.plugins.xenocraft.data.{Character, ClassType, User}
 import dev.hawu.plugins.xenocraft.utils.Formulas
@@ -13,7 +14,9 @@ import org.bukkit.entity.Player
 import org.bukkit.event.inventory.InventoryClickEvent
 import org.bukkit.inventory.meta.SkullMeta
 import org.bukkit.inventory.{ItemFlag, ItemStack}
+import org.bukkit.scheduler.BukkitTask
 
+import java.security.SecureRandom
 import java.util
 import scala.collection.mutable
 import scala.jdk.CollectionConverters.*
@@ -24,6 +27,8 @@ import scala.jdk.CollectionConverters.*
  */
 object StatsGui:
 
+  private val random = SecureRandom()
+
   /**
    * The main menu of the stats GUI.
    *
@@ -33,6 +38,7 @@ object StatsGui:
     val model = GuiModel(54, "Your Stats")
     val user = player.user.get
 
+    // The Stats displaying component.
     model.mount(13, new GuiComponent[Unit]() {
       override def render(): ItemStack = ItemStackBuilder.of(Material.PLAYER_HEAD)
         .name("&e&lYour Stats")
@@ -43,20 +49,58 @@ object StatsGui:
           s"&fHealing Power: &a${Formulas.calculateHealingPower(user).intValue}",
           s"&fDexterity: &a${Formulas.calculateDexterity(user).intValue}",
           s"&fAgility: &a${Formulas.calculateAgility(user).intValue}",
-          s"&fCritical Rate: &a${Formulas.calculateDisplayCritRate(user).intValue}",
-          s"&fBlock Rate: &a${Formulas.calculateDisplayBlockRate(user).intValue}",
-          s"&fPhys. Def: &a${Formulas.calculateDisplayPhysDefense(user).intValue}",
-          s"&fEther Def: &a${Formulas.calculateDisplayEtherDefense(user).intValue}",
+          s"&fCritical Rate: &a${(Formulas.calculateDisplayCritRate(user) * 100).intValue}%",
+          s"&fBlock Rate: &a${(Formulas.calculateDisplayBlockRate(user) * 100).intValue}%",
+          s"&fPhys. Def: &a${(Formulas.calculateDisplayPhysDefense(user) * 100).intValue}%",
+          s"&fEther Def: &a${(Formulas.calculateDisplayEtherDefense(user) * 100).intValue}%",
         )
         .transformed[SkullMeta](_.setOwningPlayer(player))
         .build()
     })
 
+    // Soulhacker class selecting component
+    if user.cls.exists(_.isSoulhacker) then model.mount(8, new GuiComponent[Int](0) {
+      var task: Option[BukkitTask] = None
+
+      def randomMaterial: Material =
+        val values = BukkitMaterial.getDisplayableMaterials.asScala
+        val num = random.nextInt(values.length)
+        values(num)
+
+      override def componentDidMount(): Unit =
+        task.foreach(_.cancel())
+        task = Some(Tasks.scheduleTimerAsync(0, 5, _ => setState(_ + 1)))
+
+      override def componentWillUnmount(): Unit =
+        task.foreach(_.cancel())
+        task = None
+
+      override def handleClick(event: InventoryClickEvent): Unit =
+        event.setCancelled(true)
+        chooseSoulhackerSoul(player)
+
+      override def render(): ItemStack = ItemStackBuilder.of(randomMaterial)
+        .name("&e&lSoul Skill")
+        .flags(ItemFlag.values().toSeq: _*)
+        .lore(
+          "",
+          "&7The class and type of",
+          "&7the Soulhacker class.",
+          "",
+          s"&fSelected: &a${user.cls.map(_.soulName).get}",
+          "",
+          "&6Click &eto change",
+        )
+        .build()
+    })
+
+    // The Character displaying component.
     model.mount(21, new GuiComponent[Unit]() {
       override def handleClick(event: InventoryClickEvent): Unit =
         event.setCancelled(true)
         if event.isRightClick then
           user.char = None
+          mainMenu(player)
         else
           chooseCharacter(player)
 
@@ -73,11 +117,37 @@ object StatsGui:
         .build()
     })
 
+    if user.canChooseWeapon then model.mount(22, new GuiComponent[Unit]() {
+      override def handleClick(event: InventoryClickEvent): Unit =
+        event.setCancelled(true)
+        chooseWeapon(player)
+
+      override def render(): ItemStack = ItemStackBuilder.of(Material.FISHING_ROD)
+        .name("&e&lWeapon")
+        .lore(
+          "",
+          "&7You're probably using a class",
+          "&7and character that allows switching",
+          "&7weapons!",
+          "",
+          s"&fCurrent: &a${user.weapon.map(_.displayName).getOrElse("&cNone")}",
+          "",
+          "&6Click &eto change",
+        )
+        .build()
+    })
+
+    // The Class displaying component.
     model.mount(23, new GuiComponent[Unit]() {
+      val realDisplayName = if user.cls.get.isSoulhacker then
+        s"Soulhacker (${user.cls.get.soulName})"
+      else user.cls.get.displayName
+
       override def handleClick(event: InventoryClickEvent): Unit =
         event.setCancelled(true)
         if event.isRightClick then
           user.cls = None
+          mainMenu(player)
         else
           chooseClass(player)
 
@@ -86,7 +156,7 @@ object StatsGui:
         .name("&e&lYour Class")
         .lore(
           "",
-          s"&fClass: &a${user.cls.map(_.toString.toLowerCase.capitalize).getOrElse("&cNone")}",
+          s"&fClass: &a$realDisplayName",
           "",
           "&6Click &eto change",
           "&6Right click &eto deselect",
@@ -95,6 +165,7 @@ object StatsGui:
     })
 
     model.open(player)
+  end mainMenu
 
   /**
    * Opens a GUI for the player to choose a character.
@@ -117,25 +188,18 @@ object StatsGui:
 
         override def render(): ItemStack = ItemStackBuilder.of(c.icon)
           .name(s"&e&l${c.toString.toLowerCase.capitalize}")
-          .transform { meta =>
-            val lore = mutable.ArrayBuffer.empty[String]
-            lore += ""
-            lore ++= description
-            lore += ""
-
-            lore += s"&7Base HP: &a${c.baseHp}"
-            lore += s"&7Base Attack: &a${c.baseAttack}"
-            lore += s"&7Base Healing: &a${c.baseHealingPower}"
-            lore += s"&7Base Dexterity: &a${c.baseDexterity}"
-            lore += s"&7Base Agility: &a${c.baseAgility}"
-
-            lore += ""
-            if user.char.contains(c) then
-              lore += "&a&lSELECTED"
-            else lore += "&6Click &eto select"
-
-            meta.setLore(lore.map(Strings.color).asJava)
-          }
+          .lore("")
+          .appendLore(description.asJava)
+          .appendLore(
+            "",
+            s"&7Base HP: &a${c.baseHp.intValue}",
+            s"&7Base Attack: &a${c.baseAttack.intValue}",
+            s"&7Base Healing: &a${c.baseHealingPower.intValue}",
+            s"&7Base Dexterity: &a${c.baseDexterity.intValue}",
+            s"&7Base Agility: &a${c.baseAgility.intValue}",
+            "",
+            if user.char.contains(c) then "&a&lSELECTED" else "&6Click &eto select",
+          )
           .flags(ItemFlag.HIDE_ATTRIBUTES)
           .build()
       })
@@ -149,25 +213,108 @@ object StatsGui:
   def chooseClass(player: Player): Unit =
     val user = player.user.get
     GuiPaginator.newBuilder[ClassType]()
-      .setCollection(ClassType.values.toList.asJava)
+      .setCollection(ClassType.values.filter(_.shouldDisplay).toList.asJava)
       .setPredicate((cls, filter) => cls.toString.toLowerCase.contains(filter.toLowerCase))
       .setBackAction(_ => mainMenu(player))
       .setItemGenerator((cls, _) => new GuiComponent[Unit]() {
         override def handleClick(event: InventoryClickEvent): Unit =
           event.setCancelled(true)
           user.cls = Some(cls)
+          user.weapon = Some(cls.weaponType)
           mainMenu(player)
 
-        override def render(): ItemStack = ItemStackBuilder.of(cls.upgradedWeaponType.getOrElse(cls.weaponType).material)
+        override def render(): ItemStack = ItemStackBuilder.of(cls.weaponType.material)
           .flags(ItemFlag.HIDE_ATTRIBUTES)
-          .name(s"&e&l${cls.toString.split("_").map(_.toLowerCase.capitalize).mkString(" ")}")
+          .name(s"&e&l${cls.displayName}")
           .lore(
             "",
             s"&7Weapon: &a${cls.weaponType.toString.split("_").map(_.toLowerCase.capitalize).mkString(" ")}",
-            s"&7Upgraded Weapon: &a${cls.upgradedWeaponType.map(_.toString.split("_").map(_.toLowerCase.capitalize).mkString(" ")).getOrElse("None")}",
+            s"&7Wielder: ${cls.classRole.colorize(cls.wielderName)}",
+            s"&7Wielder Title: ${cls.classRole.colorize(cls.wielderTitle)}",
             "",
             if user.cls.contains(cls) then "&a&lSELECTED" else "&6Click &eto select",
           )
           .build()
       })
       .build(player)
+
+  /**
+   * Chooses a soul for the soulhacker class.
+   *
+   * @param player the player
+   */
+  def chooseSoulhackerSoul(player: Player): Unit =
+    val user = player.user.get
+    GuiPaginator.newBuilder[ClassType]()
+      .setCollection(ClassType.values.filter(_.isSoulhacker).toList.asJava)
+      .setBackAction(_ => mainMenu(player))
+      .setPredicate((cls, filter) => cls.toString.toLowerCase.contains(filter.toLowerCase))
+      .setItemGenerator((cls, _) => new GuiComponent[Unit]() {
+        override def handleClick(event: InventoryClickEvent): Unit =
+          event.setCancelled(true)
+          user.cls = Some(cls)
+          mainMenu(player)
+
+        override def render(): ItemStack = ItemStackBuilder.of(Material.CHEST)
+          .name(s"&e&l${cls.soulName}")
+          .lore(
+            "",
+            if user.cls.contains(cls) then "&a&lSELECTED" else "&6Click &eto select",
+          )
+          .build()
+      })
+      .build(player)
+
+  /**
+   * Opens a menu for the player to pick a weapon.
+   *
+   * @param player the player
+   */
+  def chooseWeapon(player: Player): Unit =
+    val model = GuiModel(27, "Choose a weapon")
+    val user = player.user.get
+    model.mount(22, CloseInventoryComponent())
+    model.mount(21, new GuiComponent[Unit]() {
+      override def handleClick(event: InventoryClickEvent): Unit =
+        event.setCancelled(true)
+        mainMenu(player)
+
+      override def render(): ItemStack = ItemStackBuilder.of(Material.ARROW)
+        .name("&a&lBack")
+        .lore("&7Go back to main menu")
+        .build()
+    })
+
+    model.mount(11, new GuiComponent[Unit]() {
+      override def handleClick(event: InventoryClickEvent): Unit =
+        event.setCancelled(true)
+        user.weapon = Some(user.cls.get.weaponType)
+        mainMenu(player)
+
+      override def render(): ItemStack = ItemStackBuilder.of(user.cls.map(_.weaponType.material).get)
+        .name(s"&e&l${user.cls.map(_.weaponType.displayName).get}")
+        .lore(
+          "&8Normal",
+          "",
+          if user.weapon.contains(user.cls.map(_.weaponType).get) then "&a&lSELECTED" else "&6Click &eto select"
+        )
+        .build()
+    })
+    model.mount(15, new GuiComponent[Unit]() {
+      override def handleClick(event: InventoryClickEvent): Unit =
+        event.setCancelled(true)
+        user.weapon = Some(user.cls.get.upgradedWeaponType.get)
+        mainMenu(player)
+
+      override def render(): ItemStack = ItemStackBuilder.of(user.cls.map(_.upgradedWeaponType.get.material).get)
+        .name(s"&e&l${user.cls.map(_.upgradedWeaponType.get.displayName).get}")
+        .lore(
+          "&8Upgraded",
+          "",
+          if user.weapon.contains(user.cls.map(_.upgradedWeaponType).get) then "&a&lSELECTED" else "&6Click &eto select"
+        )
+        .build()
+    })
+
+    model.open(player)
+  end chooseWeapon
