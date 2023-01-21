@@ -9,4 +9,19 @@ depend:
   - MultiJVMLang
 commands:
   stats:
+    usage: /stats
     description: Open a GUI for your own character stats.
+  party:
+    usage: /list
+    description: Hold a party with others to fight together on fields.
+  xenocraft:
+    usage: /xenocraft
+    aliases: [ xc ]
+    description: The plugin base command.
+permissions:
+  xenocraft.base:
+    default: op
+    description: Allows access to the main plugin base command.
+  xenocraft.reload:
+    default: op
+    description: Allows access to the command to reload messages.

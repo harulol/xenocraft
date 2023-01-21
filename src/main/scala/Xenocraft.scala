@@ -1,7 +1,7 @@
 package dev.hawu.plugins.xenocraft
 
 import dev.hawu.plugins.api.commands.CommandRegistry
-import dev.hawu.plugins.xenocraft.commands.StatsCommand
+import dev.hawu.plugins.xenocraft.commands.{PartyCommand, PluginBaseCommand, StatsCommand}
 import dev.hawu.plugins.xenocraft.data.{Character, ClassType, User}
 import org.bukkit.configuration.file.YamlConfiguration
 import org.bukkit.configuration.serialization.ConfigurationSerialization
@@ -19,9 +19,10 @@ class Xenocraft extends JavaPlugin:
     loadClassWielders()
 
     ConfigurationSerialization.registerClass(classOf[User])
+    I18n.initialize(this)
     UserMap.initialize(this)
 
-    CommandRegistry.register(this, new StatsCommand)
+    CommandRegistry.register(this, new StatsCommand, new PartyCommand, PluginBaseCommand(this))
 
   private def loadCharacterDescriptions(): Unit =
     val resource = InputStreamReader(getResource("presets.yml"))
@@ -41,3 +42,5 @@ class Xenocraft extends JavaPlugin:
 
   override def onDisable(): Unit =
     UserMap.save(this)
+    I18n.clear()
+    CommandRegistry.unregister(this)
