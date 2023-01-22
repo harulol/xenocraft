@@ -3,7 +3,7 @@ package dev.hawu.plugins.xenocraft
 import dev.hawu.plugins.api.Tasks
 import dev.hawu.plugins.api.commands.CommandRegistry
 import dev.hawu.plugins.api.events.Events
-import dev.hawu.plugins.xenocraft.combat.ChatHologramListener
+import dev.hawu.plugins.xenocraft.combat.{BattlefieldListener, ChatHologramListener}
 import dev.hawu.plugins.xenocraft.commands.{PartyCommand, PluginBaseCommand, StatsCommand}
 import dev.hawu.plugins.xenocraft.data.{Character, ClassType, User}
 import org.bukkit.configuration.file.YamlConfiguration
@@ -24,6 +24,7 @@ class Xenocraft extends JavaPlugin:
     ConfigurationSerialization.registerClass(classOf[User])
     I18n.initialize(this)
     UserMap.initialize(this)
+    BattlefieldListener.initialize(this)
 
     ChatHologramListener.initialize(this)
     CommandRegistry.register(this, new StatsCommand, new PartyCommand, PluginBaseCommand(this))

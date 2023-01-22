@@ -1,6 +1,9 @@
 package dev.hawu.plugins.xenocraft
 package data
 
+import dev.hawu.plugins.xenocraft.combat.Battlefield
+import dev.hawu.plugins.xenocraft.utils.Formulas
+import org.bukkit.attribute.Attribute
 import org.bukkit.configuration.serialization.ConfigurationSerializable
 import org.bukkit.entity.Player
 import org.bukkit.{Bukkit, OfflinePlayer}
@@ -34,6 +37,8 @@ case class User(
   var talentArt: Option[ArtType] = None,
 ) extends ConfigurationSerializable:
 
+  var battlefield: Option[Battlefield] = None
+  var bladeUnsheathed = false
   var pctAttack = 0.0
   var flatAttack = 0.0
   var pctHp = 0.0
@@ -44,21 +49,45 @@ case class User(
   var flatDexterity = 0.0
   var pctAgility = 0.0
   var flatAgility = 0.0
-
   var noncombatPctCrit = 0.0
   var noncombatFlatCrit = 0.0
   var combatPctCrit = 0.0
   var combatFlatCrit = 0.0
-
   var noncombatPctBlock = 0.0
   var noncombatFlatBlock = 0.0
   var combatPctBlock = 0.0
   var combatFlatBlock = 0.0
-
   var pctPhysDef = 0.0
   var flatPhysDef = 0.0
   var pctEtherDef = 0.0
   var flatEtherDef = 0.0
+  private var _hp = 0.0
+
+  /**
+   * Retrieves the supposedly current health value of the user.
+   *
+   * @return the health value
+   */
+  def hp: Double = _hp
+
+  /**
+   * Sets the HP value of the player.
+   *
+   * @param value the HP value
+   */
+  def setHp(value: Double): Unit =
+    val maxHealth = maxHp
+    _hp = value min maxHealth max 0
+    if maxHealth != 0 then
+      val percentage = _hp / maxHealth
+      player.foreach(p => p.setHealth(p.getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue * percentage))
+
+  /**
+   * Retrieves the user's max HP.
+   *
+   * @return the user's max HP
+   */
+  def maxHp: Double = Formulas.calculateHp(this)
 
   /**
    * Attempts to retrieve the player instance from the user.
