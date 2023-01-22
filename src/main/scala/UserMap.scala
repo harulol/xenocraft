@@ -3,8 +3,8 @@ package dev.hawu.plugins.xenocraft
 import dev.hawu.plugins.api.misc.ConsoleLogger
 import dev.hawu.plugins.xenocraft.data.User
 import org.bukkit.configuration.file.YamlConfiguration
-import org.bukkit.event.EventHandler
 import org.bukkit.event.player.PlayerJoinEvent
+import org.bukkit.event.{EventHandler, Listener}
 import org.bukkit.plugin.java.JavaPlugin
 import org.bukkit.{Bukkit, OfflinePlayer}
 import org.omg.PortableInterceptor.USER_EXCEPTION
@@ -16,7 +16,7 @@ import scala.collection.mutable
 /**
  * The data holders for players.
  */
-object UserMap:
+object UserMap extends Listener:
 
   private val map = mutable.Map.empty[UUID, User]
 

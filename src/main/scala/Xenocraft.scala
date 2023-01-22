@@ -1,6 +1,9 @@
 package dev.hawu.plugins.xenocraft
 
+import dev.hawu.plugins.api.Tasks
 import dev.hawu.plugins.api.commands.CommandRegistry
+import dev.hawu.plugins.api.events.Events
+import dev.hawu.plugins.xenocraft.combat.ChatHologramListener
 import dev.hawu.plugins.xenocraft.commands.{PartyCommand, PluginBaseCommand, StatsCommand}
 import dev.hawu.plugins.xenocraft.data.{Character, ClassType, User}
 import org.bukkit.configuration.file.YamlConfiguration
@@ -22,7 +25,9 @@ class Xenocraft extends JavaPlugin:
     I18n.initialize(this)
     UserMap.initialize(this)
 
+    ChatHologramListener.initialize(this)
     CommandRegistry.register(this, new StatsCommand, new PartyCommand, PluginBaseCommand(this))
+    Events.registerEvents(this, ChatHologramListener, UserMap)
 
   private def loadCharacterDescriptions(): Unit =
     val resource = InputStreamReader(getResource("presets.yml"))
@@ -44,3 +49,4 @@ class Xenocraft extends JavaPlugin:
     UserMap.save(this)
     I18n.clear()
     CommandRegistry.unregister(this)
+    Tasks.cancelAllTasks(this)

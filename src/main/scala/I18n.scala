@@ -22,13 +22,20 @@ object I18n:
    */
   def initialize(pl: JavaPlugin): Unit =
     plugin = Some(pl)
-    reload()
+    messages = Some(LanguageModule(pl, "messages"))
 
   /**
    * Reloads all messages by reinitializing the instance.
    */
   def reload(): Unit =
-    messages = Some(LanguageModule(plugin.get, "messages"))
+    messages.foreach(_.saveResources(false))
+
+  /**
+   * Attempts to overwrite files by saving resources again
+   * and reloading.
+   */
+  def overwrite(): Unit =
+    messages.foreach(_.saveResources(true))
 
   /**
    * Clears all references in this singleton object.
@@ -78,7 +85,6 @@ object I18n:
         case player: Player =>
           val extendedUser = UserAdapter.getAdapter.getUser(player)
           val message = messages.get.translate(extendedUser.getLocale, key, args.map(convertToLibrary): _*)
-          println(key)
           player.sendMessage(message)
         case _ =>
           val message = messages.get.translate(key, args.map(convertToLibrary): _*)
