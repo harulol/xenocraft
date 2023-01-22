@@ -1,0 +1,6 @@
+# The difficulty of the scaling.
+# Ranging from:
+# 1 - Easy (Less health, Less attack, etc.)
+# 2 - Normal
+# 3 - Hard (More health, more attack, etc.)
+difficulty: 2

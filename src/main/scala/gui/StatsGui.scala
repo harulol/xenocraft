@@ -69,7 +69,7 @@ object StatsGui:
 
       override def componentDidMount(): Unit =
         task.foreach(_.cancel())
-        task = Some(Tasks.scheduleTimerAsync(0, 5, _ => setState(_ + 1)))
+        task = Some(Tasks.run { () => setState(_ + 1) }.delay(0).period(5).run())
 
       override def componentWillUnmount(): Unit =
         task.foreach(_.cancel())

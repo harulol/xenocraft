@@ -29,11 +29,11 @@ object ChatHologramListener extends Listener:
     pl.getServer.getScheduler.runTaskTimer(pl, _ => map.foreach(teleport), 0, 1)
 
   private def teleport(entry: (UUID, Hologram)): Unit =
-    Tasks.schedule { _ =>
+    Tasks.run { _ =>
       val player = Bukkit.getPlayer(entry._1)
       if player != null && entry._2.isSpawned then
         entry._2.move(player.getLocation.add(0.0, 3.0, 0.0))
-    }
+    }.run()
 
   /**
    * Simulates that a chat event has been fired in case of any cancellations
@@ -47,17 +47,7 @@ object ChatHologramListener extends Listener:
    * @param message the message to spawn
    */
   def fireEventChat(player: Player, message: String): Unit =
-    Tasks.schedule(_ => spawnHologram(player, message))
-
-  @EventHandler
-  private def onPlayerQuit(event: PlayerQuitEvent): Unit =
-    map.remove(event.getPlayer.getUniqueId).foreach(_.despawn())
-
-  @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
-  private def onAsyncChat(event: AsyncPlayerChatEvent): Unit =
-    if !event.isAsynchronous then
-      spawnHologram(event.getPlayer, event.getMessage)
-    else Tasks.schedule(_ => spawnHologram(event.getPlayer, event.getMessage))
+    Tasks.run(_ => spawnHologram(player, message)).run()
 
   private def spawnHologram(player: Player, message: String): Unit =
     map.remove(player.getUniqueId).foreach(_.despawn())
@@ -72,3 +62,13 @@ object ChatHologramListener extends Listener:
     hologram.spawn()
 
     map.put(player.getUniqueId, hologram)
+
+  @EventHandler
+  private def onPlayerQuit(event: PlayerQuitEvent): Unit =
+    map.remove(event.getPlayer.getUniqueId).foreach(_.despawn())
+
+  @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+  private def onAsyncChat(event: AsyncPlayerChatEvent): Unit =
+    if !event.isAsynchronous then
+      spawnHologram(event.getPlayer, event.getMessage)
+    else Tasks.run(_ => spawnHologram(event.getPlayer, event.getMessage)).run()

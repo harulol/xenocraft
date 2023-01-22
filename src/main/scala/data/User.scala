@@ -1,12 +1,11 @@
 package dev.hawu.plugins.xenocraft
 package data
 
-import dev.hawu.plugins.xenocraft.combat.Battlefield
 import dev.hawu.plugins.xenocraft.utils.Formulas
 import org.bukkit.attribute.Attribute
 import org.bukkit.configuration.serialization.ConfigurationSerializable
 import org.bukkit.entity.Player
-import org.bukkit.{Bukkit, OfflinePlayer}
+import org.bukkit.{Bukkit, Effect, EntityEffect, OfflinePlayer}
 
 import java.util
 import java.util.UUID
@@ -27,7 +26,7 @@ import scala.util.{Failure, Success, Try}
  * @param talentArt  The equipped talent art.
  */
 case class User(
-  uuid: UUID,
+  private val _uuid: UUID,
   var cls: Option[ClassType] = None,
   var weapon: Option[WeaponType] = None,
   var char: Option[Character] = None,
@@ -35,59 +34,34 @@ case class User(
   arts: Array[ArtType] = Array.ofDim(3),
   gems: Array[GemType] = Array.ofDim(3),
   var talentArt: Option[ArtType] = None,
-) extends ConfigurationSerializable:
+) extends ConfigurationSerializable with Attributable(_uuid):
 
-  var battlefield: Option[Battlefield] = None
   var bladeUnsheathed = false
-  var pctAttack = 0.0
-  var flatAttack = 0.0
-  var pctHp = 0.0
-  var flatHp = 0.0
-  var pctHealing = 0.0
-  var flatHealing = 0.0
-  var pctDexterity = 0.0
-  var flatDexterity = 0.0
-  var pctAgility = 0.0
-  var flatAgility = 0.0
-  var noncombatPctCrit = 0.0
-  var noncombatFlatCrit = 0.0
-  var combatPctCrit = 0.0
-  var combatFlatCrit = 0.0
-  var noncombatPctBlock = 0.0
-  var noncombatFlatBlock = 0.0
-  var combatPctBlock = 0.0
-  var combatFlatBlock = 0.0
-  var pctPhysDef = 0.0
-  var flatPhysDef = 0.0
-  var pctEtherDef = 0.0
-  var flatEtherDef = 0.0
-  private var _hp = 0.0
-
-  /**
-   * Retrieves the supposedly current health value of the user.
-   *
-   * @return the health value
-   */
-  def hp: Double = _hp
 
   /**
    * Sets the HP value of the player.
    *
    * @param value the HP value
    */
-  def setHp(value: Double): Unit =
+  override def setHp(value: Double): Unit =
     val maxHealth = maxHp
     _hp = value min maxHealth max 0
     if maxHealth != 0 then
       val percentage = _hp / maxHealth
-      player.foreach(p => p.setHealth(p.getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue * percentage))
+      player.foreach(p => {
+        val value = p.getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue * percentage
+        if value <= 0 then
+          setHp(maxHp)
+          p.sendTitle("&cYou died!", "&7Guess Ouroboros sucks still...", 20, 100, 20)
+          p.teleport(p.getWorld.getSpawnLocation)
+          p.playEffect(EntityEffect.TOTEM_RESURRECT)
+        else if value < p.getHealth then
+          p.setHealth(value)
+          p.playEffect(EntityEffect.HURT)
+        else p.setHealth(value)
+      })
 
-  /**
-   * Retrieves the user's max HP.
-   *
-   * @return the user's max HP
-   */
-  def maxHp: Double = Formulas.calculateHp(this)
+  override def maxHp: Double = Formulas.calculateHp(this)
 
   /**
    * Attempts to retrieve the player instance from the user.
@@ -95,6 +69,22 @@ case class User(
    * @return the player instance
    */
   def player: Option[Player] = Option(Bukkit.getPlayer(uuid))
+
+  override def attack: Double = Formulas.calculateAttack(this)
+
+  override def healing: Double = Formulas.calculateHealingPower(this)
+
+  override def dexterity: Double = Formulas.calculateDexterity(this)
+
+  override def agility: Double = Formulas.calculateAgility(this)
+
+  override def critRate: Double = Formulas.calculateDisplayCritRate(this)
+
+  override def blockRate: Double = Formulas.calculateDisplayBlockRate(this)
+
+  override def physicalDef: Double = Formulas.calculateDisplayPhysDefense(this)
+
+  override def etherDef: Double = Formulas.calculateDisplayEtherDefense(this)
 
   /**
    * Retrieves the offline player instance.

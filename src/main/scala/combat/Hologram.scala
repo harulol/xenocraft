@@ -29,10 +29,10 @@ class Hologram(
     stands += makeArmorStand(location.clone().subtract(0.0, 0.3 * stands.size, 0.0), line)
 
   if selfDestruct >= 0 then
-    Tasks.scheduleLater(selfDestruct, _ => {
+    Tasks.run(() => {
       despawn()
       lines.clear()
-    })
+    }).delay(selfDestruct).run()
 
   private def makeArmorStand(location: Location, name: String): ArmorStand =
     val stand: ArmorStand = location.getWorld.spawn[ArmorStand](location, classOf[ArmorStand], stand => {
