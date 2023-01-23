@@ -1,7 +1,10 @@
 package dev.hawu.plugins.xenocraft
 package data
 
+import dev.hawu.plugins.api.i18n.{LanguageModule, Locale}
+import dev.hawu.plugins.xenocraft.data.Character.module
 import org.bukkit.Material
+import org.bukkit.plugin.java.JavaPlugin
 
 /**
  * Represents a character that a user can select
@@ -16,9 +19,35 @@ enum Character(
   val baseAgility: Double,
 ):
 
-  import org.bukkit.Material
+  /**
+   * The default name of this character.
+   *
+   * @return the character
+   */
+  def name: String = module.get.translate(this.toString.toLowerCase)
 
-  var description = "No description set."
+  /**
+   * Retrieves the localized name of this character.
+   *
+   * @param locale the locale
+   * @return the character name
+   */
+  def name(locale: Locale): String = module.get.translate(locale, this.toString.toLowerCase)
+
+  /**
+   * Retrieves the description with the default locale of en_US.
+   *
+   * @return the description
+   */
+  def description: String = module.get.translate(s"${this.toString.toLowerCase}-desc")
+
+  /**
+   * Retrieves the description with the provided locale.
+   *
+   * @param locale the locale
+   * @return the description
+   */
+  def description(locale: Locale): String = module.get.translate(locale, s"${this.toString.toLowerCase}-desc")
 
   case NOAH extends Character(
     icon = Material.IRON_SWORD,
@@ -68,3 +97,26 @@ enum Character(
     baseDexterity = 282,
     baseAgility = 216,
   )
+
+/**
+ * The singleton object for [[Character]].
+ */
+object Character:
+
+  private var module: Option[LanguageModule] = None
+
+  /**
+   * Initializes the character enum.
+   *
+   * @param pl the plugin to initialize with
+   */
+  def initialize(pl: JavaPlugin): Unit =
+    module = Some(LanguageModule(pl, "characters"))
+
+  /**
+   * Reloads the character description.
+   *
+   * @param force whether to forcefully overwrite
+   */
+  def reload(force: Boolean = false): Unit =
+    module.get.saveResources(force)

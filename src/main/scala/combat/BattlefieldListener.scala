@@ -4,7 +4,6 @@ package combat
 import dev.hawu.plugins.api.Tasks
 import dev.hawu.plugins.api.events.Events
 import dev.hawu.plugins.xenocraft.UserMap.{save, user}
-import org.bukkit.Bukkit
 import org.bukkit.attribute.Attribute
 import org.bukkit.entity.*
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause
@@ -13,6 +12,7 @@ import org.bukkit.event.entity.{EntityDamageEvent, EntityDeathEvent, EntityRegai
 import org.bukkit.event.player.PlayerQuitEvent
 import org.bukkit.event.{EventHandler, Listener}
 import org.bukkit.plugin.java.JavaPlugin
+import org.bukkit.{Bukkit, EntityEffect}
 
 import java.util.UUID
 import scala.collection.mutable
@@ -62,8 +62,21 @@ object BattlefieldListener extends Listener:
   private def onDamage(event: EntityDamageEvent): Unit =
     event.getEntity match
       case player: Player =>
-        if event.getCause != DamageCause.CUSTOM then
-          event.setCancelled(true)
+        event.getCause match
+          case DamageCause.BLOCK_EXPLOSION | DamageCause.ENTITY_EXPLOSION =>
+            event.setCancelled(true)
+            player.playEffect(EntityEffect.HURT_EXPLOSION)
+          case DamageCause.THORNS =>
+            event.setCancelled(true)
+            player.playEffect(EntityEffect.THORNS_HURT)
+          case DamageCause.DROWNING =>
+            event.setCancelled(true)
+            player.playEffect(EntityEffect.HURT_DROWN)
+          case DamageCause.CONTACT =>
+            event.setCancelled(true)
+            player.playEffect(EntityEffect.HURT_BERRY_BUSH)
+          case DamageCause.CUSTOM => ()
+          case _ => event.setCancelled(true)
         val user = player.user.get
         val percentage = event.getFinalDamage / player.getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue
         CombatManager.damage(player, user.maxHp * percentage)

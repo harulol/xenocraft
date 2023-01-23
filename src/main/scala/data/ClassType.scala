@@ -1,7 +1,10 @@
 package dev.hawu.plugins.xenocraft
 package data
 
-import dev.hawu.plugins.xenocraft.data.ClassType.{ATTACKER_LUCKY_SEVEN, DEFENDER_LUCKY_SEVEN, HEALER_LUCKY_SEVEN, SOULHACKER_STRIKE}
+import dev.hawu.plugins.api.collections.tuples.Pair
+import dev.hawu.plugins.api.i18n.{LanguageModule, Locale}
+import dev.hawu.plugins.xenocraft.data.ClassType.*
+import org.bukkit.plugin.java.JavaPlugin
 
 /**
  * Represents a type of class a player can pick.
@@ -20,15 +23,34 @@ enum ClassType(
   name: Option[String] = None
 ):
 
-  var wielderName: String = ""
-  var wielderTitle: String = ""
+  private val keyName = this.name.getOrElse(this.toString.replace('_', '-')).toLowerCase
+
+  /**
+   * Retrieves the name of the hero who wields this class.
+   *
+   * @param locale the locale
+   * @return the wielder's name
+   */
+  def wielderName(locale: Locale): String =
+    module.get.translate(locale, s"$keyName-wielder")
+
+  /**
+   * Retrieves the proper title of the hero who wields this class.
+   *
+   * @param locale the locale
+   * @return the wielder's title
+   */
+  def wielderTitle(locale: Locale): String =
+    module.get.translate(locale, s"$keyName-title")
 
   /**
    * Retrieves the properly displayed name of the class type.
    *
+   * @param locale the locale
    * @return the name
    */
-  def displayName: String = this.name.getOrElse(this.toString.split("_").map(_.toLowerCase.capitalize).mkString(" "))
+  def displayName(locale: Locale): String =
+    module.get.translate(locale, s"$keyName-name")
 
   /**
    * Checks if this class type should be displayed in class selecting options.
@@ -47,8 +69,26 @@ enum ClassType(
    */
   def isSoulhacker: Boolean = this.toString.startsWith("SOULHACKER")
 
-  def soulName: String = if this.toString.startsWith("SOULHACKER") then
-    s"${this.toString.split("_")(1).toLowerCase.capitalize} Soul"
+  /**
+   * Retrieves the full name for the Soulhacker class with the
+   * soul involved.
+   *
+   * @param locale the locale
+   * @return the full name
+   */
+  def soulhackerName(locale: Locale): String = if isSoulhacker then
+    module.get.translate(locale, "soulhacker-soul", Pair.of("soul", soulName(locale)))
+  else throw new IllegalAccessException("This property only works with SOULHACKER classes.")
+
+  /**
+   * Retrieves the soul name of the Soulhacker class.
+   *
+   * @param locale the locale
+   * @return the soul name
+   */
+  def soulName(locale: Locale): String = if isSoulhacker then
+    val soul = this.toString.split("_")(1).toLowerCase
+    module.get.translate(locale, s"$soul-soul")
   else throw new IllegalAccessException("This property only works with SOULHACKER classes.")
 
   case SWORDFIGHTER extends ClassType(
@@ -440,3 +480,26 @@ enum ClassType(
     classEtherDef = 0.6,
     weaponType = WeaponType.LUCKY_SEVEN,
   )
+
+/**
+ * Companion object for [[ClassType]].
+ */
+object ClassType:
+
+  private var module: Option[LanguageModule] = None
+
+  /**
+   * Initializes the class type enum with language modules.
+   *
+   * @param pl the plugin
+   */
+  def initialize(pl: JavaPlugin): Unit =
+    module = Some(LanguageModule(pl, "classes"))
+
+  /**
+   * Reloads the language module.
+   *
+   * @param force whether to overwrite.
+   */
+  def reload(force: Boolean = false): Unit =
+    module.get.saveResources(force)

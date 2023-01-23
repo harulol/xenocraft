@@ -7,6 +7,7 @@ import dev.hawu.plugins.xenocraft.Xenocraft.instance
 import dev.hawu.plugins.xenocraft.combat.{BattlefieldListener, ChatHologramListener}
 import dev.hawu.plugins.xenocraft.commands.{PluginBaseCommand, StatsCommand}
 import dev.hawu.plugins.xenocraft.data.{Character, ClassType, User}
+import dev.hawu.plugins.xenocraft.gui.StatsGui
 import dev.hawu.plugins.xenocraft.utils.Configuration
 import org.bukkit.configuration.file.YamlConfiguration
 import org.bukkit.configuration.serialization.ConfigurationSerialization
@@ -21,11 +22,12 @@ class Xenocraft extends JavaPlugin:
 
   override def onEnable(): Unit =
     instance = this
-    loadCharacterDescriptions()
-    loadClassWielders()
+    Character.initialize(this)
+    ClassType.initialize(this)
+    I18n.initialize(this)
 
     ConfigurationSerialization.registerClass(classOf[User])
-    I18n.initialize(this)
+    StatsGui.initialize(this)
     UserMap.initialize(this)
     BattlefieldListener.initialize(this)
     Configuration.initialize(this)
@@ -33,22 +35,6 @@ class Xenocraft extends JavaPlugin:
     ChatHologramListener.initialize(this)
     CommandRegistry.register(this, new StatsCommand, PluginBaseCommand(this))
     Events.registerEvents(this, ChatHologramListener, UserMap)
-
-  private def loadCharacterDescriptions(): Unit =
-    val resource = InputStreamReader(getResource("presets.yml"))
-    val config = YamlConfiguration.loadConfiguration(resource)
-    for char <- Character.values do
-      char.description = config.getString(char.toString.toLowerCase)
-    resource.close()
-
-  private def loadClassWielders(): Unit =
-    val resource = InputStreamReader(getResource("classes.yml"))
-    val config = YamlConfiguration.loadConfiguration(resource)
-    for cls <- ClassType.values do
-      val kebabCase = if !cls.isSoulhacker then cls.toString.toLowerCase.replace('_', '-') else "soulhacker"
-      cls.wielderName = config.getString(s"$kebabCase.wielder-name")
-      cls.wielderTitle = config.getString(s"$kebabCase.wielder-title")
-    resource.close()
 
   override def onDisable(): Unit =
     UserMap.save(this)

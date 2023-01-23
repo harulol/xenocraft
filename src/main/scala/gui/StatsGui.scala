@@ -1,12 +1,16 @@
 package dev.hawu.plugins.xenocraft
 package gui
 
+import dev.hawu.plugins.api.adapters.UserAdapter
+import dev.hawu.plugins.api.collections.tuples.Pair
 import dev.hawu.plugins.api.gui.pagination.GuiPaginator
 import dev.hawu.plugins.api.gui.templates.CloseInventoryComponent
 import dev.hawu.plugins.api.gui.{GuiComponent, GuiModel}
+import dev.hawu.plugins.api.i18n.LanguageModule
 import dev.hawu.plugins.api.items.{BukkitMaterial, ItemStackBuilder}
 import dev.hawu.plugins.api.{Strings, Tasks}
-import dev.hawu.plugins.xenocraft.UserMap.{save, user}
+import dev.hawu.plugins.xenocraft.I18n.*
+import dev.hawu.plugins.xenocraft.UserMap.user
 import dev.hawu.plugins.xenocraft.data.{Character, ClassType, User}
 import dev.hawu.plugins.xenocraft.utils.Formulas
 import org.bukkit.Material
@@ -14,6 +18,7 @@ import org.bukkit.entity.Player
 import org.bukkit.event.inventory.InventoryClickEvent
 import org.bukkit.inventory.meta.SkullMeta
 import org.bukkit.inventory.{ItemFlag, ItemStack}
+import org.bukkit.plugin.java.JavaPlugin
 import org.bukkit.scheduler.BukkitTask
 
 import java.security.SecureRandom
@@ -28,6 +33,23 @@ import scala.jdk.CollectionConverters.*
 object StatsGui:
 
   private val random = SecureRandom()
+  private var module: Option[LanguageModule] = None
+
+  /**
+   * Initializes the module for the stats GUI.
+   *
+   * @param pl the plugin to initialize for
+   */
+  def initialize(pl: JavaPlugin): Unit =
+    module = Some(LanguageModule(pl, "stats-ui"))
+
+  /**
+   * Reloads the stats GUI translation module.
+   *
+   * @param force whether to overwrite all changes
+   */
+  def reload(force: Boolean = false): Unit =
+    module.foreach(_.saveResources(force))
 
   /**
    * The main menu of the stats GUI.
@@ -35,25 +57,27 @@ object StatsGui:
    * @param player The player to open the GUI for.
    */
   def mainMenu(player: Player): Unit =
-    val model = GuiModel(54, "Your Stats")
+    given p: Player = player
+
+    val extendedUser = UserAdapter.getAdapter.getUser(player)
+    val locale = extendedUser.getLocale
+
+    val model = GuiModel(54, module.get.translate(locale, "stats-ui-title"))
     val user = player.user.get
 
     // The Stats displaying component.
     model.mount(13, new GuiComponent[Unit]() {
-      override def render(): ItemStack = ItemStackBuilder.of(Material.PLAYER_HEAD)
-        .name("&e&lYour Stats")
-        .lore(
-          "",
-          s"&fHP: &a${Formulas.calculateHp(user).intValue}",
-          s"&fAttack: &a${Formulas.calculateAttack(user).intValue}",
-          s"&fHealing Power: &a${Formulas.calculateHealingPower(user).intValue}",
-          s"&fDexterity: &a${Formulas.calculateDexterity(user).intValue}",
-          s"&fAgility: &a${Formulas.calculateAgility(user).intValue}",
-          s"&fCritical Rate: &a${(Formulas.calculateDisplayCritRate(user) * 100).intValue}%",
-          s"&fBlock Rate: &a${(Formulas.calculateDisplayBlockRate(user) * 100).intValue}%",
-          s"&fPhys. Def: &a${(Formulas.calculateDisplayPhysDefense(user) * 100).intValue}%",
-          s"&fEther Def: &a${(Formulas.calculateDisplayEtherDefense(user) * 100).intValue}%",
-        )
+      override def render(): ItemStack = getItem("overall", Material.PLAYER_HEAD)(
+        "hp" -> user.maxHp.intValue,
+        "atk" -> user.attack.intValue,
+        "healing" -> user.healing.intValue,
+        "dexterity" -> user.dexterity.intValue,
+        "agility" -> user.agility.intValue,
+        "crit-rate" -> (user.critRate * 100).intValue,
+        "block-rate" -> (user.blockRate * 100).intValue,
+        "phys-def" -> (user.physicalDef * 100).intValue,
+        "ether-def" -> (user.etherDef * 100).intValue,
+      ).durability(3)
         .transformed[SkullMeta](_.setOwningPlayer(player))
         .build()
     })
@@ -79,18 +103,9 @@ object StatsGui:
         event.setCancelled(true)
         chooseSoulhackerSoul(player)
 
-      override def render(): ItemStack = ItemStackBuilder.of(randomMaterial)
-        .name("&e&lSoul Skill")
-        .flags(ItemFlag.values().toSeq: _*)
-        .lore(
-          "",
-          "&7The class and type of",
-          "&7the Soulhacker class.",
-          "",
-          s"&fSelected: &a${user.cls.map(_.soulName).get}",
-          "",
-          "&6Click &eto change",
-        )
+      override def render(): ItemStack = getItem("soul-select", randomMaterial)(
+        "soul-name" -> user.cls.map(_.soulName(locale)).get,
+      ).flags(ItemFlag.values().toSeq: _*)
         .build()
     })
 
@@ -104,44 +119,28 @@ object StatsGui:
         else
           chooseCharacter(player)
 
-      override def render(): ItemStack = ItemStackBuilder.of(Material.IRON_SWORD)
-        .flags(ItemFlag.HIDE_ATTRIBUTES)
-        .name("&e&lYour Character Preset")
-        .lore(
-          "",
-          s"&fCharacter: &a${user.char.map(_.toString.toLowerCase.capitalize).getOrElse("&cNone")}",
-          "",
-          "&6Click &eto change",
-          "&6Right click &eto deselect",
-        )
-        .build()
+      override def render(): ItemStack = getItem("character-select", Material.IRON_SWORD)(
+        "char" -> user.char.map(_.name(locale)).getOrElse("none".tl(locale)),
+      ).flags(ItemFlag.HIDE_ATTRIBUTES).build()
     })
 
+    // Weapon choosing component if the user can choose a weapon.
     if user.canChooseWeapon then model.mount(22, new GuiComponent[Unit]() {
       override def handleClick(event: InventoryClickEvent): Unit =
         event.setCancelled(true)
         chooseWeapon(player)
 
-      override def render(): ItemStack = ItemStackBuilder.of(Material.FISHING_ROD)
-        .name("&e&lWeapon")
-        .lore(
-          "",
-          "&7You're probably using a class",
-          "&7and character that allows switching",
-          "&7weapons!",
-          "",
-          s"&fCurrent: &a${user.weapon.map(_.displayName).getOrElse("&cNone")}",
-          "",
-          "&6Click &eto change",
-        )
+      override def render(): ItemStack = getItem("weapon-select", Material.FISHING_ROD)(
+        "weapon-name" -> user.weapon.map(_.displayName).getOrElse("none".tl(locale)),
+      ).flags(ItemFlag.HIDE_ATTRIBUTES)
         .build()
     })
 
     // The Class displaying component.
     model.mount(23, new GuiComponent[Unit]() {
-      val realDisplayName = if user.cls.get.isSoulhacker then
-        s"Soulhacker (${user.cls.get.soulName})"
-      else user.cls.get.displayName
+      val realDisplayName: String = if user.cls.exists(_.isSoulhacker) then
+        user.cls.get.soulhackerName(locale)
+      else user.cls.map(_.displayName(locale)).getOrElse("none".tl(locale))
 
       override def handleClick(event: InventoryClickEvent): Unit =
         event.setCancelled(true)
@@ -151,17 +150,9 @@ object StatsGui:
         else
           chooseClass(player)
 
-      override def render(): ItemStack = ItemStackBuilder.of(Material.IRON_CHESTPLATE)
-        .flags(ItemFlag.HIDE_ATTRIBUTES)
-        .name("&e&lYour Class")
-        .lore(
-          "",
-          s"&fClass: &a$realDisplayName",
-          "",
-          "&6Click &eto change",
-          "&6Right click &eto deselect",
-        )
-        .build()
+      override def render(): ItemStack = getItem("class-select", Material.IRON_CHESTPLATE)(
+        "display-name" -> realDisplayName,
+      ).flags(ItemFlag.HIDE_ATTRIBUTES).build()
     })
 
     model.open(player)
@@ -173,35 +164,39 @@ object StatsGui:
    * @param player the player
    */
   def chooseCharacter(player: Player): Unit =
+    given p: Player = player
+
+    val locale = UserAdapter.getAdapter.getUser(player).getLocale
     val user = player.user.get
+
     GuiPaginator.newBuilder[Character]()
       .setCollection(Character.values.toList.asJava)
-      .setPredicate((c, filter) => c.toString.toLowerCase.contains(filter.toLowerCase))
+      .setModelSupplier { () =>
+        val model = GuiModel(54, module.get.translate(locale, "characters-ui"))
+        model.mount(49, CloseInventoryComponent())
+        model
+      }
+      .setPredicate((c, filter) => c.name(locale).toLowerCase.contains(filter.toLowerCase))
+      .setFilterEvent(_ => p.tl("filter-input"))
       .setBackAction(_ => mainMenu(player))
       .setItemGenerator((c, _) => new GuiComponent[Unit]() {
-        private val description = Strings.chop(c.description, 32).asScala.map("&7" + _)
+        private val description = Strings.chop(c.description(locale), 32)
 
         override def handleClick(event: InventoryClickEvent): Unit =
           event.setCancelled(true)
           user.char = Some(c)
           mainMenu(player)
 
-        override def render(): ItemStack = ItemStackBuilder.of(c.icon)
-          .name(s"&e&l${c.toString.toLowerCase.capitalize}")
-          .lore("")
-          .appendLore(description.asJava)
-          .appendLore(
-            "",
-            s"&7Base HP: &a${c.baseHp.intValue}",
-            s"&7Base Attack: &a${c.baseAttack.intValue}",
-            s"&7Base Healing: &a${c.baseHealingPower.intValue}",
-            s"&7Base Dexterity: &a${c.baseDexterity.intValue}",
-            s"&7Base Agility: &a${c.baseAgility.intValue}",
-            "",
-            if user.char.contains(c) then "&a&lSELECTED" else "&6Click &eto select",
-          )
-          .flags(ItemFlag.HIDE_ATTRIBUTES)
-          .build()
+        override def render(): ItemStack = getItem("character", c.icon)(
+          "hp" -> c.baseHp.intValue,
+          "atk" -> c.baseAttack.intValue,
+          "healing" -> c.baseHealingPower.intValue,
+          "dexterity" -> c.baseDexterity.intValue,
+          "agility" -> c.baseAgility.intValue,
+          "name" -> c.name(locale),
+          "description" -> description,
+          "selection" -> (if user.char.contains(c) then "selected".tl(locale) else "not-selected".tl(locale)),
+        ).flags(ItemFlag.HIDE_ATTRIBUTES).build()
       })
       .build(player)
 
@@ -211,10 +206,20 @@ object StatsGui:
    * @param player the player
    */
   def chooseClass(player: Player): Unit =
+    given p: Player = player
+
     val user = player.user.get
+    val locale = UserAdapter.getAdapter.getUser(player).getLocale
+
     GuiPaginator.newBuilder[ClassType]()
       .setCollection(ClassType.values.filter(_.shouldDisplay).toList.asJava)
+      .setModelSupplier { () =>
+        val model = GuiModel(54, module.get.translate(locale, "classes-ui"))
+        model.mount(49, CloseInventoryComponent())
+        model
+      }
       .setPredicate((cls, filter) => cls.toString.toLowerCase.contains(filter.toLowerCase))
+      .setFilterEvent(_ => player.tl("filter-input"))
       .setBackAction(_ => mainMenu(player))
       .setItemGenerator((cls, _) => new GuiComponent[Unit]() {
         override def handleClick(event: InventoryClickEvent): Unit =
@@ -223,18 +228,13 @@ object StatsGui:
           user.weapon = Some(cls.weaponType)
           mainMenu(player)
 
-        override def render(): ItemStack = ItemStackBuilder.of(cls.weaponType.material)
-          .flags(ItemFlag.HIDE_ATTRIBUTES)
-          .name(s"&e&l${cls.displayName}")
-          .lore(
-            "",
-            s"&7Weapon: &a${cls.weaponType.toString.split("_").map(_.toLowerCase.capitalize).mkString(" ")}",
-            s"&7Wielder: ${cls.classRole.colorize(cls.wielderName)}",
-            s"&7Wielder Title: ${cls.classRole.colorize(cls.wielderTitle)}",
-            "",
-            if user.cls.contains(cls) then "&a&lSELECTED" else "&6Click &eto select",
-          )
-          .build()
+        override def render(): ItemStack = getItem("class", cls.weaponType.material, durability = cls.weaponType.durability)(
+          "weapon-type" -> s"&a${cls.weaponType.toString.split("_").map(_.toLowerCase.capitalize).mkString(" ")}",
+          "wielder-name" -> cls.classRole.colorize(cls.wielderName(locale)),
+          "wielder-title" -> cls.classRole.colorize(cls.wielderTitle(locale)),
+          "class" -> cls.displayName(locale),
+          "selection" -> (if user.cls.contains(cls) then "selected".tl(locale) else "not-selected".tl(locale)),
+        ).flags(ItemFlag.HIDE_ATTRIBUTES).build()
       })
       .build(player)
 
@@ -244,9 +244,18 @@ object StatsGui:
    * @param player the player
    */
   def chooseSoulhackerSoul(player: Player): Unit =
+    given p: Player = player
+
     val user = player.user.get
+    val locale = UserAdapter.getAdapter.getUser(player).getLocale
+
     GuiPaginator.newBuilder[ClassType]()
       .setCollection(ClassType.values.filter(_.isSoulhacker).toList.asJava)
+      .setModelSupplier { () =>
+        val model = GuiModel(54, module.get.translate(locale, "souls-ui"))
+        model.mount(49, CloseInventoryComponent())
+        model
+      }
       .setBackAction(_ => mainMenu(player))
       .setPredicate((cls, filter) => cls.toString.toLowerCase.contains(filter.toLowerCase))
       .setItemGenerator((cls, _) => new GuiComponent[Unit]() {
@@ -255,13 +264,10 @@ object StatsGui:
           user.cls = Some(cls)
           mainMenu(player)
 
-        override def render(): ItemStack = ItemStackBuilder.of(Material.CHEST)
-          .name(s"&e&l${cls.soulName}")
-          .lore(
-            "",
-            if user.cls.contains(cls) then "&a&lSELECTED" else "&6Click &eto select",
-          )
-          .build()
+        override def render(): ItemStack = getItem("soul", Material.CHEST_MINECART)(
+          "soul" -> cls.soulName(locale),
+          "selection" -> (if user.cls.contains(cls) then "selected".tl(locale) else "not-selected".tl(locale)),
+        ).build()
       })
       .build(player)
 
@@ -271,17 +277,19 @@ object StatsGui:
    * @param player the player
    */
   def chooseWeapon(player: Player): Unit =
-    val model = GuiModel(27, "Choose a weapon")
+    given p: Player = player
+
+    val locale = UserAdapter.getAdapter.getUser(p).getLocale
+    val model = GuiModel(27, module.get.translate(locale, "weapons-ui"))
     val user = player.user.get
+
     model.mount(22, CloseInventoryComponent())
     model.mount(21, new GuiComponent[Unit]() {
       override def handleClick(event: InventoryClickEvent): Unit =
         event.setCancelled(true)
         mainMenu(player)
 
-      override def render(): ItemStack = ItemStackBuilder.of(Material.ARROW)
-        .name("&a&lBack")
-        .lore("&7Go back to main menu")
+      override def render(): ItemStack = getItem("back-button", Material.ARROW)()
         .build()
     })
 
@@ -291,14 +299,10 @@ object StatsGui:
         user.weapon = Some(user.cls.get.weaponType)
         mainMenu(player)
 
-      override def render(): ItemStack = ItemStackBuilder.of(user.cls.map(_.weaponType.material).get)
-        .name(s"&e&l${user.cls.map(_.weaponType.displayName).get}")
-        .lore(
-          "&8Normal",
-          "",
-          if user.weapon.contains(user.cls.map(_.weaponType).get) then "&a&lSELECTED" else "&6Click &eto select"
-        )
-        .build()
+      override def render(): ItemStack = getItem("normal-weapon", user.cls.get.weaponType.material)(
+        "soul" -> user.cls.get.weaponType.displayName,
+        "selection" -> (if user.weapon.contains(user.cls.get.weaponType) then "selected".tl(locale) else "not-selected".tl(locale)),
+      ).flags(ItemFlag.HIDE_ATTRIBUTES).build()
     })
     model.mount(15, new GuiComponent[Unit]() {
       override def handleClick(event: InventoryClickEvent): Unit =
@@ -306,15 +310,16 @@ object StatsGui:
         user.weapon = Some(user.cls.get.upgradedWeaponType.get)
         mainMenu(player)
 
-      override def render(): ItemStack = ItemStackBuilder.of(user.cls.map(_.upgradedWeaponType.get.material).get)
-        .name(s"&e&l${user.cls.map(_.upgradedWeaponType.get.displayName).get}")
-        .lore(
-          "&8Upgraded",
-          "",
-          if user.weapon.contains(user.cls.map(_.upgradedWeaponType).get) then "&a&lSELECTED" else "&6Click &eto select"
-        )
-        .build()
+      override def render(): ItemStack = getItem("upgraded-weapon", user.cls.get.weaponType.material)(
+        "name" -> user.cls.flatMap(_.upgradedWeaponType).get.displayName,
+        "selection" -> (if user.weapon.contains(user.cls.get.upgradedWeaponType.get) then "selected".tl(locale) else "not-selected".tl(locale)),
+      ).flags(ItemFlag.HIDE_ATTRIBUTES).build()
     })
 
     model.open(player)
   end chooseWeapon
+
+  private def getItem(key: String, material: Material, amount: Int = 1, durability: Int = 1)(args: (String, Any)*)(using player: Player): ItemStackBuilder =
+    val extendedUser = UserAdapter.getAdapter.getUser(player)
+    val item = module.map(_.translateItem(extendedUser.getLocale, ItemStack(material, amount), key, args.asLibrary: _*)).get
+    ItemStackBuilder.from(item)

@@ -3,6 +3,8 @@ package commands
 
 import dev.hawu.plugins.api.commands.*
 import dev.hawu.plugins.xenocraft.I18n.*
+import dev.hawu.plugins.xenocraft.data.{Character, ClassType}
+import dev.hawu.plugins.xenocraft.gui.StatsGui
 import org.bukkit.plugin.java.JavaPlugin
 
 import java.util
@@ -29,13 +31,18 @@ class PluginBaseCommand(private val plugin: JavaPlugin) extends CommandRegistrab
   @CommandPermission(Array("xenocraft.reload"))
   def reloadCommand(sender: CommandSource, args: CommandArgument): Unit =
     val cli = CommandLine().withFlag("-f")
-    val pair = args.parse(cli)
-    if pair.getSecond.containsKey("-f") then
-      I18n.overwrite()
+    val force = args.parse(cli).getSecond.containsKey("-f")
+
+    reload(force)
+    if force then
       sender.getBase.tl("overwritten-messages")
-    else
-      I18n.reload()
-      sender.getBase.tl("reloaded-messages")
+    else sender.getBase.tl("reloaded-messages")
+
+  private def reload(force: Boolean): Unit =
+    I18n.reload(force)
+    StatsGui.reload(force)
+    Character.reload(force)
+    ClassType.reload(force)
 
   @TabExecute("xenocraft reload")
   @CommandPermission(Array("xenocraft.reload"))

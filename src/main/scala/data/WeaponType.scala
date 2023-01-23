@@ -14,6 +14,7 @@ import org.bukkit.Material
  */
 enum WeaponType(
   val material: Material,
+  val durability: Int = 0,
   val weaponAttack: Double,
   val weaponCrit: Double,
   val weaponBlock: Double,
@@ -195,14 +196,15 @@ enum WeaponType(
     weaponStability = 0.06,
   )
   case MIMIC_KNUCKLES extends WeaponType(
-    material = Material.PURPLE_DYE,
+    material = Material.PINK_DYE,
+    durability = 9,
     weaponAttack = 580,
     weaponCrit = 0.15,
     weaponBlock = 0.25,
     weaponStability = 0.16,
   )
   case TURBO_CESTUS extends WeaponType(
-    material = Material.BLACK_DYE,
+    material = Material.INK_SAC,
     weaponAttack = 554,
     weaponCrit = 0.36,
     weaponBlock = 0.16,

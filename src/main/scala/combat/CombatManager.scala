@@ -31,14 +31,6 @@ object CombatManager:
     val change = user.hp - oldHp
     spawnHologramAround(player.getEyeLocation, s"&a${change.intValue}")
 
-  private def spawnHologramAround(location: Location, lines: String*): Unit =
-    Hologram(location.clone().add(getOffset, getOffset, getOffset), ArrayBuffer.from(lines), 60).spawn()
-
-  private def getOffset: Double =
-    val value = secureRandom.nextGaussian() / 2
-    val signum = if secureRandom.nextBoolean() then -1 else 1
-    signum * value
-
   /**
    * Damages the player for the specified damage value.
    *
@@ -50,6 +42,14 @@ object CombatManager:
     val damage = value min 9999999 max 0
     user.setHp(user.hp - damage)
     spawnHologramAround(player.getEyeLocation, s"&c${damage.intValue}")
+
+  private def spawnHologramAround(location: Location, lines: String*): Unit =
+    Hologram(location.clone().add(getOffset, getOffset, getOffset), ArrayBuffer.from(lines), 60).spawn()
+
+  private def getOffset: Double =
+    val value = secureRandom.nextGaussian() / 2
+    val signum = if secureRandom.nextBoolean() then -1 else 1
+    signum * value
 
   /**
    * Draws the aggro target line from an entity to a player.
@@ -64,7 +64,7 @@ object CombatManager:
 
   private def drawLine(from: Location, to: Location, dustOptions: DustOptions): Unit =
     val distance = to.distance(from)
-    val count = (distance * distance).longValue
+    val count = distance.longValue * 3
     val step = distance / count
     val direction = to.clone().subtract(from).toVector.normalize().multiply(step)
 
