@@ -29,6 +29,7 @@ trait Attributable(val uuid: UUID):
   var noncombatFlatCrit = 0.0
   var combatPctCrit = 0.0
   var combatFlatCrit = 0.0
+  var critDamage = 0.0
 
   // BLOCK RATE CALCULATIONS
   var noncombatPctBlock = 0.0

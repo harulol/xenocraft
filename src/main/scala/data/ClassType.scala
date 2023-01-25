@@ -6,6 +6,8 @@ import dev.hawu.plugins.api.i18n.{LanguageModule, Locale}
 import dev.hawu.plugins.xenocraft.data.ClassType.*
 import org.bukkit.plugin.java.JavaPlugin
 
+import scala.collection.mutable
+
 /**
  * Represents a type of class a player can pick.
  */
@@ -24,6 +26,7 @@ enum ClassType(
 ):
 
   private val keyName = this.name.getOrElse(this.toString.replace('_', '-')).toLowerCase
+  val arts: mutable.ArrayBuffer[ArtType] = mutable.ArrayBuffer.empty[ArtType]
 
   /**
    * Retrieves the name of the hero who wields this class.

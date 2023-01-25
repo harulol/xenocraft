@@ -43,6 +43,10 @@ object CombatManager:
     user.setHp(user.hp - damage)
     spawnHologramAround(player.getEyeLocation, s"&c${damage.intValue}")
 
+  def damageEntity(entity: LivingEntity, value: Double): Unit =
+    entity.setHealth((entity.getHealth - value) max 0)
+    spawnHologramAround(entity.getLocation.add(0, entity.getEyeHeight, 0), s"&c${value.intValue}")
+
   private def spawnHologramAround(location: Location, lines: String*): Unit =
     Hologram(location.clone().add(getOffset, getOffset, getOffset), ArrayBuffer.from(lines), 60).spawn()
 

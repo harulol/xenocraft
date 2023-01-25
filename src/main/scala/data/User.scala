@@ -5,13 +5,13 @@ import dev.hawu.plugins.xenocraft.utils.Formulas
 import org.bukkit.attribute.Attribute
 import org.bukkit.configuration.serialization.ConfigurationSerializable
 import org.bukkit.entity.Player
+import org.bukkit.inventory.ItemStack
 import org.bukkit.{Bukkit, Effect, EntityEffect, OfflinePlayer}
 
 import java.util
 import java.util.UUID
-import scala.annotation.tailrec
+import scala.collection.mutable
 import scala.jdk.CollectionConverters.*
-import scala.reflect.ClassTag
 import scala.util.{Failure, Success, Try}
 
 /**
@@ -37,6 +37,29 @@ case class User(
 ) extends ConfigurationSerializable with Attributable(_uuid):
 
   var bladeUnsheathed = false
+  private val inventory = mutable.Map.empty[Int, ItemStack]
+
+  /**
+   * Unsheathe the blade.
+   */
+  def unsheathe(): Unit =
+    if bladeUnsheathed then return ()
+    bladeUnsheathed = true
+    inventory.clear()
+    player.foreach(p => {
+      p.getInventory.getContents.zipWithIndex.foreach((item, index) => inventory += index -> item)
+    })
+
+  /**
+   * Sheathes the blade back and disables combat.
+   */
+  def sheathe(): Unit =
+    if !bladeUnsheathed then return ()
+    bladeUnsheathed = false
+    player.foreach(p => {
+      inventory.foreach((index, item) => p.getInventory.setItem(index, item))
+    })
+    inventory.clear()
 
   /**
    * Sets the HP value of the player.

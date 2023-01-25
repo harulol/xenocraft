@@ -5,7 +5,7 @@ import dev.hawu.plugins.api.commands.CommandRegistry
 import dev.hawu.plugins.api.events.Events
 import dev.hawu.plugins.xenocraft.Xenocraft.instance
 import dev.hawu.plugins.xenocraft.combat.{BattlefieldListener, ChatHologramListener}
-import dev.hawu.plugins.xenocraft.commands.{PluginBaseCommand, StatsCommand}
+import dev.hawu.plugins.xenocraft.commands.{ArtCommand, PluginBaseCommand, StatsCommand}
 import dev.hawu.plugins.xenocraft.data.{Character, ClassType, User}
 import dev.hawu.plugins.xenocraft.gui.StatsGui
 import dev.hawu.plugins.xenocraft.utils.Configuration
@@ -33,7 +33,7 @@ class Xenocraft extends JavaPlugin:
     Configuration.initialize(this)
 
     ChatHologramListener.initialize(this)
-    CommandRegistry.register(this, new StatsCommand, PluginBaseCommand(this))
+    CommandRegistry.register(this, new StatsCommand, PluginBaseCommand(this), new ArtCommand)
     Events.registerEvents(this, ChatHologramListener, UserMap)
 
   override def onDisable(): Unit =

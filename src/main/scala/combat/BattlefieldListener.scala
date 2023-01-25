@@ -6,9 +6,9 @@ import dev.hawu.plugins.api.events.Events
 import dev.hawu.plugins.xenocraft.UserMap.{save, user}
 import org.bukkit.attribute.Attribute
 import org.bukkit.entity.*
+import org.bukkit.event.entity.*
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause
 import org.bukkit.event.entity.EntityRegainHealthEvent.RegainReason
-import org.bukkit.event.entity.{EntityDamageEvent, EntityDeathEvent, EntityRegainHealthEvent, EntityTargetLivingEntityEvent}
 import org.bukkit.event.player.PlayerQuitEvent
 import org.bukkit.event.{EventHandler, Listener}
 import org.bukkit.plugin.java.JavaPlugin
@@ -53,6 +53,13 @@ object BattlefieldListener extends Listener:
         mob != null && mob.asInstanceOf[Mob].getTarget != null && mob.asInstanceOf[Mob].getTarget.getUniqueId == p && Bukkit.getPlayer(p) != null
       })
 
+      // Auto-sheathe
+      val values = aggro.values.toSet
+      Bukkit.getOnlinePlayers.asScala.filter(_ != null)
+        .filter(p => values.contains(p.getUniqueId))
+        .flatMap(_.user)
+        .foreach(_.sheathe())
+
       aggro.map[LivingEntity, Player](entry => Bukkit.getEntity(entry._1).asInstanceOf[LivingEntity] -> Bukkit.getPlayer(entry._2))
         .filter(tup => tup._2 != null && tup._2.isOnline && tup._1 != null && !tup._1.isDead)
         .foreach(entry => CombatManager.drawAggroLine(entry._1, entry._2))
@@ -80,6 +87,20 @@ object BattlefieldListener extends Listener:
         val user = player.user.get
         val percentage = event.getFinalDamage / player.getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue
         CombatManager.damage(player, user.maxHp * percentage)
+      case _ => ()
+
+  @EventHandler
+  private def onDamage(event: EntityDamageByEntityEvent): Unit =
+    event.getDamager match
+      case player: Player =>
+        val user = player.user.get
+        if !user.bladeUnsheathed then
+          event.getEntity match
+            case mob: Mob =>
+              if mob != null && mob.getTarget != null && mob.getTarget.getUniqueId == player.getUniqueId then
+                user.unsheathe()
+                event.setCancelled(true)
+            case _ => ()
       case _ => ()
 
   @EventHandler

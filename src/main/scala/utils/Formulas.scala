@@ -1,12 +1,19 @@
 package dev.hawu.plugins.xenocraft
 package utils
 
+import dev.hawu.plugins.xenocraft.combat.CombatManager
 import dev.hawu.plugins.xenocraft.data.User
+import org.bukkit.entity.LivingEntity
+
+import java.security.SecureRandom
+import java.util.concurrent.ThreadLocalRandom
 
 /**
  * Singleton object dedicated to calculating stats.
  */
 object Formulas:
+
+  private val random = SecureRandom()
 
   /**
    * Calculates the display attack value of a user.
@@ -103,3 +110,16 @@ object Formulas:
   def calculateDisplayEtherDefense(user: User): Double =
     val etherDef = user.cls.map(_.classEtherDef).getOrElse(0D)
     etherDef * (1 + user.pctEtherDef) + user.flatEtherDef
+
+  def calculateDamage(
+    user: User,
+    entity: LivingEntity,
+    artCritMod: Double = 0,
+  ): Unit =
+    val critRate = user.critRate * (1 + user.combatPctCrit) * (1 + artCritMod) + user.combatFlatCrit
+    val stabilityModifier = ThreadLocalRandom.current().nextDouble(0, user.weapon.map(_.weaponStability).get)
+    val criticalModifier = if random.nextDouble() < critRate then 1.25 + user.critDamage else 1
+    // TODO: Launch Modifier 1.25 if launched
+
+    val damage = (user.attack + stabilityModifier) * criticalModifier
+    CombatManager.damageEntity(entity, damage)

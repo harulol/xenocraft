@@ -21,11 +21,3 @@ abstract class Art(val artType: ArtType):
    * @param user   the user
    */
   def startAnimation(player: Player, user: User): Unit
-
-  /**
-   * The effects logic for each art.
-   *
-   * @param player the player who used the skill
-   * @param user   the user
-   */
-  def act(player: Player, user: User): Unit

@@ -11,9 +11,9 @@ commands:
   stats:
     usage: /stats
     description: Open a GUI for your own character stats.
-  party:
-    usage: /list
-    description: Hold a party with others to fight together on fields.
+  art:
+    usage: /art
+    description: Art testing
   xenocraft:
     usage: /xenocraft
     aliases: [ xc ]
