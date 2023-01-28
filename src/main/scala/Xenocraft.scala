@@ -7,7 +7,7 @@ import dev.hawu.plugins.xenocraft.Xenocraft.instance
 import dev.hawu.plugins.xenocraft.combat.{BattlefieldListener, ChatHologramListener}
 import dev.hawu.plugins.xenocraft.commands.{ArtCommand, PluginBaseCommand, StatsCommand}
 import dev.hawu.plugins.xenocraft.data.{Character, ClassType, User}
-import dev.hawu.plugins.xenocraft.gui.{CharactersGUI, ClassesGUI, MainGUI, StatsGui}
+import dev.hawu.plugins.xenocraft.gui.*
 import dev.hawu.plugins.xenocraft.utils.Configuration
 import org.bukkit.configuration.file.YamlConfiguration
 import org.bukkit.configuration.serialization.ConfigurationSerialization
@@ -23,6 +23,7 @@ class Xenocraft extends JavaPlugin:
   private val modules = List(
     CharactersGUI,
     ClassesGUI,
+    GemsGUI,
     MainGUI,
     I18n,
   )

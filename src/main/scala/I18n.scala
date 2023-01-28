@@ -12,10 +12,43 @@ import org.bukkit.event.inventory.InventoryType
 import org.bukkit.inventory.ItemStack
 import org.bukkit.plugin.java.JavaPlugin
 
+import scala.collection.mutable
+
 /**
  * The singleton object for dealing with language modules.
  */
 object I18n extends ModuleHolder("messages"):
+
+  private val romanNumerals = mutable.LinkedHashMap(
+    1000 -> "M",
+    900 -> "CM",
+    500 -> "D",
+    400 -> "CD",
+    100 -> "C",
+    90 -> "XC",
+    50 -> "L",
+    40 -> "XL",
+    10 -> "X",
+    9 -> "IX",
+    5 -> "V",
+    4 -> "IV",
+    1 -> "I",
+  )
+
+  /**
+   * Converts a number to roman's counterpart.
+   *
+   * @param num the number
+   * @return the roman
+   */
+  def toRomans(num: Long): String =
+    var n = num
+    var result = ""
+    for (arabic, roman) <- romanNumerals do
+      while n >= arabic do
+        result += roman
+        n -= arabic
+    result
 
   /**
    * Translates the title into a GuiModel.
@@ -31,7 +64,7 @@ object I18n extends ModuleHolder("messages"):
     size: Int | InventoryType,
     key: String,
     replacements: (String, Any)*,
-  )(using module: Option[LanguageModule] | LanguageModule)(using p: Player): GuiModel =
+  )(using module: Option[LanguageModule] | LanguageModule, p: Player): GuiModel =
     val mod = matchModule(module)
     val locale = UserAdapter.getAdapter.getUser(p).getLocale
     val title = mod.translate(locale, key, replacements.asLibrary: _*)
@@ -55,7 +88,7 @@ object I18n extends ModuleHolder("messages"):
     template: (Material, Int) | ItemStack,
     key: String,
     replacements: (String, Any)*,
-  )(using module: Option[LanguageModule] | LanguageModule)(using p: Player): ItemStack =
+  )(using module: Option[LanguageModule] | LanguageModule, p: Player): ItemStack =
     val mod = matchModule(module)
     val locale = UserAdapter.getAdapter.getUser(p).getLocale
     val item = template match

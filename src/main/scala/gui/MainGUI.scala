@@ -38,7 +38,7 @@ object MainGUI extends ModuleHolder("main-ui"):
     '1' -> CharactersGUI.openCharacters,
     '2' -> ClassesGUI.openClasses,
     '3' -> ((p: Player) => openMain(p)),
-    '4' -> ((p: Player) => openMain(p)),
+    '4' -> GemsGUI.openGems,
     '5' -> ((p: Player) => openMain(p)),
     '6' -> ((p: Player) => openMain(p)),
   )

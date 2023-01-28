@@ -33,12 +33,22 @@ case class User(
   var char: Option[Character] = None,
   masterArts: Array[ArtType] = Array.ofDim(3),
   arts: Array[ArtType] = Array.ofDim(3),
-  gems: Array[GemType] = Array.ofDim(3),
+  gems: Array[(GemType, Int)] = Array.ofDim(3),
   var talentArt: Option[ArtType] = None,
 ) extends ConfigurationSerializable with Attributable(_uuid):
 
   private val inventory = mutable.Map.empty[Int, ItemStack]
   var bladeUnsheathed = false
+
+  /**
+   * Attempts to check if the provided gem is already equipped.
+   *
+   * @param gem the gem to check
+   * @return the index if it is equipped, -1 if not
+   */
+  def isGemEquipped(gem: GemType, level: Int = 0): Int =
+    if level >= 1 then gems.zipWithIndex.filter(_._1 != null).filter(_._1 == (gem, level)).map(_._2).headOption.getOrElse(-1)
+    else gems.zipWithIndex.filter(_._1 != null).filter(_._1._1 == gem).map(_._2).headOption.getOrElse(-1)
 
   /**
    * Unsheathe the blade.
@@ -143,7 +153,7 @@ case class User(
     "character" -> char.map(_.toString).orNull,
     "masterArts" -> masterArts.map(art => if art != null then art.toString else null).toList.asJava,
     "arts" -> arts.map(art => if art != null then art.toString else null).toList.asJava,
-    "gems" -> gems.map(gem => if gem != null then gem.toString else null).toList.asJava,
+    "gems" -> gems.map(tuple => if tuple != null then s"${tuple._1.toString}:${tuple._2}" else null).toList.asJava,
     "talentArt" -> talentArt.map(_.toString).orNull,
   ).asJava
 
@@ -163,7 +173,13 @@ object User:
 
     val masterArts = tryGettingArray("masterArts", ArtType.valueOf).toArray[ArtType]
     val arts = tryGettingArray("arts", ArtType.valueOf).toArray[ArtType]
-    val gems = tryGettingArray("gems", GemType.valueOf).toArray[GemType]
+    val gems = tryGettingArray("gems", String.valueOf).toArray[String]
+      .map(s => {
+        if s != null && s != "null" then
+          val arr = s.split(":")
+          GemType.valueOf(arr(0)) -> arr(1).toInt
+        else null
+      })
 
     User(uuid, cls, weapon, char, masterArts, arts, gems, talentArt)
 
