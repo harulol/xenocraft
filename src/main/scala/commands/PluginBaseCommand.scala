@@ -4,7 +4,7 @@ package commands
 import dev.hawu.plugins.api.commands.*
 import dev.hawu.plugins.xenocraft.I18n.*
 import dev.hawu.plugins.xenocraft.data.{Character, ClassType}
-import dev.hawu.plugins.xenocraft.gui.StatsGui
+import dev.hawu.plugins.xenocraft.gui.{CharactersGUI, MainGUI, StatsGui}
 import org.bukkit.plugin.java.JavaPlugin
 
 import java.util
@@ -39,10 +39,8 @@ class PluginBaseCommand(private val plugin: JavaPlugin) extends CommandRegistrab
     else sender.getBase.tl("reloaded-messages")
 
   private def reload(force: Boolean): Unit =
-    I18n.reload(force)
+    Xenocraft.getModels.foreach(_.reload(force))
     StatsGui.reload(force)
-    Character.reload(force)
-    ClassType.reload(force)
 
   @TabExecute("xenocraft reload")
   @CommandPermission(Array("xenocraft.reload"))

@@ -7,7 +7,7 @@ import dev.hawu.plugins.xenocraft.Xenocraft.instance
 import dev.hawu.plugins.xenocraft.combat.{BattlefieldListener, ChatHologramListener}
 import dev.hawu.plugins.xenocraft.commands.{ArtCommand, PluginBaseCommand, StatsCommand}
 import dev.hawu.plugins.xenocraft.data.{Character, ClassType, User}
-import dev.hawu.plugins.xenocraft.gui.StatsGui
+import dev.hawu.plugins.xenocraft.gui.{CharactersGUI, ClassesGUI, MainGUI, StatsGui}
 import dev.hawu.plugins.xenocraft.utils.Configuration
 import org.bukkit.configuration.file.YamlConfiguration
 import org.bukkit.configuration.serialization.ConfigurationSerialization
@@ -20,11 +20,16 @@ import java.io.InputStreamReader
  */
 class Xenocraft extends JavaPlugin:
 
+  private val modules = List(
+    CharactersGUI,
+    ClassesGUI,
+    MainGUI,
+    I18n,
+  )
+
   override def onEnable(): Unit =
     instance = this
-    Character.initialize(this)
-    ClassType.initialize(this)
-    I18n.initialize(this)
+    modules.foreach(_.initialize(this))
 
     ConfigurationSerialization.registerClass(classOf[User])
     StatsGui.initialize(this)
@@ -38,7 +43,6 @@ class Xenocraft extends JavaPlugin:
 
   override def onDisable(): Unit =
     UserMap.save(this)
-    I18n.clear()
     CommandRegistry.unregister(this)
     Tasks.cancelAllTasks(this)
 
@@ -55,3 +59,10 @@ object Xenocraft:
    * @return the instance
    */
   def getInstance: Xenocraft = instance
+
+  /**
+   * Retrieves the list of modules available in the plugin.
+   *
+   * @return the modules
+   */
+  def getModels: List[ModuleHolder] = instance.modules

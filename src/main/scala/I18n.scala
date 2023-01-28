@@ -2,40 +2,73 @@ package dev.hawu.plugins.xenocraft
 
 import dev.hawu.plugins.api.adapters.UserAdapter
 import dev.hawu.plugins.api.collections.tuples.Pair
+import dev.hawu.plugins.api.gui.GuiModel
 import dev.hawu.plugins.api.i18n.{LanguageModule, Locale}
+import dev.hawu.plugins.api.items.ItemStackBuilder
+import org.bukkit.Material
 import org.bukkit.command.CommandSender
 import org.bukkit.entity.Player
+import org.bukkit.event.inventory.InventoryType
+import org.bukkit.inventory.ItemStack
 import org.bukkit.plugin.java.JavaPlugin
 
 /**
  * The singleton object for dealing with language modules.
  */
-object I18n:
-
-  private var messages: Option[LanguageModule] = None
-  private var plugin: Option[JavaPlugin] = None
+object I18n extends ModuleHolder("messages"):
 
   /**
-   * Initializes the I18n object.
+   * Translates the title into a GuiModel.
    *
-   * @param pl the plugin
+   * @param size         the size of the model
+   * @param key          the key to translate
+   * @param replacements the replacements to translate with
+   * @param module       the module to use
+   * @param p            the player to get the locale from
+   * @return the GuiModel
    */
-  def initialize(pl: JavaPlugin): Unit =
-    plugin = Some(pl)
-    messages = Some(LanguageModule(pl, "messages"))
+  def translateModel(
+    size: Int | InventoryType,
+    key: String,
+    replacements: (String, Any)*,
+  )(using module: Option[LanguageModule] | LanguageModule)(using p: Player): GuiModel =
+    val mod = matchModule(module)
+    val locale = UserAdapter.getAdapter.getUser(p).getLocale
+    val title = mod.translate(locale, key, replacements.asLibrary: _*)
+
+    size match
+      case i: Int => GuiModel(i, title)
+      case inventoryType: InventoryType => GuiModel(inventoryType, title)
+  end translateModel
 
   /**
-   * Reloads all messages by reinitializing the instance.
+   * Translates an item with the provided key.
+   *
+   * @param template     the template item, could be a material tuple or a full item stack
+   * @param key          the key to translate
+   * @param replacements the replacements to replace with
+   * @param module       the module to translate with
+   * @param p            the player to get the locale for
+   * @return the item stack
    */
-  def reload(force: Boolean = false): Unit =
-    messages.foreach(_.saveResources(force))
+  def translateItem(
+    template: (Material, Int) | ItemStack,
+    key: String,
+    replacements: (String, Any)*,
+  )(using module: Option[LanguageModule] | LanguageModule)(using p: Player): ItemStack =
+    val mod = matchModule(module)
+    val locale = UserAdapter.getAdapter.getUser(p).getLocale
+    val item = template match
+      case stack: ItemStack => stack
+      case (mat, count): (Material, Int) => ItemStack(mat, count)
 
-  /**
-   * Clears all references in this singleton object.
-   */
-  def clear(): Unit =
-    plugin = None
-    messages = None
+    mod.translateItem(locale, item, key, replacements.asLibrary: _*)
+  end translateItem
+
+  private def matchModule(module: Option[LanguageModule] | LanguageModule): LanguageModule =
+    module match
+      case option: Option[LanguageModule] => option.get
+      case languageModule: LanguageModule => languageModule
 
   /**
    * Converts a scala tuple of 2 to the library's version of pair.
@@ -68,7 +101,7 @@ object I18n:
      * @return the translated string
      */
     def tl(args: (String, Any)*): String =
-      messages.get.translate(s, args.map(asLib): _*)
+      getModule.translate(s, args.map(asLib): _*)
 
     /**
      * Translates the [[s]] with the [[args]] provided in
@@ -79,7 +112,7 @@ object I18n:
      * @return the translated string
      */
     def tl(locale: Locale, args: (String, Any)*): String =
-      messages.get.translate(locale, s, args.map(asLib): _*)
+      getModule.translate(locale, s, args.map(asLib): _*)
 
   }
 
@@ -96,10 +129,10 @@ object I18n:
       sender match
         case player: Player =>
           val extendedUser = UserAdapter.getAdapter.getUser(player)
-          val message = messages.get.translate(extendedUser.getLocale, key, args.map(asLib): _*)
+          val message = getModule.translate(extendedUser.getLocale, key, args.map(asLib): _*)
           player.sendMessage(message)
         case _ =>
-          val message = messages.get.translate(key, args.map(asLib): _*)
+          val message = getModule.translate(key, args.map(asLib): _*)
           sender.sendMessage(message)
 
   }

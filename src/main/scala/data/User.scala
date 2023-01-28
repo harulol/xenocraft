@@ -1,11 +1,12 @@
 package dev.hawu.plugins.xenocraft
 package data
 
+import dev.hawu.plugins.api.items.ItemStackBuilder
 import dev.hawu.plugins.xenocraft.utils.Formulas
 import org.bukkit.attribute.Attribute
 import org.bukkit.configuration.serialization.ConfigurationSerializable
 import org.bukkit.entity.Player
-import org.bukkit.inventory.ItemStack
+import org.bukkit.inventory.{ItemFlag, ItemStack}
 import org.bukkit.{Bukkit, Effect, EntityEffect, OfflinePlayer}
 
 import java.util
@@ -36,8 +37,8 @@ case class User(
   var talentArt: Option[ArtType] = None,
 ) extends ConfigurationSerializable with Attributable(_uuid):
 
-  var bladeUnsheathed = false
   private val inventory = mutable.Map.empty[Int, ItemStack]
+  var bladeUnsheathed = false
 
   /**
    * Unsheathe the blade.
@@ -47,8 +48,20 @@ case class User(
     bladeUnsheathed = true
     inventory.clear()
     player.foreach(p => {
-      p.getInventory.getContents.zipWithIndex.foreach((item, index) => inventory += index -> item)
+      p.getInventory.getContents.zipWithIndex.foreach((item, index) => {
+        inventory += index -> item
+        p.getInventory.setItem(index, null)
+      })
+
+      p.getInventory.setItem(0, ItemStackBuilder.of(weapon.get.material).name(weapon.get.displayName).flags(ItemFlag.HIDE_ATTRIBUTES).build())
     })
+
+  /**
+   * Attempts to retrieve the player instance from the user.
+   *
+   * @return the player instance
+   */
+  def player: Option[Player] = Option(Bukkit.getPlayer(uuid))
 
   /**
    * Sheathes the blade back and disables combat.
@@ -75,9 +88,7 @@ case class User(
         val value = p.getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue * percentage
         if value <= 0 then
           setHp(maxHp)
-          p.sendTitle("&cYou died!", "&7Guess Ouroboros sucks still...", 20, 100, 20)
           p.teleport(p.getWorld.getSpawnLocation)
-          p.playEffect(EntityEffect.TOTEM_RESURRECT)
         else if value < p.getHealth then
           p.setHealth(value)
           p.playEffect(EntityEffect.HURT)
@@ -85,13 +96,6 @@ case class User(
       })
 
   override def maxHp: Double = Formulas.calculateHp(this)
-
-  /**
-   * Attempts to retrieve the player instance from the user.
-   *
-   * @return the player instance
-   */
-  def player: Option[Player] = Option(Bukkit.getPlayer(uuid))
 
   override def attack: Double = Formulas.calculateAttack(this)
 
