@@ -11,7 +11,7 @@ import org.bukkit.{Bukkit, Effect, EntityEffect, OfflinePlayer}
 
 import java.util
 import java.util.UUID
-import scala.collection.mutable
+import scala.collection.{GenMap, mutable}
 import scala.jdk.CollectionConverters.*
 import scala.util.{Failure, Success, Try}
 
@@ -157,6 +157,78 @@ case class User(
     "talentArt" -> talentArt.map(_.toString).orNull,
   ).asJava
 
+  /**
+   * Logic to unapply a gem, removing the gem's special buffs.
+   *
+   * This only removes the effects, it doesn't actually unbind the
+   * gem from the gems array.
+   *
+   * @param gem   the gem to unapply
+   * @param level the level of the gem
+   */
+  def unapplyGem(gem: GemType, level: Int): Unit =
+    gem match
+      case GemType.TAILWIND => flatAgility -= gem.value1At(level)
+      case GemType.STEEL_PROTECTION => noncombatFlatBlock -= (gem.value1At(level) / 100.0)
+      case GemType.BRIMMING_SPIRIT => artAggroGeneration -= gem.value1At(level)
+      case GemType.LIFEBEARER => flatHealing -= gem.value1At(level)
+      case GemType.SOOTHING_BREATH =>
+        allyHpRestore -= gem.value1At(level)
+        flatHealing -= gem.value2At(level)
+      case GemType.LIFESAVING_EXPERTISE =>
+        allyReviveSpeed -= gem.value1At(level)
+        flatHealing -= gem.value2At(level)
+      case GemType.SWELLING_BLESSING => buffPower -= gem.value1At(level)
+      case GemType.REFINED_BLESSING => buffDurationBonus -= gem.value1At(level)
+      case GemType.STEELCLEAVER => flatAttack -= gem.value1At(level)
+      case GemType.ACCURATE_GRACE => flatDexterity -= gem.value1At(level)
+      case GemType.ANALYZE_WEAKNESS => critDamage -= gem.value1At(level)
+      case GemType.SWELLING_SCOURGE => debuffPower -= gem.value1At(level)
+      case GemType.REFINED_INCANTATION => debuffDurationBonus -= gem.value1At(level)
+      case GemType.IRON_CLAD => flatHp -= gem.value1At(level)
+      case GemType.STEADY_STRIKER => rechargeSpeed -= gem.value1At(level)
+      case GemType.DOUBLESTRIKE => doubleHits -= gem.value1At(level)
+      case GemType.EMPOWERED_COMBO => damageBonus3 -= gem.value1At(level)
+      case GemType.DISPERSE_BLOODLUST => artAggroGeneration += gem.value1At(level)
+      case _ => ()
+
+  /**
+   * Apply the gem's effects.
+   *
+   * This may cause duplicate effects if you don't [[unapplyGem]] first.
+   *
+   * This only applies the effects, it doesn't actually bind the
+   * gem to the gems array.
+   *
+   * @param gem   the gem
+   * @param level the level
+   */
+  def applyGem(gem: GemType, level: Int): Unit =
+    gem match
+      case GemType.TAILWIND => flatAgility += gem.value1At(level)
+      case GemType.STEEL_PROTECTION => noncombatFlatBlock += (gem.value1At(level) / 100.0)
+      case GemType.BRIMMING_SPIRIT => artAggroGeneration += gem.value1At(level)
+      case GemType.LIFEBEARER => flatHealing += gem.value1At(level)
+      case GemType.SOOTHING_BREATH =>
+        allyHpRestore += gem.value1At(level)
+        flatHealing += gem.value2At(level)
+      case GemType.LIFESAVING_EXPERTISE =>
+        allyReviveSpeed += gem.value1At(level)
+        flatHealing += gem.value2At(level)
+      case GemType.SWELLING_BLESSING => buffPower += gem.value1At(level)
+      case GemType.REFINED_BLESSING => buffDurationBonus += gem.value1At(level)
+      case GemType.STEELCLEAVER => flatAttack += gem.value1At(level)
+      case GemType.ACCURATE_GRACE => flatDexterity += gem.value1At(level)
+      case GemType.ANALYZE_WEAKNESS => critDamage += gem.value1At(level)
+      case GemType.SWELLING_SCOURGE => debuffPower += gem.value1At(level)
+      case GemType.REFINED_INCANTATION => debuffDurationBonus += gem.value1At(level)
+      case GemType.IRON_CLAD => flatHp += gem.value1At(level)
+      case GemType.STEADY_STRIKER => rechargeSpeed += gem.value1At(level)
+      case GemType.DOUBLESTRIKE => doubleHits += gem.value1At(level)
+      case GemType.EMPOWERED_COMBO => damageBonus3 += gem.value1At(level)
+      case GemType.DISPERSE_BLOODLUST => artAggroGeneration -= gem.value1At(level)
+      case _ => ()
+
 /**
  * Companion object for [[User]].
  */
@@ -181,7 +253,9 @@ object User:
         else null
       })
 
-    User(uuid, cls, weapon, char, masterArts, arts, gems, talentArt)
+    val user = User(uuid, cls, weapon, char, masterArts, arts, gems, talentArt)
+    gems.filter(_ != null).foreach(user.applyGem)
+    user
 
   private def tryGetting[T](key: String, f: String => T)(using map: util.Map[String, Any]): Option[T] =
     val result = Option(map.get(key)).map(_.toString)

@@ -27,7 +27,7 @@ import scala.jdk.CollectionConverters.*
 object MainGUI extends ModuleHolder("main-ui"):
 
   private val navigationMap = Map(
-    '1' -> ("character-menu-item" -> Material.COMPASS),
+    '1' -> ("character-menu-item" -> Material.PLAYER_HEAD),
     '2' -> ("class-menu-item" -> Material.PAPER),
     '3' -> ("art-menu-item" -> Material.IRON_SWORD),
     '4' -> ("gem-menu-item" -> Material.EMERALD),
@@ -44,6 +44,41 @@ object MainGUI extends ModuleHolder("main-ui"):
   )
 
   given Option[LanguageModule] = module
+
+  /**
+   * Mounts the navigation buttons on the menu on the side.
+   *
+   * @param model   the model
+   * @param player  the player
+   * @param current the current selected item
+   * @param border  the border as decorations
+   */
+  def applyNavigationBar(model: GuiModel, current: Char, border: Material)(using player: Player): Unit =
+    val layout = BrushRegistry.layout().setModel(model)
+      .setLayout(
+        "1-*******",
+        "2-*-----*",
+        "3-*-----*",
+        "4-*-----*",
+        "5-*-----*",
+        "6-******X",
+      ).build()
+
+    layout.apply('*', () => ItemStackBuilder.of(border).name("&e").toStaticComponent)
+    layout.apply('X', () => new GuiComponent[Unit]() {
+      override def handleClick(event: InventoryClickEvent): Unit =
+        event.setCancelled(true)
+        openMain(player)
+
+      override def render(): ItemStack = I18n.translateItem(Material.COMPASS -> 1, "main-menu-item")
+    })
+
+    // Set the navigation buttons and apply glow if needed.
+    applyNavigationButtons(current, layout)
+
+    val index = current.toString.toInt - 1
+    model.mount(index * 9 + 1, ItemStackBuilder.of(border).name("&e").toStaticComponent)
+  end applyNavigationBar
 
   /**
    * Opens the main GUI's... main menu to the player.
@@ -116,34 +151,6 @@ object MainGUI extends ModuleHolder("main-ui"):
           else item.build()
       })
     end for
-
-  /**
-   * Mounts the navigation buttons on the menu on the side.
-   *
-   * @param model   the model
-   * @param player  the player
-   * @param current the current selected item
-   * @param border  the border as decorations
-   */
-  def applyNavigationBar(model: GuiModel, current: Char, border: Material)(using player: Player): Unit =
-    val layout = BrushRegistry.layout().setModel(model)
-      .setLayout(
-        "1-*******",
-        "2-*-----*",
-        "3-*-----*",
-        "4-*-----*",
-        "5-*-----*",
-        "6-*******",
-      ).build()
-
-    layout.apply('*', () => ItemStackBuilder.of(border).name("&e").toStaticComponent)
-
-    // Set the navigation buttons and apply glow if needed.
-    applyNavigationButtons(current, layout)
-
-    val index = current.toString.toInt - 1
-    model.mount(index * 9 + 1, ItemStackBuilder.of(border).name("&e").toStaticComponent)
-  end applyNavigationBar
 
   /**
    * Retrieves the slots needed for pagination within an enclosed space.

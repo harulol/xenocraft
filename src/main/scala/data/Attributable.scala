@@ -37,6 +37,25 @@ trait Attributable(val uuid: UUID):
   var combatPctBlock = 0.0
   var combatFlatBlock = 0.0
 
+  // AGGRO CALCULATIONS
+  var aggro = 0.0
+  var artAggroGeneration = 1.0
+
+  // RECHARGE CALCULATIONS
+  var rechargeSpeed = 1.0
+  var doubleHits = 1.0
+
+  // BATTLE CALCULATIONS
+  var damageBonus1 = 0.0
+  var damageBonus2 = 0.0
+  var damageBonus3 = 0.0
+  var buffPower = 0.0
+  var buffDurationBonus = 0.0
+  var debuffPower = 0.0
+  var debuffDurationBonus = 0.0
+  var allyHpRestore = 1.0
+  var allyReviveSpeed = 1.0
+
   // DEFENSE TYPE CALCULATIONS
   var pctPhysDef = 0.0
   var flatPhysDef = 0.0

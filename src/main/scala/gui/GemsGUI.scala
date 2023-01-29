@@ -89,11 +89,17 @@ object GemsGUI extends ModuleHolder("gems-ui"):
           event.setCancelled(true)
           val generalIndex = user.isGemEquipped(gem)
           if generalIndex >= 0 && generalIndex != index then
-            user.gems(generalIndex) = user.gems(index)
+            // Unapply the effects first.
+            Option(user.gems(generalIndex)).foreach((g, lvl) => user.unapplyGem(g, lvl))
+            user.gems(generalIndex) = user.gems(index) // Just moving, no need to apply effects.
             user.gems(index) = gem -> level
+            user.applyGem(gem, level) // Apply.
             openGems(player)
           else
+            // Unapply the effects first, then bind gem, then apply the new effects.
+            Option(user.gems(index)).foreach((g, lvl) => user.unapplyGem(g, lvl))
             user.gems(index) = gem -> level
+            user.applyGem(gem, level)
             openGems(player)
 
         override def render(): ItemStack = I18n.translateItem(gem.category.icon -> 1, "gem-type",
