@@ -1,7 +1,8 @@
 package dev.hawu.plugins.xenocraft
 package arts
 
-import dev.hawu.plugins.xenocraft.data.{ArtType, ClassType}
+import dev.hawu.plugins.xenocraft.data.{ArtRechargeType, ArtType, ClassType}
+import org.bukkit.Material
 
 import scala.collection.mutable
 
@@ -11,6 +12,33 @@ import scala.collection.mutable
 object ArtManager:
 
   private val map = mutable.Map.empty[ArtType, Art]
+
+  /**
+   * Initializes the art manager, binding all arts
+   * to its corresponding classes.
+   */
+  def initialize(): Unit =
+    import ArtType.*
+    ClassType.SWORDFIGHTER.arts ++= Seq(GROUND_BEAT, AIR_SLASH, EDGE_THRUST, SHADOW_EYE, SWORD_STRIKE, OVERCLOCK_BUSTER)
+
+  /**
+   * Retrieves an iterable of all arts.
+   *
+   * @param includesKeves  whether to include kevesi arts
+   * @param includesAgnus  whether to include agnian arts
+   * @param includesTalent whether to include talent arts
+   * @return
+   */
+  def getAllArts(
+    includesKeves: Boolean = true,
+    includesAgnus: Boolean = true,
+    includesTalent: Boolean = true,
+  ): Iterable[ArtType] =
+    var values = ArtType.values
+    if !includesKeves then values = values.filterNot(_.isKevesi)
+    if !includesAgnus then values = values.filterNot(_.isAgnian)
+    if !includesTalent then values = values.filterNot(_.isTalent)
+    values
 
   /**
    * Binds an art to the art manager.
@@ -52,3 +80,23 @@ object ArtManager:
    * @return the art option
    */
   def get(artType: ArtType): Option[Art] = map.get(artType)
+
+  /**
+   * Retrieves the icon of this art, calculated based on its category
+   * and its effects.
+   *
+   * @param art the art
+   * @return the material
+   */
+  def getIcon(art: ArtType): Material =
+    import dev.hawu.plugins.xenocraft.data.ArtCategory
+    art.category match
+      case ArtCategory.HEALING => Material.GOLDEN_APPLE
+      case ArtCategory.BUFF => Material.POTION
+      case ArtCategory.CLEANSE => Material.SPLASH_POTION
+      case ArtCategory.DEFENSE => Material.SHIELD
+      case ArtCategory.ETHER => Material.IRON_HORSE_ARMOR
+      case ArtCategory.FIELD => Material.CHEST_MINECART
+      case ArtCategory.STANCE => Material.HEAVY_WEIGHTED_PRESSURE_PLATE
+      case ArtCategory.PHYSICAL => Material.IRON_SWORD
+      case ArtCategory.TAUNT => Material.BLAZE_ROD

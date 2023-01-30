@@ -50,7 +50,7 @@ object ClassesGUI extends ModuleHolder("classes-ui"):
       .setItemGenerator((cls, _) => new GuiComponent[Unit]() {
         override def handleClick(event: InventoryClickEvent): Unit =
           event.setCancelled(true)
-          user.cls = Some(cls)
+          user.applyClass(Some(cls))
           MainGUI.openMain(player)
 
         override def render(): ItemStack = ItemStackBuilder.from(I18n.translateItem(cls.weaponType.material -> 1, "class",

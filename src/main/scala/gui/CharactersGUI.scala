@@ -58,12 +58,12 @@ object CharactersGUI extends ModuleHolder("characters-ui"):
           "dexterity" -> char.baseDexterity.intValue,
           "name" -> char.name(locale),
           "description" -> Strings.chop(char.description(locale), 32),
-          "selection" -> (if user.cls.contains(char) then "selected".tl(locale) else "not-selected".tl(locale)),
+          "selection" -> (if user.char.contains(char) then "selected".tl(locale) else "not-selected".tl(locale)),
         )
 
         override def handleClick(event: InventoryClickEvent): Unit =
           event.setCancelled(true)
-          user.char = Some(char)
+          user.applyCharacter(char)
           MainGUI.openMain(player)
 
         override def render(): ItemStack = ItemStackBuilder.from(item)

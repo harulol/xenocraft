@@ -25,6 +25,7 @@ class Xenocraft extends JavaPlugin:
     ClassesGUI,
     GemsGUI,
     MainGUI,
+    ArtsGUI,
     I18n,
   )
 

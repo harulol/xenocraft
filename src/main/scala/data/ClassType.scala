@@ -13,6 +13,7 @@ import scala.collection.mutable
  * Represents a type of class a player can pick.
  */
 enum ClassType(
+  val nation: ClassNation,
   val classRole: ClassRole,
   val classHp: Double,
   val classAttack: Double,
@@ -27,6 +28,7 @@ enum ClassType(
 ):
 
   val arts: mutable.ArrayBuffer[ArtType] = mutable.ArrayBuffer.empty[ArtType]
+  val skills: mutable.ArrayBuffer[SkillType] = mutable.ArrayBuffer.empty[SkillType]
   private val keyName = this.name.getOrElse(this.toString.replace('_', '-')).toLowerCase
 
   /**
@@ -63,7 +65,7 @@ enum ClassType(
    */
   def shouldDisplay: Boolean = this match
     case ATTACKER_LUCKY_SEVEN | DEFENDER_LUCKY_SEVEN | HEALER_LUCKY_SEVEN => false
-    case cls: ClassType if cls.isSoulhacker && cls != SOULHACKER_STRIKE => false
+    case cls: ClassType if cls.isSoulhacker && cls != SOULHACKER_POWER => false
     case _ => true
 
   /**
@@ -96,6 +98,7 @@ enum ClassType(
   def isSoulhacker: Boolean = this.toString.startsWith("SOULHACKER")
 
   case SWORDFIGHTER extends ClassType(
+    nation = ClassNation.KEVES,
     classRole = ClassRole.ATTACKER,
     classHp = 0.75,
     classAttack = 1.15,
@@ -108,6 +111,7 @@ enum ClassType(
     upgradedWeaponType = Some(WeaponType.TRUTHSINGER),
   )
   case ZEPHYR extends ClassType(
+    nation = ClassNation.AGNUS,
     classRole = ClassRole.DEFENDER,
     classHp = 1.1,
     classAttack = 0.75,
@@ -120,6 +124,7 @@ enum ClassType(
     upgradedWeaponType = Some(WeaponType.SUNDANCERS),
   )
   case MEDIC_GUNNER extends ClassType(
+    nation = ClassNation.KEVES,
     classRole = ClassRole.HEALER,
     classHp = 0.6,
     classAttack = 0.6,
@@ -132,6 +137,7 @@ enum ClassType(
     upgradedWeaponType = Some(WeaponType.CADUCEUS_GUNROD),
   )
   case TACTICIAN extends ClassType(
+    nation = ClassNation.AGNUS,
     classRole = ClassRole.HEALER,
     classHp = 0.65,
     classAttack = 0.65,
@@ -144,6 +150,7 @@ enum ClassType(
     upgradedWeaponType = Some(WeaponType.SPELL_TAGS_TOTALITY),
   )
   case HEAVY_GUARD extends ClassType(
+    nation = ClassNation.KEVES,
     classRole = ClassRole.DEFENDER,
     classHp = 1.3,
     classAttack = 0.8,
@@ -156,6 +163,7 @@ enum ClassType(
     upgradedWeaponType = Some(WeaponType.ADAMANT_SHELL),
   )
   case OGRE extends ClassType(
+    nation = ClassNation.AGNUS,
     classRole = ClassRole.ATTACKER,
     classHp = 0.8,
     classAttack = 1.2,
@@ -169,6 +177,7 @@ enum ClassType(
   )
 
   case FLASH_FENCER extends ClassType(
+    nation = ClassNation.KEVES,
     classRole = ClassRole.ATTACKER,
     classHp = 0.75,
     classAttack = 1.1,
@@ -180,6 +189,7 @@ enum ClassType(
     weaponType = WeaponType.DUAL_RAPIERS,
   )
   case WAR_MEDIC extends ClassType(
+    nation = ClassNation.KEVES,
     classRole = ClassRole.HEALER,
     classHp = 0.6,
     classAttack = 0.55,
@@ -191,6 +201,7 @@ enum ClassType(
     weaponType = WeaponType.RELIEF_RIFLE,
   )
   case GUARDIAN_COMMANDER extends ClassType(
+    nation = ClassNation.KEVES,
     classRole = ClassRole.DEFENDER,
     classHp = 1.2,
     classAttack = 0.75,
@@ -202,6 +213,7 @@ enum ClassType(
     weaponType = WeaponType.GUTSY_GLADIUS,
   )
   case THAUMATURGE extends ClassType(
+    nation = ClassNation.AGNUS,
     classRole = ClassRole.HEALER,
     classHp = 0.75,
     classAttack = 0.75,
@@ -213,6 +225,7 @@ enum ClassType(
     weaponType = WeaponType.MARTIAL_LINKSTAFF,
   )
   case YUMSMITH extends ClassType(
+    nation = ClassNation.KEVES,
     classRole = ClassRole.ATTACKER,
     classHp = 0.8,
     classAttack = 1.1,
@@ -224,6 +237,7 @@ enum ClassType(
     weaponType = WeaponType.VARIABLE_ARMS,
   )
   case FULL_METAL_JAGUAR extends ClassType(
+    nation = ClassNation.KEVES,
     classRole = ClassRole.ATTACKER,
     classHp = 0.7,
     classAttack = 1.1,
@@ -235,6 +249,7 @@ enum ClassType(
     weaponType = WeaponType.GUN_DRONES,
   )
   case STRATEGOS extends ClassType(
+    nation = ClassNation.AGNUS,
     classRole = ClassRole.HEALER,
     classHp = 0.65,
     classAttack = 0.65,
@@ -246,6 +261,7 @@ enum ClassType(
     weaponType = WeaponType.DISC_LAUNCHER,
   )
   case STALKER extends ClassType(
+    nation = ClassNation.AGNUS,
     classRole = ClassRole.ATTACKER,
     classHp = 0.7,
     classAttack = 1.1,
@@ -257,6 +273,7 @@ enum ClassType(
     weaponType = WeaponType.LUMINESCENT_BOW,
   )
   case LONE_EXILE extends ClassType(
+    nation = ClassNation.KEVES,
     classRole = ClassRole.DEFENDER,
     classHp = 1.1,
     classAttack = 0.95,
@@ -268,6 +285,7 @@ enum ClassType(
     weaponType = WeaponType.TWINSABER,
   )
   case INCURSOR extends ClassType(
+    nation = ClassNation.AGNUS,
     classRole = ClassRole.ATTACKER,
     classHp = 0.75,
     classAttack = 1.2,
@@ -279,6 +297,7 @@ enum ClassType(
     weaponType = WeaponType.EXPONENTIAL_EDGE,
   )
   case LOST_VANGUARD extends ClassType(
+    nation = ClassNation.AGNUS,
     classRole = ClassRole.DEFENDER,
     classHp = 1.25,
     classAttack = 0.8,
@@ -290,6 +309,7 @@ enum ClassType(
     weaponType = WeaponType.DEFENSE_MACE,
   )
   case SIGNIFIER extends ClassType(
+    nation = ClassNation.AGNUS,
     classRole = ClassRole.HEALER,
     classHp = 0.6,
     classAttack = 0.85,
@@ -301,6 +321,7 @@ enum ClassType(
     weaponType = WeaponType.WAR_STANDARD,
   )
   case MARTIAL_ARTIST extends ClassType(
+    nation = ClassNation.AGNUS,
     classRole = ClassRole.ATTACKER,
     classHp = 0.75,
     classAttack = 1.1,
@@ -312,6 +333,7 @@ enum ClassType(
     weaponType = WeaponType.TURBO_CESTUS,
   )
   case TROUBADOUR extends ClassType(
+    nation = ClassNation.AGNUS,
     classRole = ClassRole.HEALER,
     classHp = 0.55,
     classAttack = 0.6,
@@ -323,6 +345,7 @@ enum ClassType(
     weaponType = WeaponType.SIKEN_IVY,
   )
   case SERAPH extends ClassType(
+    nation = ClassNation.AGNUS,
     classRole = ClassRole.ATTACKER,
     classHp = 0.8,
     classAttack = 1.3,
@@ -334,6 +357,7 @@ enum ClassType(
     weaponType = WeaponType.HEATSHIMMER_SPEAR,
   )
   case MACHINE_ASSASSIN extends ClassType(
+    nation = ClassNation.KEVES,
     classRole = ClassRole.ATTACKER,
     classHp = 0.8,
     classAttack = 1.25,
@@ -345,6 +369,7 @@ enum ClassType(
     weaponType = WeaponType.DOOM_AXES,
   )
   case LIFESAGE extends ClassType(
+    nation = ClassNation.AGNUS,
     classRole = ClassRole.HEALER,
     classHp = 0.65,
     classAttack = 0.75,
@@ -356,6 +381,7 @@ enum ClassType(
     weaponType = WeaponType.ANIMA_SWORD,
   )
   case ROYAL_SUMMONER extends ClassType(
+    nation = ClassNation.KEVES,
     classRole = ClassRole.ATTACKER,
     classHp = 0.65,
     classAttack = 1.3,
@@ -367,6 +393,7 @@ enum ClassType(
     weaponType = WeaponType.ELEMENTAL_STAFF,
   )
   case NOPONIC_CHAMPION extends ClassType(
+    nation = ClassNation.AGNUS,
     classRole = ClassRole.DEFENDER,
     classHp = 1.2,
     classAttack = 0.95,
@@ -379,6 +406,7 @@ enum ClassType(
   )
 
   case SOULHACKER_POWER extends ClassType(
+    nation = ClassNation.KEVES,
     classRole = ClassRole.ATTACKER,
     classHp = 0.75,
     classAttack = 1.3,
@@ -391,6 +419,7 @@ enum ClassType(
     name = Some("Soulhacker"),
   )
   case SOULHACKER_STRIKE extends ClassType(
+    nation = ClassNation.KEVES,
     classRole = ClassRole.ATTACKER,
     classHp = 0.75,
     classAttack = 1.15,
@@ -403,6 +432,7 @@ enum ClassType(
     name = Some("Soulhacker"),
   )
   case SOULHACKER_TOUGH extends ClassType(
+    nation = ClassNation.KEVES,
     classRole = ClassRole.DEFENDER,
     classHp = 1.25,
     classAttack = 0.95,
@@ -415,6 +445,7 @@ enum ClassType(
     name = Some("Soulhacker"),
   )
   case SOULHACKER_DODGE extends ClassType(
+    nation = ClassNation.KEVES,
     classRole = ClassRole.DEFENDER,
     classHp = 1.1,
     classAttack = 0.95,
@@ -427,6 +458,7 @@ enum ClassType(
     name = Some("Soulhacker"),
   )
   case SOULHACKER_HEAL extends ClassType(
+    nation = ClassNation.KEVES,
     classRole = ClassRole.HEALER,
     classHp = 0.7,
     classAttack = 0.75,
@@ -439,6 +471,7 @@ enum ClassType(
     name = Some("Soulhacker"),
   )
   case SOULHACKER_BALANCED extends ClassType(
+    nation = ClassNation.KEVES,
     classRole = ClassRole.HEALER,
     classHp = 0.65,
     classAttack = 0.9,
@@ -452,6 +485,7 @@ enum ClassType(
   )
 
   case ATTACKER_LUCKY_SEVEN extends ClassType(
+    nation = ClassNation.KEVES,
     classRole = ClassRole.ATTACKER,
     classHp = 0.9,
     classAttack = 1.4,
@@ -463,6 +497,7 @@ enum ClassType(
     weaponType = WeaponType.LUCKY_SEVEN,
   )
   case HEALER_LUCKY_SEVEN extends ClassType(
+    nation = ClassNation.KEVES,
     classRole = ClassRole.HEALER,
     classHp = 0.8,
     classAttack = 0.9,
@@ -474,6 +509,7 @@ enum ClassType(
     weaponType = WeaponType.LUCKY_SEVEN,
   )
   case DEFENDER_LUCKY_SEVEN extends ClassType(
+    nation = ClassNation.KEVES,
     classRole = ClassRole.DEFENDER,
     classHp = 1.2,
     classAttack = 1.0,

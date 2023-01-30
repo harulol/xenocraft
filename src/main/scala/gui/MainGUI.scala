@@ -37,7 +37,7 @@ object MainGUI extends ModuleHolder("main-ui"):
   private val functionMap = Map(
     '1' -> CharactersGUI.openCharacters,
     '2' -> ClassesGUI.openClasses,
-    '3' -> ((p: Player) => openMain(p)),
+    '3' -> ArtsGUI.openArts,
     '4' -> GemsGUI.openGems,
     '5' -> ((p: Player) => openMain(p)),
     '6' -> ((p: Player) => openMain(p)),
@@ -56,12 +56,12 @@ object MainGUI extends ModuleHolder("main-ui"):
   def applyNavigationBar(model: GuiModel, current: Char, border: Material)(using player: Player): Unit =
     val layout = BrushRegistry.layout().setModel(model)
       .setLayout(
-        "1-*******",
+        "1-******X",
         "2-*-----*",
         "3-*-----*",
         "4-*-----*",
         "5-*-----*",
-        "6-******X",
+        "6-*******",
       ).build()
 
     layout.apply('*', () => ItemStackBuilder.of(border).name("&e").toStaticComponent)
@@ -119,6 +119,7 @@ object MainGUI extends ModuleHolder("main-ui"):
       "ether-def" -> (user.etherDef * 100).intValue,
       "class" -> user.cls.map(_.displayName(locale)).getOrElse("none".tl(locale)),
       "weapon" -> user.weapon.map(_.displayName).getOrElse("none".tl(locale)),
+      "char" -> user.char.map(_.name(locale)).getOrElse("none".tl(locale)),
     )).transformed[SkullMeta](_.setOwningPlayer(player)).toStaticComponent
     layout.apply('P', () => profileItem)
 

@@ -13,7 +13,7 @@ import java.util
 import java.util.UUID
 import scala.collection.{GenMap, mutable}
 import scala.jdk.CollectionConverters.*
-import scala.util.{Failure, Success, Try}
+import scala.util.{Failure, Random, Success, Try}
 
 /**
  * Represents a player's data.
@@ -38,7 +38,75 @@ case class User(
 ) extends ConfigurationSerializable with Attributable(_uuid):
 
   private val inventory = mutable.Map.empty[Int, ItemStack]
+  private val classMemory = mutable.Map.empty[ClassType, ClassMemory]
   var bladeUnsheathed = false
+
+  /**
+   * Checks if a certain art is currently already being selected.
+   *
+   * @param art the art
+   * @return the result
+   */
+  def isArtSelected(art: ArtType): Boolean =
+    masterArts.contains(art) || arts.contains(art)
+
+  /**
+   * Attempts to equip an art.
+   *
+   * @param art    the art
+   * @param slot   the slot
+   * @param master whether it is a master art
+   */
+  def equipArt(art: ArtType, slot: Int, master: Boolean): Unit =
+    val arr = if master then masterArts else arts
+    val index = arr.indexOf(art)
+
+    if index >= 0 then
+      arr(index) = arr(slot)
+      arr(slot) = art
+    else
+      arr(slot) = art
+
+  /**
+   * Attempts to apply a character, ridding the player of the talent art
+   * they would not have access to.
+   *
+   * @param char the character
+   */
+  def applyCharacter(char: Character): Unit =
+    this.char = Option(char)
+    talentArt.foreach(art => if !canUse(art) then talentArt = None)
+
+  /**
+   * Checks if the user can use a specified art.
+   *
+   * @param art the art to check
+   * @return whether they can use the art
+   */
+  def canUse(art: ArtType): Boolean =
+    art match
+      case ArtType.INFINITY_BLADE => char.contains(Character.NOAH)
+      case _ => cls.isDefined && art.cls.contains(cls.get)
+
+  /**
+   * Apply the class provided and put up the arts, skills
+   * and gems memory.
+   *
+   * @param clazz the class to apply
+   */
+  def applyClass(clazz: Option[ClassType]): Unit =
+    cls.foreach(classMemory.put(_, ClassMemory(this)))
+    if clazz.isDefined then
+      val memory = classMemory.get(clazz.get)
+      if memory.isDefined then memory.get.apply(this)
+      else
+        cls = clazz
+        weapon = Some(clazz.get.weaponType)
+        Array.ofDim[ArtType](3).copyToArray(masterArts)
+        Array.ofDim[ArtType](3).copyToArray(arts)
+        clazz.get.arts.filter(_ => Random.nextBoolean()).take(3).toArray.copyToArray(arts)
+        Array.ofDim[(GemType, Int)](3).copyToArray(gems)
+        talentArt = None
 
   /**
    * Attempts to check if the provided gem is already equipped.
@@ -155,6 +223,7 @@ case class User(
     "arts" -> arts.map(art => if art != null then art.toString else null).toList.asJava,
     "gems" -> gems.map(tuple => if tuple != null then s"${tuple._1.toString}:${tuple._2}" else null).toList.asJava,
     "talentArt" -> talentArt.map(_.toString).orNull,
+    "memory" -> classMemory.map(entry => entry._1.toString -> entry._2).asJava,
   ).asJava
 
   /**
@@ -253,8 +322,11 @@ object User:
         else null
       })
 
+    val memory = map.get("memory").asInstanceOf[util.Map[String, ClassMemory]].asScala.map(entry => ClassType.valueOf(entry._1) -> entry._2)
+
     val user = User(uuid, cls, weapon, char, masterArts, arts, gems, talentArt)
     gems.filter(_ != null).foreach(user.applyGem)
+    user.classMemory ++= memory
     user
 
   private def tryGetting[T](key: String, f: String => T)(using map: util.Map[String, Any]): Option[T] =
