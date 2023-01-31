@@ -6,7 +6,7 @@ import dev.hawu.plugins.api.events.Events
 import dev.hawu.plugins.xenocraft.Xenocraft.instance
 import dev.hawu.plugins.xenocraft.combat.{BattlefieldListener, ChatHologramListener}
 import dev.hawu.plugins.xenocraft.commands.{ArtCommand, PluginBaseCommand, StatsCommand}
-import dev.hawu.plugins.xenocraft.data.{Character, ClassType, User}
+import dev.hawu.plugins.xenocraft.data.{Character, ClassMemory, ClassType, User}
 import dev.hawu.plugins.xenocraft.gui.*
 import dev.hawu.plugins.xenocraft.utils.Configuration
 import org.bukkit.configuration.file.YamlConfiguration
@@ -21,19 +21,15 @@ import java.io.InputStreamReader
 class Xenocraft extends JavaPlugin:
 
   private val modules = List(
-    CharactersGUI,
-    ClassesGUI,
-    GemsGUI,
-    MainGUI,
-    ArtsGUI,
-    I18n,
+    CharactersGUI, ClassesGUI, GemsGUI, MainGUI, ArtsGUI, I18n,
   )
+  private val serializables = List(classOf[User], classOf[ClassMemory])
 
   override def onEnable(): Unit =
     instance = this
     modules.foreach(_.initialize(this))
+    serializables.foreach(ConfigurationSerialization.registerClass)
 
-    ConfigurationSerialization.registerClass(classOf[User])
     StatsGui.initialize(this)
     UserMap.initialize(this)
     BattlefieldListener.initialize(this)

@@ -38,6 +38,7 @@ object ArtManager:
     if !includesKeves then values = values.filterNot(_.isKevesi)
     if !includesAgnus then values = values.filterNot(_.isAgnian)
     if !includesTalent then values = values.filterNot(_.isTalent)
+    println(s"Retrieved all arts with keves=$includesKeves, agnus=$includesAgnus, talent=$includesTalent: ${values.mkString("Array(", ", ", ")")}")
     values
 
   /**
@@ -90,6 +91,11 @@ object ArtManager:
    */
   def getIcon(art: ArtType): Material =
     import dev.hawu.plugins.xenocraft.data.ArtCategory
+    art match
+      case ArtType.INFINITY_BLADE => return Material.DIAMOND_SWORD
+      case ArtType.UNLIMITED_SWORD => return Material.NETHERITE_SWORD
+      case ArtType.DOMINION_FLOWER => return Material.WITHER_ROSE
+      case _ => ()
     art.category match
       case ArtCategory.HEALING => Material.GOLDEN_APPLE
       case ArtCategory.BUFF => Material.POTION

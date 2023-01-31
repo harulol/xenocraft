@@ -40,7 +40,7 @@ case class ClassMemory(
     masterArts.copyToArray(user.masterArts)
     arts.copyToArray(user.arts)
     gems.copyToArray(user.gems)
-    if talentArt.isDefined then user.talentArt = if user.canUse(talentArt.get) then talentArt else None
+    if talentArt.isDefined then user.talentArt = if user.canUseArtAs(talentArt.get, "talent") then talentArt else None
     else user.talentArt = None
 
   override def serialize(): util.Map[String, Any] = Map(

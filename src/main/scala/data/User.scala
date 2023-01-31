@@ -75,18 +75,24 @@ case class User(
    */
   def applyCharacter(char: Character): Unit =
     this.char = Option(char)
-    talentArt.foreach(art => if !canUse(art) then talentArt = None)
+    talentArt.foreach(art => if !canUseArtAs(art, "talent") then talentArt = None)
 
   /**
-   * Checks if the user can use a specified art.
+   * Checks if the user can use an art given the context.
    *
-   * @param art the art to check
-   * @return whether they can use the art
+   * @param art  the art
+   * @param what the context
+   * @return whether they are eligible
    */
-  def canUse(art: ArtType): Boolean =
-    art match
-      case ArtType.INFINITY_BLADE => char.contains(Character.NOAH)
-      case _ => cls.isDefined && art.cls.contains(cls.get)
+  def canUseArtAs(art: ArtType, what: "master" | "class" | "talent"): Boolean =
+    what match
+      case "master" => art.isMaster && !art.isTalent
+      case "class" => cls.isDefined && art.cls.contains(cls.get) && !art.isTalent
+      case "talent" =>
+        art match
+          case ArtType.INFINITY_BLADE | ArtType.UNLIMITED_SWORD => char.contains(Character.NOAH)
+          case ArtType.DOMINION_FLOWER => char.contains(Character.MIO)
+          case _ => art.isTalent
 
   /**
    * Apply the class provided and put up the arts, skills
@@ -98,7 +104,10 @@ case class User(
     cls.foreach(classMemory.put(_, ClassMemory(this)))
     if clazz.isDefined then
       val memory = classMemory.get(clazz.get)
-      if memory.isDefined then memory.get.apply(this)
+      if memory.isDefined then
+        memory.get.apply(this)
+        cls = clazz
+        if weapon.isEmpty then weapon = Some(cls.get.weaponType)
       else
         cls = clazz
         weapon = Some(clazz.get.weaponType)

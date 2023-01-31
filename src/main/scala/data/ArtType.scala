@@ -17,6 +17,7 @@ enum ArtType(
   val powerMultiplier: Double = 0,
   val cooldown: Double,
   val cooldownType: ArtRechargeType,
+  val reaction: Option[ArtReaction] = None,
   val fusionBonus: ArtFusionBonus = ArtFusionBonus.NONE,
   val hits: Int = 0,
   val isMaster: Boolean = false,
@@ -89,6 +90,7 @@ enum ArtType(
     powerMultiplier = 2.25,
     cooldown = 22.7,
     cooldownType = ArtRechargeType.TIME,
+    reaction = Some(ArtReaction.BREAK),
     hits = 1,
     fusionBonus = ArtFusionBonus.DAMAGE,
   )
@@ -132,6 +134,67 @@ enum ArtType(
     isMaster = true,
   )
 
+  case BUTTERFLY_BLADE extends ArtType(
+    cls = Some(ClassType.ZEPHYR),
+    category = ArtCategory.PHYSICAL,
+    target = ArtTarget.SINGLE,
+    powerMultiplier = 1.65,
+    cooldown = 3,
+    cooldownType = ArtRechargeType.AUTO_ATTACK,
+    fusionBonus = ArtFusionBonus.AGGRO,
+    hits = 2,
+  )
+  case AIR_FANG extends ArtType(
+    cls = Some(ClassType.ZEPHYR),
+    category = ArtCategory.PHYSICAL,
+    target = ArtTarget.SINGLE,
+    powerMultiplier = 2.5,
+    cooldown = 3,
+    cooldownType = ArtRechargeType.AUTO_ATTACK,
+    fusionBonus = ArtFusionBonus.AGGRO,
+    hits = 2,
+  )
+  case WIDE_SLASH extends ArtType(
+    cls = Some(ClassType.ZEPHYR),
+    category = ArtCategory.PHYSICAL,
+    target = ArtTarget.SINGLE,
+    powerMultiplier = 3.6,
+    cooldown = 5,
+    cooldownType = ArtRechargeType.AUTO_ATTACK,
+    fusionBonus = ArtFusionBonus.DAMAGE,
+    hits = 2, // 3 FOR MIO, 2 FOR OTHERS
+    isMaster = true,
+  )
+  case GLOW_RING extends ArtType(
+    cls = Some(ClassType.ZEPHYR),
+    category = ArtCategory.PHYSICAL,
+    target = ArtTarget.SINGLE,
+    powerMultiplier = 3.1,
+    cooldown = 5,
+    cooldownType = ArtRechargeType.AUTO_ATTACK,
+    fusionBonus = ArtFusionBonus.DURATION,
+    hits = 1,
+    isMaster = true,
+  )
+  case SPEED_DEMON extends ArtType(
+    cls = Some(ClassType.ZEPHYR),
+    category = ArtCategory.STANCE,
+    target = ArtTarget.SELF,
+    cooldown = 8,
+    cooldownType = ArtRechargeType.AUTO_ATTACK,
+    fusionBonus = ArtFusionBonus.DURATION,
+  )
+  case GEMINI_STRIKE extends ArtType(
+    cls = Some(ClassType.ZEPHYR),
+    category = ArtCategory.PHYSICAL, // PHYSICAL FOR OTHERS, ETHER FOR MIO
+    target = ArtTarget.SINGLE,
+    powerMultiplier = 7,
+    cooldown = 3,
+    cooldownType = ArtRechargeType.ROLE_ACTION,
+    hits = 2,
+    isMaster = true,
+  )
+
   // ================================== //
   // EXCLUSIVE NOAH'S ARTS
   // ================================== //
@@ -142,5 +205,23 @@ enum ArtType(
     cooldown = 4,
     cooldownType = ArtRechargeType.ROLE_ACTION,
     hits = 2,
-    isMaster = true,
+  )
+  case UNLIMITED_SWORD extends ArtType(
+    category = ArtCategory.BUFF,
+    target = ArtTarget.SELF,
+    cooldown = 10,
+    cooldownType = ArtRechargeType.ROLE_ACTION,
+  )
+
+  // ================================== //
+  // EXCLUSIVE MIO'S ARTS
+  // ================================== //
+  case DOMINION_FLOWER extends ArtType(
+    category = ArtCategory.ETHER,
+    target = ArtTarget.SINGLE,
+    powerMultiplier = 7.5,
+    cooldown = 4,
+    cooldownType = ArtRechargeType.ROLE_ACTION,
+    reaction = Some(ArtReaction.BURST), // Burst on every hit.
+    hits = 5,
   )
