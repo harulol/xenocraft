@@ -166,7 +166,7 @@ object ArtsGUI extends ModuleHolder("arts-ui"):
         "name" -> art.name(locale),
         "type" -> art.category.name(locale),
         "target" -> art.target.name(locale),
-        "power" -> s"${(art.powerMultiplier * 100).intValue}%",
+        "power" -> s"${(art.powerMultiplier * 100).round}%",
         "cooldown" -> cooldownText,
         "recharge" -> art.cooldownType.name(locale),
         "description" -> Strings.chop(art.description(locale), 32),

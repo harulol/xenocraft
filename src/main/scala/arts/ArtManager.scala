@@ -38,7 +38,6 @@ object ArtManager:
     if !includesKeves then values = values.filterNot(_.isKevesi)
     if !includesAgnus then values = values.filterNot(_.isAgnian)
     if !includesTalent then values = values.filterNot(_.isTalent)
-    println(s"Retrieved all arts with keves=$includesKeves, agnus=$includesAgnus, talent=$includesTalent: ${values.mkString("Array(", ", ", ")")}")
     values
 
   /**
@@ -103,6 +102,6 @@ object ArtManager:
       case ArtCategory.DEFENSE => Material.SHIELD
       case ArtCategory.ETHER => Material.IRON_HORSE_ARMOR
       case ArtCategory.FIELD => Material.CHEST_MINECART
-      case ArtCategory.STANCE => Material.HEAVY_WEIGHTED_PRESSURE_PLATE
+      case ArtCategory.STANCE => Material.ELYTRA
       case ArtCategory.PHYSICAL => Material.IRON_SWORD
       case ArtCategory.TAUNT => Material.BLAZE_ROD

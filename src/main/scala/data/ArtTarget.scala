@@ -19,4 +19,4 @@ enum ArtTarget:
   def name(locale: Locale): String =
     ArtsGUI.getModule.translate(locale, s"target-${toString.toLowerCase.replace('_', '-')}")
 
-  case SINGLE, FRONT_AOE, SELF, CIRCLE_AOE, PARTY
+  case SINGLE, FRONT_AOE, SELF, CIRCLE_AOE, ENEMY_AOE, PARTY

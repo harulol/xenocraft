@@ -113,9 +113,10 @@ case class User(
         weapon = Some(clazz.get.weaponType)
         Array.ofDim[ArtType](3).copyToArray(masterArts)
         Array.ofDim[ArtType](3).copyToArray(arts)
-        clazz.get.arts.filter(_ => Random.nextBoolean()).take(3).toArray.copyToArray(arts)
+        ArtType.values.filter(_.cls.contains(clazz.get)).take(3).copyToArray(arts)
         Array.ofDim[(GemType, Int)](3).copyToArray(gems)
-        talentArt = None
+        talentArt = ArtType.values.filter(_.isTalent).find(_.cls.contains(clazz.get))
+        applyClass(cls)
 
   /**
    * Attempts to check if the provided gem is already equipped.
