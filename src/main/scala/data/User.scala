@@ -85,14 +85,23 @@ case class User(
    * @return whether they are eligible
    */
   def canUseArtAs(art: ArtType, what: "master" | "class" | "talent"): Boolean =
+  // Since Soulhacker is a Kevesi class, master arts must be of agnian classes.
+  // Other classes can not use Soulhacker's arts.
     what match
-      case "master" => art.isMaster && !art.isTalent
-      case "class" => cls.isDefined && art.cls.contains(cls.get) && !art.isTalent
+      case "master" =>
+        if cls.exists(_.isSoulhacker) then art.isAgnian && art.isSoulhacker
+        else art.isMaster && !art.isTalent && !art.isSoulhacker
+      case "class" =>
+        if cls.exists(_.isSoulhacker) then art.isKevesi && art.isSoulhacker
+        else cls.isDefined && art.cls.contains(cls.get) && !art.isTalent && !art.isSoulhacker
       case "talent" =>
+        // Noah and Mio can still use respective talent arts while using Soulhacker.
         art match
           case ArtType.INFINITY_BLADE | ArtType.UNLIMITED_SWORD => char.contains(Character.NOAH)
           case ArtType.DOMINION_FLOWER => char.contains(Character.MIO)
-          case _ => art.isTalent
+          case _ =>
+            if cls.exists(_.isSoulhacker) then art.isSoulhacker && art.isTalent
+            else art.isTalent
 
   /**
    * Apply the class provided and put up the arts, skills
