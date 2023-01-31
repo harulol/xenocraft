@@ -102,6 +102,7 @@ object ArtManager:
       case ArtCategory.STANCE   => Material.ELYTRA
       case ArtCategory.PHYSICAL => Material.IRON_SWORD
       case ArtCategory.TAUNT    => Material.BLAZE_ROD
+      case ArtCategory.DEBUFF   => Material.TIPPED_ARROW
   end getIcon
 
 end ArtManager

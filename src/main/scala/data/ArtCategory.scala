@@ -17,4 +17,4 @@ enum ArtCategory:
     */
   def name(locale: Locale): String = ArtsGUI.getModule.translate(locale, s"art-${toString.toLowerCase}")
 
-  case PHYSICAL, ETHER, BUFF, STANCE, HEALING, FIELD, TAUNT, CLEANSE, DEFENSE
+  case PHYSICAL, ETHER, BUFF, DEBUFF, STANCE, HEALING, FIELD, TAUNT, CLEANSE, DEFENSE

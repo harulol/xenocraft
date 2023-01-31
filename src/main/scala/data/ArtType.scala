@@ -2283,6 +2283,359 @@ enum ArtType(
       hits = 1,
     )
 
+  case SHELL_GUARD
+    extends ArtType(
+      cls = Some(ClassType.SOULHACKER_POWER),
+      category = ArtCategory.STANCE,
+      target = ArtTarget.SELF,
+      cooldown = 9,
+      cooldownType = ArtRechargeType.AUTO_ATTACK,
+      fusionBonus = ArtFusionBonus.DURATION,
+    )
+
+  case BUBBLE_CLOUD
+    extends ArtType(
+      cls = Some(ClassType.SOULHACKER_POWER),
+      category = ArtCategory.ETHER,
+      target = ArtTarget.FRONT_AOE,
+      powerMultiplier = 3.1,
+      cooldown = 4,
+      cooldownType = ArtRechargeType.AUTO_ATTACK,
+      fusionBonus = ArtFusionBonus.DAMAGE,
+      hits = 1,
+    )
+
+  case BURROWING_ROCKET
+    extends ArtType(
+      cls = Some(ClassType.SOULHACKER_POWER),
+      category = ArtCategory.PHYSICAL,
+      target = ArtTarget.SINGLE,
+      powerMultiplier = 3.1,
+      cooldown = 5,
+      cooldownType = ArtRechargeType.AUTO_ATTACK,
+      fusionBonus = ArtFusionBonus.DAMAGE,
+      hits = 1,
+    )
+
+  case ELECTRIC_SKIN
+    extends ArtType(
+      cls = Some(ClassType.SOULHACKER_POWER),
+      category = ArtCategory.ETHER,
+      target = ArtTarget.CIRCLE_AOE,
+      powerMultiplier = 3.1,
+      cooldown = 5,
+      cooldownType = ArtRechargeType.AUTO_ATTACK,
+      reaction = Some(ArtReaction.DAZE),
+      fusionBonus = ArtFusionBonus.DAMAGE,
+      hits = 1,
+    )
+
+  case TRICK_DART
+    extends ArtType(
+      cls = Some(ClassType.SOULHACKER_POWER),
+      category = ArtCategory.ETHER,
+      target = ArtTarget.FRONT_AOE,
+      powerMultiplier = 2.5,
+      cooldown = 8,
+      cooldownType = ArtRechargeType.AUTO_ATTACK,
+      fusionBonus = ArtFusionBonus.DAMAGE,
+      hits = 1,
+    )
+
+  case BUTTERFLY_DUST
+    extends ArtType(
+      cls = Some(ClassType.SOULHACKER_POWER),
+      category = ArtCategory.BUFF,
+      target = ArtTarget.CIRCLE_AOE,
+      cooldown = 5,
+      cooldownType = ArtRechargeType.AUTO_ATTACK,
+      fusionBonus = ArtFusionBonus.DURATION,
+    )
+
+  case POISON_SPRAY
+    extends ArtType(
+      cls = Some(ClassType.SOULHACKER_POWER),
+      category = ArtCategory.ETHER,
+      target = ArtTarget.FRONT_AOE,
+      powerMultiplier = 2.1,
+      cooldown = 5,
+      cooldownType = ArtRechargeType.AUTO_ATTACK,
+      fusionBonus = ArtFusionBonus.DURATION,
+      hits = 1,
+    )
+
+  case HAWK_SHOT
+    extends ArtType(
+      cls = Some(ClassType.SOULHACKER_POWER),
+      category = ArtCategory.PHYSICAL,
+      target = ArtTarget.SINGLE,
+      powerMultiplier = 3.1,
+      cooldown = 5,
+      cooldownType = ArtRechargeType.AUTO_ATTACK,
+      reaction = Some(ArtReaction.BREAK),
+      fusionBonus = ArtFusionBonus.DAMAGE,
+      hits = 1,
+    )
+
+  case WATER_JET
+    extends ArtType(
+      cls = Some(ClassType.SOULHACKER_POWER),
+      category = ArtCategory.ETHER,
+      target = ArtTarget.FRONT_AOE,
+      powerMultiplier = 2.9,
+      cooldown = 5,
+      cooldownType = ArtRechargeType.AUTO_ATTACK,
+      fusionBonus = ArtFusionBonus.DAMAGE,
+      reaction = Some(ArtReaction.KNOCKBACK),
+      hits = 1,
+    )
+
+  case CURSED_CUISINE
+    extends ArtType(
+      cls = Some(ClassType.SOULHACKER_POWER),
+      category = ArtCategory.PHYSICAL,
+      target = ArtTarget.SINGLE,
+      powerMultiplier = 3.1,
+      cooldown = 5,
+      cooldownType = ArtRechargeType.AUTO_ATTACK,
+      fusionBonus = ArtFusionBonus.DAMAGE,
+      reaction = Some(ArtReaction.BLOWDOWN),
+      hits = 1,
+    )
+
+  case HYPNO_LIGHT
+    extends ArtType(
+      cls = Some(ClassType.SOULHACKER_POWER),
+      category = ArtCategory.DEBUFF,
+      target = ArtTarget.CIRCLE_AOE,
+      cooldown = 3,
+      cooldownType = ArtRechargeType.AUTO_ATTACK,
+      fusionBonus = ArtFusionBonus.DURATION,
+    )
+
+  case HYPNOTISM
+    extends ArtType(
+      cls = Some(ClassType.SOULHACKER_POWER),
+      category = ArtCategory.DEBUFF,
+      target = ArtTarget.SINGLE,
+      cooldown = 7,
+      cooldownType = ArtRechargeType.AUTO_ATTACK,
+      fusionBonus = ArtFusionBonus.DURATION,
+    )
+
+  case BATTLE_PHEROMONE
+    extends ArtType(
+      cls = Some(ClassType.SOULHACKER_POWER),
+      category = ArtCategory.BUFF,
+      target = ArtTarget.CIRCLE_AOE,
+      cooldown = 7,
+      cooldownType = ArtRechargeType.AUTO_ATTACK,
+      fusionBonus = ArtFusionBonus.DURATION,
+    )
+
+  case LAST_FENCER
+    extends ArtType(
+      cls = Some(ClassType.SOULHACKER_POWER),
+      category = ArtCategory.PHYSICAL,
+      target = ArtTarget.SINGLE,
+      powerMultiplier = 3.1,
+      cooldown = 5,
+      cooldownType = ArtRechargeType.AUTO_ATTACK,
+      fusionBonus = ArtFusionBonus.DAMAGE,
+      hits = 1,
+    )
+
+  case POINTY_STICK
+    extends ArtType(
+      cls = Some(ClassType.SOULHACKER_POWER),
+      category = ArtCategory.PHYSICAL,
+      target = ArtTarget.SINGLE,
+      powerMultiplier = 3.1,
+      cooldown = 5,
+      cooldownType = ArtRechargeType.AUTO_ATTACK,
+      fusionBonus = ArtFusionBonus.DAMAGE,
+      hits = 1,
+    )
+
+  case AQUATIC_MISSILE
+    extends ArtType(
+      cls = Some(ClassType.SOULHACKER_POWER),
+      category = ArtCategory.PHYSICAL,
+      target = ArtTarget.SINGLE,
+      powerMultiplier = 3.1,
+      cooldown = 5,
+      cooldownType = ArtRechargeType.AUTO_ATTACK,
+      reaction = Some(ArtReaction.TOPPLE),
+      fusionBonus = ArtFusionBonus.DAMAGE,
+      hits = 1,
+    )
+
+  case PIERCING_LASER
+    extends ArtType(
+      cls = Some(ClassType.SOULHACKER_POWER),
+      category = ArtCategory.ETHER,
+      target = ArtTarget.SINGLE,
+      powerMultiplier = 4,
+      cooldown = 8,
+      cooldownType = ArtRechargeType.AUTO_ATTACK,
+      fusionBonus = ArtFusionBonus.DAMAGE,
+      hits = 1,
+    )
+
+  case BOMBERHEAD
+    extends ArtType(
+      cls = Some(ClassType.SOULHACKER_POWER),
+      category = ArtCategory.PHYSICAL,
+      target = ArtTarget.SINGLE,
+      powerMultiplier = 3.1,
+      cooldown = 5,
+      cooldownType = ArtRechargeType.AUTO_ATTACK,
+      reaction = Some(ArtReaction.LAUNCH),
+      fusionBonus = ArtFusionBonus.DAMAGE,
+      hits = 1,
+    )
+
+  case JET_STREAM
+    extends ArtType(
+      cls = Some(ClassType.SOULHACKER_POWER),
+      category = ArtCategory.PHYSICAL,
+      target = ArtTarget.FRONT_AOE,
+      powerMultiplier = 4.0,
+      cooldown = 8,
+      cooldownType = ArtRechargeType.AUTO_ATTACK,
+      fusionBonus = ArtFusionBonus.DAMAGE,
+      hits = 1,
+      reaction = Some(ArtReaction.BLOWDOWN),
+    )
+
+  case DRAGON_DECREE
+    extends ArtType(
+      cls = Some(ClassType.SOULHACKER_POWER),
+      category = ArtCategory.CLEANSE,
+      target = ArtTarget.CIRCLE_AOE,
+      cooldown = 5,
+      cooldownType = ArtRechargeType.AUTO_ATTACK,
+      fusionBonus = ArtFusionBonus.RANGE,
+    )
+
+  case SHARK_SHOCK
+    extends ArtType(
+      cls = Some(ClassType.SOULHACKER_POWER),
+      category = ArtCategory.ETHER,
+      target = ArtTarget.CIRCLE_AOE,
+      powerMultiplier = 3.1,
+      cooldown = 5,
+      cooldownType = ArtRechargeType.AUTO_ATTACK,
+      fusionBonus = ArtFusionBonus.DAMAGE,
+      hits = 1,
+    )
+
+  case ETHER_SPHERE
+    extends ArtType(
+      cls = Some(ClassType.SOULHACKER_POWER),
+      category = ArtCategory.ETHER,
+      target = ArtTarget.SINGLE,
+      powerMultiplier = 2.5,
+      cooldown = 4,
+      cooldownType = ArtRechargeType.AUTO_ATTACK,
+      fusionBonus = ArtFusionBonus.DAMAGE,
+      hits = 1,
+    )
+
+  case VAMPIRE_BAT
+    extends ArtType(
+      cls = Some(ClassType.SOULHACKER_POWER),
+      category = ArtCategory.PHYSICAL,
+      target = ArtTarget.SINGLE,
+      powerMultiplier = 1.65,
+      cooldown = 4,
+      cooldownType = ArtRechargeType.AUTO_ATTACK,
+      fusionBonus = ArtFusionBonus.DAMAGE,
+      hits = 1,
+    )
+
+  case TRANSIENT_BOND
+    extends ArtType(
+      cls = Some(ClassType.SOULHACKER_POWER),
+      category = ArtCategory.ETHER,
+      target = ArtTarget.SINGLE,
+      powerMultiplier = 5.0,
+      cooldown = 8,
+      cooldownType = ArtRechargeType.AUTO_ATTACK,
+      fusionBonus = ArtFusionBonus.DAMAGE,
+      hits = 16,
+    )
+
+  case GATLING_PECK
+    extends ArtType(
+      cls = Some(ClassType.SOULHACKER_POWER),
+      category = ArtCategory.PHYSICAL,
+      target = ArtTarget.SINGLE,
+      powerMultiplier = 3.1,
+      cooldown = 5,
+      cooldownType = ArtRechargeType.AUTO_ATTACK,
+      fusionBonus = ArtFusionBonus.DURATION,
+      hits = 4,
+    )
+
+  case MINISTORM
+    extends ArtType(
+      cls = Some(ClassType.SOULHACKER_POWER),
+      category = ArtCategory.ETHER,
+      target = ArtTarget.FRONT_AOE,
+      powerMultiplier = 3.1,
+      cooldown = 5,
+      cooldownType = ArtRechargeType.AUTO_ATTACK,
+      fusionBonus = ArtFusionBonus.DAMAGE,
+      hits = 1,
+    )
+
+  case HYDRA_GAS
+    extends ArtType(
+      cls = Some(ClassType.SOULHACKER_POWER),
+      category = ArtCategory.ETHER,
+      target = ArtTarget.FRONT_AOE,
+      powerMultiplier = 1.65,
+      cooldown = 5,
+      cooldownType = ArtRechargeType.AUTO_ATTACK,
+      fusionBonus = ArtFusionBonus.DURATION,
+      hits = 1,
+    )
+
+  case KINGS_BASH
+    extends ArtType(
+      cls = Some(ClassType.SOULHACKER_POWER),
+      category = ArtCategory.PHYSICAL,
+      target = ArtTarget.SINGLE,
+      powerMultiplier = 3.9,
+      cooldown = 8,
+      cooldownType = ArtRechargeType.AUTO_ATTACK,
+      fusionBonus = ArtFusionBonus.DAMAGE,
+      hits = 1,
+    )
+
+  case ELIMINATION_BEAM
+    extends ArtType(
+      cls = Some(ClassType.SOULHACKER_POWER),
+      category = ArtCategory.ETHER,
+      target = ArtTarget.FRONT_AOE,
+      powerMultiplier = 6.0,
+      cooldown = 8,
+      cooldownType = ArtRechargeType.AUTO_ATTACK,
+      fusionBonus = ArtFusionBonus.DAMAGE,
+      hits = 1,
+    )
+
+  case EVASIVE_POSTURE
+    extends ArtType(
+      cls = Some(ClassType.SOULHACKER_POWER),
+      category = ArtCategory.STANCE,
+      target = ArtTarget.SELF,
+      cooldown = 9,
+      cooldownType = ArtRechargeType.AUTO_ATTACK,
+      fusionBonus = ArtFusionBonus.DURATION,
+    )
+
   case FINAL_COUNTDOWN
     extends ArtType(
       cls = Some(ClassType.SOULHACKER_POWER),
