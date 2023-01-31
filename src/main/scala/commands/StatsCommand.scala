@@ -5,9 +5,8 @@ import dev.hawu.plugins.api.commands.*
 import dev.hawu.plugins.xenocraft.UserMap.user
 import dev.hawu.plugins.xenocraft.gui.{MainGUI, StatsGui}
 
-/**
- * The command handlers for /stats.
- */
+/** The command handlers for /stats.
+  */
 class StatsCommand extends CommandRegistrable:
 
   @Command("stats", senders = Array(SenderType.PLAYER))

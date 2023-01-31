@@ -15,14 +15,11 @@ import org.bukkit.plugin.java.JavaPlugin
 
 import java.io.InputStreamReader
 
-/**
- * Represents the plugin entrypoint.
- */
+/** Represents the plugin entrypoint.
+  */
 class Xenocraft extends JavaPlugin:
 
-  private val modules = List(
-    CharactersGUI, ClassesGUI, GemsGUI, MainGUI, ArtsGUI, I18n,
-  )
+  private val modules = List(CharactersGUI, ClassesGUI, GemsGUI, MainGUI, ArtsGUI, I18n)
   private val serializables = List(classOf[User], classOf[ClassMemory])
 
   override def onEnable(): Unit =
@@ -44,23 +41,24 @@ class Xenocraft extends JavaPlugin:
     CommandRegistry.unregister(this)
     Tasks.cancelAllTasks(this)
 
-/**
- * Object singleton for [[Xenocraft]].
- */
+end Xenocraft
+
+/** Object singleton for [[Xenocraft]].
+  */
 object Xenocraft:
 
   private var instance: Xenocraft = _
 
-  /**
-   * Retrieves the instance of the plugin.
-   *
-   * @return the instance
-   */
+  /** Retrieves the instance of the plugin.
+    *
+    * @return
+    *   the instance
+    */
   def getInstance: Xenocraft = instance
 
-  /**
-   * Retrieves the list of modules available in the plugin.
-   *
-   * @return the modules
-   */
+  /** Retrieves the list of modules available in the plugin.
+    *
+    * @return
+    *   the modules
+    */
   def getModels: List[ModuleHolder] = instance.modules

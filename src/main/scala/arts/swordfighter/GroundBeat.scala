@@ -18,7 +18,8 @@ object GroundBeat extends Art(ArtType.GROUND_BEAT):
     player.swingMainHand()
     player.chat("Ground Beat!")
 
-    val source = player.getLocation.add(player.getLocation.getDirection.setY(0.1).normalize().multiply(5)).add(0.0, 2.0, 0.0)
+    val source = player.getLocation.add(player.getLocation.getDirection.setY(0.1).normalize().multiply(5))
+      .add(0.0, 2.0, 0.0)
     val destination = source.clone().subtract(0.0, 2.0, 0.0)
 
     Tasks.run(runnable => {
@@ -37,3 +38,5 @@ object GroundBeat extends Art(ArtType.GROUND_BEAT):
     val entities = location.getWorld.getNearbyEntities(location, 3, 3, 3).asScala.filterNot(_.isInstanceOf[Player])
       .filter(_.isInstanceOf[LivingEntity]).map(_.asInstanceOf[LivingEntity])
     entities.foreach(entity => Formulas.calculateDamage(user, entity))
+
+end GroundBeat

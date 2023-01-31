@@ -19,11 +19,9 @@ import org.bukkit.{Material, Sound}
 import java.util
 import scala.jdk.CollectionConverters.*
 
-/**
- * The singleton object for dealing with the very main
- * character building UIs, as all other UIs are accessible
- * from this UI.
- */
+/** The singleton object for dealing with the very main character building UIs, as all other UIs are accessible from
+  * this UI.
+  */
 object MainGUI extends ModuleHolder("main-ui"):
 
   private val navigationMap = Map(
@@ -34,6 +32,7 @@ object MainGUI extends ModuleHolder("main-ui"):
     '5' -> ("skill-menu-item" -> Material.NETHER_STAR),
     '6' -> ("accessory-menu-item" -> Material.TOTEM_OF_UNDYING),
   )
+
   private val functionMap = Map(
     '1' -> CharactersGUI.openCharacters,
     '2' -> ClassesGUI.openClasses,
@@ -45,33 +44,33 @@ object MainGUI extends ModuleHolder("main-ui"):
 
   given Option[LanguageModule] = module
 
-  /**
-   * Mounts the navigation buttons on the menu on the side.
-   *
-   * @param model   the model
-   * @param player  the player
-   * @param current the current selected item
-   * @param border  the border as decorations
-   */
+  /** Mounts the navigation buttons on the menu on the side.
+    *
+    * @param model
+    *   the model
+    * @param player
+    *   the player
+    * @param current
+    *   the current selected item
+    * @param border
+    *   the border as decorations
+    */
   def applyNavigationBar(model: GuiModel, current: Char, border: Material)(using player: Player): Unit =
     val layout = BrushRegistry.layout().setModel(model)
-      .setLayout(
-        "1-******X",
-        "2-*-----*",
-        "3-*-----*",
-        "4-*-----*",
-        "5-*-----*",
-        "6-*******",
-      ).build()
+      .setLayout("1-******X", "2-*-----*", "3-*-----*", "4-*-----*", "5-*-----*", "6-*******").build()
 
     layout.apply('*', () => ItemStackBuilder.of(border).name("&e").toStaticComponent)
-    layout.apply('X', () => new GuiComponent[Unit]() {
-      override def handleClick(event: InventoryClickEvent): Unit =
-        event.setCancelled(true)
-        openMain(player)
+    layout.apply(
+      'X',
+      () =>
+        new GuiComponent[Unit]() {
+          override def handleClick(event: InventoryClickEvent): Unit =
+            event.setCancelled(true)
+            openMain(player)
 
-      override def render(): ItemStack = I18n.translateItem(Material.COMPASS -> 1, "main-menu-item")
-    })
+          override def render(): ItemStack = I18n.translateItem(Material.COMPASS -> 1, "main-menu-item")
+        },
+    )
 
     // Set the navigation buttons and apply glow if needed.
     applyNavigationButtons(current, layout)
@@ -80,11 +79,11 @@ object MainGUI extends ModuleHolder("main-ui"):
     model.mount(index * 9 + 1, ItemStackBuilder.of(border).name("&e").toStaticComponent)
   end applyNavigationBar
 
-  /**
-   * Opens the main GUI's... main menu to the player.
-   *
-   * @param player the player
-   */
+  /** Opens the main GUI's... main menu to the player.
+    *
+    * @param player
+    *   the player
+    */
   def openMain(player: Player): Unit =
     given Player = player
 
@@ -93,20 +92,16 @@ object MainGUI extends ModuleHolder("main-ui"):
 
     val model = I18n.translateModel(45, "main-ui-title")
     val layout = BrushRegistry.layout().setModel(model)
-      .setLayout(
-        "123456***",
-        "*-------*",
-        "*---P---*",
-        "*-------*",
-        "****X****",
-      ).build()
+      .setLayout("123456***", "*-------*", "*---P---*", "*-------*", "****X****").build()
 
     layout.apply('*', () => ItemStackBuilder.of(Material.BLACK_STAINED_GLASS_PANE).toStaticComponent)
     layout.apply('X', () => CloseInventoryComponent())
     applyNavigationButtons(' ', layout)
 
     // The profile button, just there to show you what you have chosen.
-    val profileItem = ItemStackBuilder.from(I18n.translateItem(Material.PLAYER_HEAD -> 1, "profile-item",
+    val profileItem = ItemStackBuilder.from(I18n.translateItem(
+      Material.PLAYER_HEAD -> 1,
+      "profile-item",
       "name" -> player.getName,
       "hp" -> user.maxHp.intValue,
       "atk" -> user.attack.intValue,
@@ -126,41 +121,45 @@ object MainGUI extends ModuleHolder("main-ui"):
     model.open(player)
   end openMain
 
-  /**
-   * Apply navigation buttons to a layout brush from the chars
-   * 1 -> 6.
-   *
-   * @param current the current selected item
-   * @param layout  the layout brush
-   * @param player  the player to open to
-   */
+  /** Apply navigation buttons to a layout brush from the chars 1 -> 6.
+    *
+    * @param current
+    *   the current selected item
+    * @param layout
+    *   the layout brush
+    * @param player
+    *   the player to open to
+    */
   def applyNavigationButtons(current: Char, layout: LayoutBrush)(using player: Player): Unit =
     for i <- 1 to 6 do
       val char = i.toString.head
       val (key, mat) = navigationMap(char)
       val item = ItemStackBuilder.from(I18n.translateItem(mat -> 1, key))
 
-      layout.apply(char, () => new GuiComponent[Unit]() {
-        override def handleClick(event: InventoryClickEvent): Unit =
-          event.setCancelled(true)
-          player.playSound(player.getLocation, Sound.BLOCK_LEVER_CLICK, 1, 1)
-          functionMap(char)(player)
+      layout.apply(
+        char,
+        () =>
+          new GuiComponent[Unit]() {
+            override def handleClick(event: InventoryClickEvent): Unit =
+              event.setCancelled(true)
+              player.playSound(player.getLocation, Sound.BLOCK_LEVER_CLICK, 1, 1)
+              functionMap(char)(player)
 
-        override def render(): ItemStack =
-          item.flags(ItemFlag.HIDE_ATTRIBUTES, ItemFlag.HIDE_POTION_EFFECTS)
-          if current == char then item.glow().build()
-          else item.build()
-      })
+            override def render(): ItemStack =
+              item.flags(ItemFlag.HIDE_ATTRIBUTES, ItemFlag.HIDE_POTION_EFFECTS)
+              if current == char then item.glow().build() else item.build()
+          },
+      )
     end for
 
-  /**
-   * Retrieves the slots needed for pagination within an enclosed space.
-   *
-   * @return the slots needed
-   */
-  def getPaginationSlots: util.List[Integer] =
-    (0 to 54).filter(i => i % 9 >= 3 && i % 9 <= 7)
-      .filterNot(_ < 9)
-      .filterNot(_ > 44)
-      .map(Integer.valueOf)
-      .asJava
+  end applyNavigationButtons
+
+  /** Retrieves the slots needed for pagination within an enclosed space.
+    *
+    * @return
+    *   the slots needed
+    */
+  def getPaginationSlots: util.List[Integer] = (0 to 54).filter(i => i % 9 >= 3 && i % 9 <= 7).filterNot(_ < 9)
+    .filterNot(_ > 44).map(Integer.valueOf).asJava
+
+end MainGUI

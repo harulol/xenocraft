@@ -12,11 +12,11 @@ import java.util.UUID
 import scala.collection.mutable
 import scala.jdk.CollectionConverters.*
 
-/**
- * Represents an enemy within a battlefield.
- *
- * @param uuid the uuid
- */
+/** Represents an enemy within a battlefield.
+  *
+  * @param uuid
+  *   the uuid
+  */
 class EnemyEntity(uuid: UUID) extends Attributable(uuid):
 
   private val config = load(Bukkit.getEntity(uuid).getType)
@@ -58,9 +58,10 @@ class EnemyEntity(uuid: UUID) extends Attributable(uuid):
 
   override def etherDef: Double = config.getDouble("ether-def")
 
-/**
- * Companion object for enemy entities.
- */
+end EnemyEntity
+
+/** Companion object for enemy entities.
+  */
 object EnemyEntity:
 
   private val map = mutable.Map.empty[EntityType, FileConfiguration]

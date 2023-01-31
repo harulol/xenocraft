@@ -10,20 +10,19 @@ import org.bukkit.{Color, Location, Particle}
 import java.security.SecureRandom
 import scala.collection.mutable.ArrayBuffer
 
-/**
- * The singleton object dedicated to managing the battlefield
- * and spawning holograms in the right place.
- */
+/** The singleton object dedicated to managing the battlefield and spawning holograms in the right place.
+  */
 object CombatManager:
 
   private val secureRandom = SecureRandom()
 
-  /**
-   * Heals the player for the specified health value.
-   *
-   * @param player the player
-   * @param value  the value
-   */
+  /** Heals the player for the specified health value.
+    *
+    * @param player
+    *   the player
+    * @param value
+    *   the value
+    */
   def heal(player: Player, value: Double): Unit =
     val user = player.user.get
     val oldHp = user.hp
@@ -31,12 +30,13 @@ object CombatManager:
     val change = user.hp - oldHp
     spawnHologramAround(player.getEyeLocation, s"&a${change.intValue}")
 
-  /**
-   * Damages the player for the specified damage value.
-   *
-   * @param player the player
-   * @param value  the damage
-   */
+  /** Damages the player for the specified damage value.
+    *
+    * @param player
+    *   the player
+    * @param value
+    *   the damage
+    */
   def damage(player: Player, value: Double): Unit =
     val user = player.user.get
     val damage = value min 9999999 max 0
@@ -55,15 +55,18 @@ object CombatManager:
     val signum = if secureRandom.nextBoolean() then -1 else 1
     signum * value
 
-  /**
-   * Draws the aggro target line from an entity to a player.
-   *
-   * @param entity the entity
-   * @param player the player
-   */
+  /** Draws the aggro target line from an entity to a player.
+    *
+    * @param entity
+    *   the entity
+    * @param player
+    *   the player
+    */
   def drawAggroLine(entity: LivingEntity, player: Player): Unit =
     val user = player.user.get
-    val dustOptions = if user.cls.exists(_.classRole == ClassRole.DEFENDER) then DustOptions(Color.AQUA, 1) else DustOptions(Color.RED, 1)
+    val dustOptions =
+      if user.cls.exists(_.classRole == ClassRole.DEFENDER) then DustOptions(Color.AQUA, 1)
+      else DustOptions(Color.RED, 1)
     drawLine(entity.getEyeLocation.add(0.0, 1.0, 0.0), player.getEyeLocation.add(0.0, 1.0, 0.0), dustOptions)
 
   private def drawLine(from: Location, to: Location, dustOptions: DustOptions): Unit =
@@ -84,3 +87,5 @@ object CombatManager:
       current.add(direction)
       angle += trigStep
   end drawLine
+
+end CombatManager

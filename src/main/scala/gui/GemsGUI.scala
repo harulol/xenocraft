@@ -19,103 +19,103 @@ import org.bukkit.inventory.ItemStack
 
 import scala.jdk.CollectionConverters.*
 
-/**
- * The singleton object dedicated to working with
- * the UI to select gems.
- */
+/** The singleton object dedicated to working with the UI to select gems.
+  */
 object GemsGUI extends ModuleHolder("gems-ui"):
 
   given Option[LanguageModule] = module
 
-  /**
-   * Opens the selection menu for gems.
-   *
-   * @param player the player
-   * @param index  the index to place at
-   */
+  /** Opens the selection menu for gems.
+    *
+    * @param player
+    *   the player
+    * @param index
+    *   the index to place at
+    */
   def gemSelectionMenu(player: Player, index: Int): Unit =
     given Player = player
 
     val user = player.user.get
     val locale = UserAdapter.getAdapter.getUser(player).getLocale
 
-    GuiPaginator.newBuilder[GemType]()
-      .setCollection(GemType.values.toList.asJava)
-      .setAllowedSlots(MainGUI.getPaginationSlots)
-      .setModelSupplier(() => {
+    GuiPaginator.newBuilder[GemType]().setCollection(GemType.values.toList.asJava)
+      .setAllowedSlots(MainGUI.getPaginationSlots).setModelSupplier(() => {
         val model = I18n.translateModel(54, "gems-ui-title")
         MainGUI.applyNavigationBar(model, '4', Material.ORANGE_STAINED_GLASS_PANE)
         model
-      })
-      .setPredicate(null)
-      .setItemGenerator((gem, _) => new GuiComponent[Unit]() {
-        override def handleClick(event: InventoryClickEvent): Unit =
-          event.setCancelled(true)
-          gemLevelSelectionMenu(player, index, gem)
+      }).setPredicate(null).setItemGenerator((gem, _) =>
+        new GuiComponent[Unit]() {
+          override def handleClick(event: InventoryClickEvent): Unit =
+            event.setCancelled(true)
+            gemLevelSelectionMenu(player, index, gem)
 
-        override def render(): ItemStack = I18n.translateItem(gem.category.icon -> 1, "gem-type",
-          "name" -> gem.category.colorize(gem.name(locale), true),
-          "description" -> Strings.chop(gem.description(locale), 32),
-          "selection" -> (if user.isGemEquipped(gem) >= 0 then "selected".tl(locale) else "not-selected".tl(locale)),
-        )
-      })
-      .build(player)
+          override def render(): ItemStack = I18n.translateItem(
+            gem.category.icon -> 1,
+            "gem-type",
+            "name" -> gem.category.colorize(gem.name(locale), true),
+            "description" -> Strings.chop(gem.description(locale), 32),
+            "selection" -> (if user.isGemEquipped(gem) >= 0 then "selected".tl(locale) else "not-selected".tl(locale)),
+          )
+        },
+      ).build(player)
   end gemSelectionMenu
 
-  /**
-   * Opens a more detailed screen to choose a level for the gem slot.
-   *
-   * @param player the player
-   * @param index  the gem slot
-   * @param gem    the gem type
-   */
+  /** Opens a more detailed screen to choose a level for the gem slot.
+    *
+    * @param player
+    *   the player
+    * @param index
+    *   the gem slot
+    * @param gem
+    *   the gem type
+    */
   def gemLevelSelectionMenu(player: Player, index: Int, gem: GemType): Unit =
     given Player = player
 
     val user = player.user.get
     val locale = UserAdapter.getAdapter.getUser(player).getLocale
 
-    GuiPaginator.newBuilder[Int]()
-      .setCollection((1 to 10).toList.asJava)
-      .setAllowedSlots(MainGUI.getPaginationSlots)
+    GuiPaginator.newBuilder[Int]().setCollection((1 to 10).toList.asJava).setAllowedSlots(MainGUI.getPaginationSlots)
       .setModelSupplier(() => {
         val model = I18n.translateModel(54, "gems-ui-title")
         MainGUI.applyNavigationBar(model, '4', Material.ORANGE_STAINED_GLASS_PANE)
         model
-      })
-      .setPredicate(null)
-      .setItemGenerator((level, _) => new GuiComponent[Unit]() {
-        override def handleClick(event: InventoryClickEvent): Unit =
-          event.setCancelled(true)
-          val generalIndex = user.isGemEquipped(gem)
-          if generalIndex >= 0 && generalIndex != index then
-            // Unapply the effects first.
-            Option(user.gems(generalIndex)).foreach((g, lvl) => user.unapplyGem(g, lvl))
-            user.gems(generalIndex) = user.gems(index) // Just moving, no need to apply effects.
-            user.gems(index) = gem -> level
-            user.applyGem(gem, level) // Apply.
-            openGems(player)
-          else
-            // Unapply the effects first, then bind gem, then apply the new effects.
-            Option(user.gems(index)).foreach((g, lvl) => user.unapplyGem(g, lvl))
-            user.gems(index) = gem -> level
-            user.applyGem(gem, level)
-            openGems(player)
+      }).setPredicate(null).setItemGenerator((level, _) =>
+        new GuiComponent[Unit]() {
+          override def handleClick(event: InventoryClickEvent): Unit =
+            event.setCancelled(true)
+            val generalIndex = user.isGemEquipped(gem)
+            if generalIndex >= 0 && generalIndex != index then
+              // Unapply the effects first.
+              Option(user.gems(generalIndex)).foreach((g, lvl) => user.unapplyGem(g, lvl))
+              user.gems(generalIndex) = user.gems(index) // Just moving, no need to apply effects.
+              user.gems(index) = gem -> level
+              user.applyGem(gem, level) // Apply.
+              openGems(player)
+            else
+              // Unapply the effects first, then bind gem, then apply the new effects.
+              Option(user.gems(index)).foreach((g, lvl) => user.unapplyGem(g, lvl))
+              user.gems(index) = gem -> level
+              user.applyGem(gem, level)
+              openGems(player)
 
-        override def render(): ItemStack = I18n.translateItem(gem.category.icon -> 1, "gem-type",
-          "name" -> gem.category.colorize(gem.name(locale, level), true),
-          "description" -> Strings.chop(gem.description(locale, level), 32),
-          "selection" -> (if user.isGemEquipped(gem, level) >= 0 then "selected".tl(locale) else "not-selected".tl(locale)),
-        )
-      })
-      .build(player)
+          override def render(): ItemStack = I18n.translateItem(
+            gem.category.icon -> 1,
+            "gem-type",
+            "name" -> gem.category.colorize(gem.name(locale, level), true),
+            "description" -> Strings.chop(gem.description(locale, level), 32),
+            "selection" ->
+              (if user.isGemEquipped(gem, level) >= 0 then "selected".tl(locale) else "not-selected".tl(locale)),
+          )
+        },
+      ).build(player)
   end gemLevelSelectionMenu
 
-  /**
-   * The gems selection screen.
-   *
-   * @param player the player to open to
-   */
+  /** The gems selection screen.
+    *
+    * @param player
+    *   the player to open to
+    */
   def openGems(player: Player): Unit =
     given Player = player
 
@@ -130,13 +130,9 @@ object GemsGUI extends ModuleHolder("gems-ui"):
     model.open(player)
   end openGems
 
-  /**
-   * The GUIComponent that handles selecting gems.
-   */
-  class GemComponent(
-    private var player: Player,
-    private val slot: Int,
-  ) extends GuiComponent[Unit]():
+  /** The GUIComponent that handles selecting gems.
+    */
+  class GemComponent(private var player: Player, private val slot: Int) extends GuiComponent[Unit]():
 
     private val locale = UserAdapter.getAdapter.getUser(player).getLocale
     private var user = player.user.get
@@ -153,20 +149,23 @@ object GemsGUI extends ModuleHolder("gems-ui"):
       if event.isRightClick then
         user.gems(slot) = null
         openGems(player)
-      else
-        gemSelectionMenu(player, slot)
+      else gemSelectionMenu(player, slot)
 
-    override def render(): ItemStack =
-      if gemTuple == null then emptyGem
-      else gemItem
+    override def render(): ItemStack = if gemTuple == null then emptyGem else gemItem
 
-    private def emptyGem: ItemStack = I18n.translateItem(Material.BLACK_STAINED_GLASS_PANE -> 1, "no-gem")(using module, player)
+    private def emptyGem: ItemStack = I18n
+      .translateItem(Material.BLACK_STAINED_GLASS_PANE -> 1, "no-gem")(using module, player)
 
     private def gemItem: ItemStack =
       val (gem, level) = gemTuple
       val description = Strings.chop(gem.description(locale, level), 32)
-      I18n.translateItem(gem.category.icon -> 1, "gem",
+      I18n.translateItem(
+        gem.category.icon -> 1,
+        "gem",
         "name" -> gem.category.colorize(gem.name(locale, level), true),
         "description" -> description,
       )(using module, player)
+
   end GemComponent
+
+end GemsGUI
