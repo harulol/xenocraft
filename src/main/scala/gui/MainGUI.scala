@@ -113,7 +113,7 @@ object MainGUI extends ModuleHolder("main-ui"):
       "physical-def" -> (user.physicalDef * 100).intValue,
       "ether-def" -> (user.etherDef * 100).intValue,
       "class" -> user.cls.map(_.displayName(locale)).getOrElse("none".tl(locale)),
-      "weapon" -> user.weapon.map(_.displayName).getOrElse("none".tl(locale)),
+      "weapon" -> user.weapon.map(_.displayName(locale)).getOrElse("none".tl(locale)),
       "char" -> user.char.map(_.name(locale)).getOrElse("none".tl(locale)),
     )).transformed[SkullMeta](_.setOwningPlayer(player)).toStaticComponent
     layout.apply('P', () => profileItem)

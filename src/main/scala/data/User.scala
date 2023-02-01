@@ -157,11 +157,6 @@ case class User(
         inventory += index -> item
         p.getInventory.setItem(index, null)
       })
-
-      p.getInventory.setItem(
-        0,
-        ItemStackBuilder.of(weapon.get.material).name(weapon.get.displayName).flags(ItemFlag.HIDE_ATTRIBUTES).build(),
-      )
     })
 
   /** Attempts to retrieve the player instance from the user.

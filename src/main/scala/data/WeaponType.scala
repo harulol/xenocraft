@@ -2,6 +2,8 @@ package dev.hawu.plugins.xenocraft
 package data
 
 import org.bukkit.Material
+import dev.hawu.plugins.api.i18n.Locale
+import dev.hawu.plugins.xenocraft.gui.ClassesGUI
 
 /** Represents a type of Blade a class holder can have.
   *
@@ -17,10 +19,17 @@ enum WeaponType(
   val weaponCrit: Double,
   val weaponBlock: Double,
   val weaponStability: Double,
-  name: Option[String] = None,
 ):
 
-  def displayName: String = name.getOrElse(this.toString.split("_").map(_.toLowerCase.capitalize).mkString(" "))
+  /** Retrieves the localized display name.
+    *
+    * @param locale
+    *   the locale
+    * @return
+    *   the display name
+    */
+  def displayName(locale: Locale): String = ClassesGUI.getModule
+    .translate(locale, s"${toString().replace('_', '-').toLowerCase()}")
 
   case VEILED_SWORD
     extends WeaponType(
@@ -83,7 +92,6 @@ enum WeaponType(
       weaponCrit = 0.1,
       weaponBlock = 0.15,
       weaponStability = 0.02,
-      name = Some("Spell Tags: Mondo"),
     )
 
   case SPELL_TAGS_TOTALITY
@@ -93,7 +101,6 @@ enum WeaponType(
       weaponCrit = 0.12,
       weaponBlock = 0.18,
       weaponStability = 0.02,
-      name = Some("Spell Tags: Totality"),
     )
 
   case SHIELDBLADE
@@ -315,7 +322,7 @@ enum WeaponType(
 
   case LUCKY_SEVEN
     extends WeaponType(
-      material = Material.NETHER_STAR,
+      material = Material.NETHERITE_SWORD,
       weaponAttack = 686,
       weaponCrit = 0.5,
       weaponBlock = 0.5,
