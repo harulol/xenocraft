@@ -123,6 +123,7 @@ case class User(
         art match
           case ArtType.INFINITY_BLADE | ArtType.UNLIMITED_SWORD => char.contains(Character.NOAH)
           case ArtType.DOMINION_FLOWER                          => char.contains(Character.MIO)
+          case ArtType.FINAL_LUCKY_SEVEN                        => false
           case _ => if cls.exists(_.isSoulhacker) then art.isSoulhacker && art.isTalent else art.isTalent
 
   /** Apply the class provided and put up the arts, skills and gems memory.

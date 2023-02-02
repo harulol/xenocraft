@@ -2670,6 +2670,90 @@ enum ArtType(
     )
 
   // ================================== //
+  // LUCKY SEVEN ARTS
+  // ================================== //
+  case GRAVITY_BLOW
+    extends ArtType(
+      cls = Some(ClassType.ATTACKER_LUCKY_SEVEN),
+      category = ArtCategory.PHYSICAL,
+      target = ArtTarget.CIRCLE_AOE,
+      powerMultiplier = 2.4,
+      cooldown = 14,
+      cooldownType = ArtRechargeType.TIME,
+      fusionBonus = ArtFusionBonus.DAMAGE,
+      hits = 1,
+    )
+
+  case DIMENSION_RIPPER
+    extends ArtType(
+      cls = Some(ClassType.ATTACKER_LUCKY_SEVEN),
+      category = ArtCategory.PHYSICAL,
+      target = ArtTarget.FRONT_AOE,
+      powerMultiplier = 4.0,
+      cooldown = 10.7,
+      cooldownType = ArtRechargeType.TIME,
+      fusionBonus = ArtFusionBonus.DAMAGE,
+      hits = 1,
+    )
+
+  case TACHYON_SLASH
+    extends ArtType(
+      cls = Some(ClassType.ATTACKER_LUCKY_SEVEN),
+      category = ArtCategory.PHYSICAL,
+      target = ArtTarget.FRONT_AOE,
+      powerMultiplier = 4.0,
+      cooldown = 6.7,
+      cooldownType = ArtRechargeType.TIME,
+      fusionBonus = ArtFusionBonus.DAMAGE,
+      hits = 7,
+    )
+
+  case POWER_RAISER
+    extends ArtType(
+      cls = Some(ClassType.ATTACKER_LUCKY_SEVEN),
+      category = ArtCategory.BUFF,
+      target = ArtTarget.CIRCLE_AOE,
+      cooldown = 2,
+      cooldownType = ArtRechargeType.AUTO_ATTACK,
+      fusionBonus = ArtFusionBonus.DURATION,
+    )
+
+  case NIGHT_BREAKER
+    extends ArtType(
+      cls = Some(ClassType.ATTACKER_LUCKY_SEVEN),
+      category = ArtCategory.PHYSICAL,
+      target = ArtTarget.CIRCLE_AOE,
+      powerMultiplier = 5.4,
+      cooldown = 2,
+      cooldownType = ArtRechargeType.AUTO_ATTACK,
+      fusionBonus = ArtFusionBonus.DURATION,
+      hits = 1,
+    )
+
+  case HARMONIC_WAVE
+    extends ArtType(
+      cls = Some(ClassType.ATTACKER_LUCKY_SEVEN),
+      category = ArtCategory.PHYSICAL,
+      target = ArtTarget.CIRCLE_AOE,
+      powerMultiplier = 5.4,
+      cooldown = 3,
+      cooldownType = ArtRechargeType.AUTO_ATTACK,
+      fusionBonus = ArtFusionBonus.DAMAGE,
+      hits = 4,
+    )
+
+  case FINAL_LUCKY_SEVEN
+    extends ArtType(
+      cls = Some(ClassType.ATTACKER_LUCKY_SEVEN),
+      category = ArtCategory.PHYSICAL,
+      target = ArtTarget.CIRCLE_AOE,
+      powerMultiplier = 12.5,
+      cooldown = 4,
+      cooldownType = ArtRechargeType.ROLE_ACTION,
+      hits = 5,
+    )
+
+  // ================================== //
   // EXCLUSIVE MIO'S ARTS
   // ================================== //
   case DOMINION_FLOWER

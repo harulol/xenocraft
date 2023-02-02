@@ -12,12 +12,6 @@ object ArtManager:
 
   private val map = mutable.Map.empty[ArtType, Art]
 
-  /** Initializes the art manager, binding all arts to its corresponding classes.
-    */
-  def initialize(): Unit =
-    import ArtType.*
-    ClassType.SWORDFIGHTER.arts ++= Seq(GROUND_BEAT, AIR_SLASH, EDGE_THRUST, SHADOW_EYE, SWORD_STRIKE, OVERCLOCK_BUSTER)
-
   /** Retrieves an iterable of all arts.
     *
     * @param includesKeves
@@ -51,30 +45,16 @@ object ArtManager:
     * @param art
     *   the art to unbind
     */
-  def unbind(art: Art): Unit = map -= art.artType
+  def unbind(art: Art | ArtType): Unit = art match
+    case art: Art         => map -= art.artType
+    case artType: ArtType => map -= artType
 
-  /** Unbinds an art type from the art manager.
-    *
-    * @param artType
-    *   the art type to unbind
-    */
-  def unbind(artType: ArtType): Unit = map -= artType
-
-  /** Binds all arts provided to the class type.
-    *
-    * @param cls
-    *   the class type
-    * @param arts
-    *   the arts to bind
-    */
-  def bind(cls: ClassType, arts: ArtType*): Unit = cls.arts ++= arts
-
-  /** Retrieves an optional of the art bound to this type.
+  /** Retrieves the art bound to the art type.
     *
     * @param artType
     *   the art type
     * @return
-    *   the art option
+    *   the art, if any
     */
   def get(artType: ArtType): Option[Art] = map.get(artType)
 

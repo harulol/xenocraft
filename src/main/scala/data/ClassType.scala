@@ -26,8 +26,6 @@ enum ClassType(
   name: Option[String] = None,
 ):
 
-  val arts: mutable.ArrayBuffer[ArtType] = mutable.ArrayBuffer.empty[ArtType]
-  val skills: mutable.ArrayBuffer[SkillType] = mutable.ArrayBuffer.empty[SkillType]
   private val keyName = this.name.getOrElse(this.toString.replace('_', '-')).toLowerCase
 
   /** Retrieves the name of the hero who wields this class.

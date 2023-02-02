@@ -252,4 +252,21 @@ enum SkillType(val cls: Option[ClassType] = None, val material: Material, val is
   case POSITIONAL_ATTACKER extends SkillType(Some(ClassType.SOULHACKER_POWER), Material.EXPERIENCE_BOTTLE, false)
   case DODGE_ACCELERATION extends SkillType(Some(ClassType.SOULHACKER_POWER), Material.RABBIT_FOOT, false)
 
+  // Lucky Seven's special skills. These are not displayed anywhere.
+
+  case _CUT_IN_HALF extends SkillType(Some(ClassType.ATTACKER_LUCKY_SEVEN), Material.NETHER_STAR, false)
+  case _REALM_OF_THE_MASTER extends SkillType(Some(ClassType.ATTACKER_LUCKY_SEVEN), Material.NETHER_STAR, false)
+  case _OPENING_STAND extends SkillType(Some(ClassType.ATTACKER_LUCKY_SEVEN), Material.NETHER_STAR, false)
+  case _SILENT_SWORD extends SkillType(Some(ClassType.ATTACKER_LUCKY_SEVEN), Material.NETHER_STAR, false)
+
+  case _SWORD_OF_PROTECTION extends SkillType(Some(ClassType.HEALER_LUCKY_SEVEN), Material.NETHER_STAR, false)
+  case _UNWAVERING_WILL extends SkillType(Some(ClassType.HEALER_LUCKY_SEVEN), Material.NETHER_STAR, false)
+  case _ENCOURAGEMENT extends SkillType(Some(ClassType.HEALER_LUCKY_SEVEN), Material.NETHER_STAR, false)
+  case _EXTINGUISHING_BLOODLUST extends SkillType(Some(ClassType.HEALER_LUCKY_SEVEN), Material.NETHER_STAR, false)
+
+  case _NEVER_AGAIN extends SkillType(Some(ClassType.DEFENDER_LUCKY_SEVEN), Material.NETHER_STAR, false)
+  case _FLASH_OF_AVOIDANCE extends SkillType(Some(ClassType.DEFENDER_LUCKY_SEVEN), Material.NETHER_STAR, false)
+  case __UNWAVERING_WILL extends SkillType(Some(ClassType.DEFENDER_LUCKY_SEVEN), Material.NETHER_STAR, false)
+  case _I_WILL_TAKE_OVER extends SkillType(Some(ClassType.DEFENDER_LUCKY_SEVEN), Material.NETHER_STAR, false)
+
 end SkillType
