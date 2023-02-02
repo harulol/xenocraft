@@ -14,6 +14,7 @@ import java.util.UUID
 import scala.collection.{mutable, GenMap}
 import scala.jdk.CollectionConverters.*
 import scala.util.{Failure, Random, Success, Try}
+import dev.hawu.plugins.xenocraft.skills.SkillManager
 
 /** Represents a player's data.
   *
@@ -135,6 +136,10 @@ case class User(
     if cls.exists(_.isSoulhacker) then classMemory.put(ClassType.SOULHACKER_POWER, ClassMemory(this))
     else cls.foreach(classMemory.put(_, ClassMemory(this)))
 
+    if cls.isDefined then
+      SkillType.values.filter(_.cls.get == cls.get).map(SkillManager.get).filter(_.isDefined).map(_.get)
+        .foreach(_.safeUnapply(this))
+
     if clazz.isDefined then
       val memory = classMemory.get(if clazz.exists(_.isSoulhacker) then ClassType.SOULHACKER_POWER else clazz.get)
       if memory.isDefined then
@@ -150,6 +155,10 @@ case class User(
         Array.ofDim[(GemType, Int)](3).copyToArray(gems)
         talentArt = ArtType.values.filter(_.isTalent).find(_.cls.contains(clazz.get))
         applyClass(cls)
+
+      SkillType.values.filter(_.cls.get == clazz.get).map(SkillManager.get).filter(_.isDefined).map(_.get)
+        .foreach(_.safeApply(this))
+    end if
 
   end applyClass
 

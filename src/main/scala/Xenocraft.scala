@@ -14,6 +14,7 @@ import org.bukkit.configuration.serialization.ConfigurationSerialization
 import org.bukkit.plugin.java.JavaPlugin
 
 import java.io.InputStreamReader
+import dev.hawu.plugins.xenocraft.skills.SkillManager
 
 /** Represents the plugin entrypoint.
   */
@@ -27,6 +28,7 @@ class Xenocraft extends JavaPlugin:
     modules.foreach(_.initialize(this))
     serializables.foreach(ConfigurationSerialization.registerClass)
 
+    SkillManager.initialize()
     UserMap.initialize(this)
     BattlefieldListener.initialize(this)
     Configuration.initialize(this)

@@ -32,22 +32,18 @@ object UserMap extends Listener:
           val config = YamlConfiguration.loadConfiguration(file)
           val user = config.get("data").asInstanceOf[User]
           map.put(user.uuid, user)
+          user.applyClass(user.cls)
         } catch
           case e: Exception =>
             e.printStackTrace()
-            ConsoleLogger.severef(
-              pl,
-              "Couldn't properly load %s: %s",
-              file.getName,
-              e.getMessage
-            )
+            ConsoleLogger.severef(pl, "Couldn't properly load %s: %s", file.getName, e.getMessage)
       }
 
-    Bukkit.getOfflinePlayers
-      .filter(p => !map.contains(p.getUniqueId))
-      .foreach { p =>
-        map.put(p.getUniqueId, User(p.getUniqueId))
-      }
+    Bukkit.getOfflinePlayers.filter(p => !map.contains(p.getUniqueId)).foreach { p =>
+      map.put(p.getUniqueId, User(p.getUniqueId))
+    }
+
+  end initialize
 
   /** Saves all users.
     *
@@ -68,18 +64,14 @@ object UserMap extends Listener:
       } catch
         case e: Exception =>
           e.printStackTrace()
-          ConsoleLogger.severef(
-            pl,
-            "Couldn't properly save %s.yml: %s",
-            uuid.toString,
-            e.getMessage
-          )
+          ConsoleLogger.severef(pl, "Couldn't properly save %s.yml: %s", uuid.toString, e.getMessage),
     )
 
+  end save
+
   @EventHandler
-  private def onJoin(event: PlayerJoinEvent): Unit =
-    if !map.contains(event.getPlayer.getUniqueId) then
-      map.put(event.getPlayer.getUniqueId, User(event.getPlayer.getUniqueId))
+  private def onJoin(event: PlayerJoinEvent): Unit = if !map.contains(event.getPlayer.getUniqueId) then
+    map.put(event.getPlayer.getUniqueId, User(event.getPlayer.getUniqueId))
 
   extension (player: OfflinePlayer) {
 
@@ -91,3 +83,5 @@ object UserMap extends Listener:
     def user: Option[User] = map.get(player.getUniqueId)
 
   }
+
+end UserMap
