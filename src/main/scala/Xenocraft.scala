@@ -19,7 +19,7 @@ import java.io.InputStreamReader
   */
 class Xenocraft extends JavaPlugin:
 
-  private val modules = List(CharactersGUI, ClassesGUI, GemsGUI, MainGUI, ArtsGUI, I18n)
+  private val modules = List(CharactersGUI, ClassesGUI, GemsGUI, MainGUI, ArtsGUI, SkillsGUI, I18n)
   private val serializables = List(classOf[User], classOf[ClassMemory])
 
   override def onEnable(): Unit =
@@ -27,7 +27,6 @@ class Xenocraft extends JavaPlugin:
     modules.foreach(_.initialize(this))
     serializables.foreach(ConfigurationSerialization.registerClass)
 
-    StatsGui.initialize(this)
     UserMap.initialize(this)
     BattlefieldListener.initialize(this)
     Configuration.initialize(this)

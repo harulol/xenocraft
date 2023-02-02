@@ -38,7 +38,7 @@ object MainGUI extends ModuleHolder("main-ui"):
     '2' -> ClassesGUI.openClasses,
     '3' -> ArtsGUI.openArts,
     '4' -> GemsGUI.openGems,
-    '5' -> ((p: Player) => openMain(p)),
+    '5' -> SkillsGUI.openSkills,
     '6' -> ((p: Player) => openMain(p)),
   )
 
@@ -99,6 +99,9 @@ object MainGUI extends ModuleHolder("main-ui"):
     applyNavigationButtons(' ', layout)
 
     // The profile button, just there to show you what you have chosen.
+    val className =
+      if user.cls.exists(_.isSoulhacker) then user.cls.map(_.soulhackerName(locale)).get
+      else user.cls.map(_.displayName(locale)).getOrElse("none".tl(locale))
     val profileItem = ItemStackBuilder.from(I18n.translateItem(
       Material.PLAYER_HEAD -> 1,
       "profile-item",
@@ -112,7 +115,7 @@ object MainGUI extends ModuleHolder("main-ui"):
       "block-rate" -> (user.blockRate * 100).intValue,
       "physical-def" -> (user.physicalDef * 100).intValue,
       "ether-def" -> (user.etherDef * 100).intValue,
-      "class" -> user.cls.map(_.displayName(locale)).getOrElse("none".tl(locale)),
+      "class" -> className,
       "weapon" -> user.weapon.map(_.displayName(locale)).getOrElse("none".tl(locale)),
       "char" -> user.char.map(_.name(locale)).getOrElse("none".tl(locale)),
     )).transformed[SkullMeta](_.setOwningPlayer(player)).toStaticComponent

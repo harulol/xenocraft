@@ -25,6 +25,7 @@ import scala.jdk.CollectionConverters.*
 case class ClassMemory(
   weapon: Option[WeaponType] = None,
   masterArts: Array[ArtType] = Array.ofDim(3),
+  masterSkills: Array[SkillType] = Array.ofDim(3),
   arts: Array[ArtType] = Array.ofDim(3),
   gems: Array[(GemType, Int)] = Array.ofDim(3),
   talentArt: Option[ArtType] = None,
@@ -40,13 +41,20 @@ case class ClassMemory(
     user.weapon = weapon
     masterArts.copyToArray(user.masterArts)
     arts.copyToArray(user.arts)
+
+    masterSkills.copyToArray(user.masterSkills)
+
+    user.gems.filter(_ != null).foreach(user.unapplyGem)
     gems.copyToArray(user.gems)
+    gems.filter(_ != null).foreach(user.applyGem)
+
     if talentArt.isDefined then user.talentArt = if user.canUseArtAs(talentArt.get, "talent") then talentArt else None
     else user.talentArt = None
 
   override def serialize(): util.Map[String, Any] = Map(
     "weapon" -> weapon.map(_.toString).orNull,
     "master-arts" -> masterArts.map(Option.apply).map(_.map(_.toString).orNull).toList.asJava,
+    "master-skills" -> masterSkills.map(skill => if skill != null then skill.toString else null).toList.asJava,
     "arts" -> arts.map(Option.apply).map(_.map(_.toString).orNull).toList.asJava,
     "gems" -> {
       val buffer = ArrayBuffer.empty[String]

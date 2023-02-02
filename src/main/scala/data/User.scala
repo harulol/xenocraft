@@ -40,12 +40,14 @@ case class User(
   masterArts: Array[ArtType] = Array.ofDim(3),
   arts: Array[ArtType] = Array.ofDim(3),
   gems: Array[(GemType, Int)] = Array.ofDim(3),
+  masterSkills: Array[SkillType] = Array.ofDim(3),
   var talentArt: Option[ArtType] = None,
 ) extends ConfigurationSerializable with Attributable(_uuid):
 
   private val inventory = mutable.Map.empty[Int, ItemStack]
   private val classMemory = mutable.Map.empty[ClassType, ClassMemory]
   var bladeUnsheathed = false
+  var lastSoulhackerSoul: Option[ClassType] = None
 
   /** Checks if a certain art is currently already being selected.
     *
@@ -73,6 +75,20 @@ case class User(
       arr(index) = arr(slot)
       arr(slot) = art
     else arr(slot) = art
+
+  /** Attempts to equip a skill.
+    *
+    * @param skill
+    *   the skill
+    * @param slot
+    *   the slot
+    */
+  def equipMasterSkill(skill: SkillType, slot: Int): Unit =
+    val index = masterSkills.indexOf(skill)
+    if index >= 0 then
+      masterSkills(index) = masterSkills(slot)
+      masterSkills(slot) = skill
+    else masterSkills(slot) = skill
 
   /** Attempts to apply a character, ridding the player of the talent art they would not have access to.
     *
@@ -115,9 +131,11 @@ case class User(
     *   the class to apply
     */
   def applyClass(clazz: Option[ClassType]): Unit =
-    cls.foreach(classMemory.put(_, ClassMemory(this)))
+    if cls.exists(_.isSoulhacker) then classMemory.put(ClassType.SOULHACKER_POWER, ClassMemory(this))
+    else cls.foreach(classMemory.put(_, ClassMemory(this)))
+
     if clazz.isDefined then
-      val memory = classMemory.get(clazz.get)
+      val memory = classMemory.get(if clazz.exists(_.isSoulhacker) then ClassType.SOULHACKER_POWER else clazz.get)
       if memory.isDefined then
         memory.get.apply(this)
         cls = clazz
@@ -240,10 +258,12 @@ case class User(
     "weapon" -> weapon.map(_.toString).orNull,
     "character" -> char.map(_.toString).orNull,
     "masterArts" -> masterArts.map(art => if art != null then art.toString else null).toList.asJava,
+    "masterSkills" -> masterSkills.map(skill => if skill != null then skill.toString else null).toList.asJava,
     "arts" -> arts.map(art => if art != null then art.toString else null).toList.asJava,
     "gems" -> gems.map(tuple => if tuple != null then s"${tuple._1.toString}:${tuple._2}" else null).toList.asJava,
     "talentArt" -> talentArt.map(_.toString).orNull,
     "memory" -> classMemory.map(entry => entry._1.toString -> entry._2).asJava,
+    "latestSoul" -> lastSoulhackerSoul.map(_.toString()).orNull,
   ).asJava
 
   /** Logic to unapply a gem, removing the gem's special buffs.
@@ -330,8 +350,10 @@ object User:
     val weapon = tryGetting("weapon", WeaponType.valueOf)
     val char = tryGetting("character", Character.valueOf)
     val talentArt = tryGetting("talentArt", ArtType.valueOf)
+    val lastSoulhackerSoul = tryGetting("latestSoul", ClassType.valueOf)
 
     val masterArts = tryGettingArray("masterArts", ArtType.valueOf).toArray[ArtType]
+    val masterSkills = tryGettingArray("masterSkills", SkillType.valueOf).toArray[SkillType]
     val arts = tryGettingArray("arts", ArtType.valueOf).toArray[ArtType]
     val gems = tryGettingArray("gems", String.valueOf).toArray[String].map(s => {
       if s != null && s != "null" then
@@ -343,9 +365,10 @@ object User:
     val memory = map.get("memory").asInstanceOf[util.Map[String, ClassMemory]].asScala
       .map(entry => ClassType.valueOf(entry._1) -> entry._2)
 
-    val user = User(uuid, cls, weapon, char, masterArts, arts, gems, talentArt)
+    val user = User(uuid, cls, weapon, char, masterArts, arts, gems, masterSkills, talentArt)
     gems.filter(_ != null).foreach(user.applyGem)
     user.classMemory ++= memory
+    user.lastSoulhackerSoul = lastSoulhackerSoul
     user
 
   end deserialize

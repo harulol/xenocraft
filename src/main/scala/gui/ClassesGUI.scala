@@ -38,7 +38,7 @@ object ClassesGUI extends ModuleHolder("classes-ui"):
     GuiPaginator.newBuilder[ClassType]().setModelSupplier(() => {
       val model = I18n.translateModel(54, "classes-ui-title")
       MainGUI.applyNavigationBar(model, '2', Material.PINK_STAINED_GLASS_PANE)
-      model.mount(2, WeaponSelectComponent(user, player))
+      if user.canChooseWeapon then model.mount(2, WeaponSelectComponent(user, player))
       model
     }).setCollection(ClassType.values.filter(_.shouldDisplay).toList.asJava).setAllowedSlots(MainGUI.getPaginationSlots)
       .setPredicate(null).setPreviousButtonSlots(Set(47).map(Integer.valueOf).asJava)
@@ -46,7 +46,15 @@ object ClassesGUI extends ModuleHolder("classes-ui"):
         new GuiComponent[Unit]() {
           override def handleClick(event: InventoryClickEvent): Unit =
             event.setCancelled(true)
-            user.applyClass(Some(cls))
+
+            // Something just to save the last chosen soul, so when you select soulhacker again,
+            // it goes straight to that soul instead of Power Soul.
+            if cls.isSoulhacker then
+              if user.lastSoulhackerSoul.isDefined then user.applyClass(user.lastSoulhackerSoul)
+              else
+                user.applyClass(Some(cls))
+                user.lastSoulhackerSoul = Some(cls)
+            else user.applyClass(Some(cls))
             MainGUI.openMain(player)
 
           override def render(): ItemStack = ItemStackBuilder.from(I18n.translateItem(
@@ -101,7 +109,7 @@ object ClassesGUI extends ModuleHolder("classes-ui"):
 
     override def render(): ItemStack = I18n.translateItem(
       weapon.material -> 1,
-      if upgraded then "normal-weapon" else "upgraded-weapon",
+      if upgraded then "upgraded-weapon" else "normal-weapon",
       "name" -> weapon.displayName(locale),
       "selection" -> (if user.weapon.contains(weapon) then "selected".tl(locale) else "not-selected".tl(locale)),
     )(using module, player)
@@ -122,10 +130,14 @@ object ClassesGUI extends ModuleHolder("classes-ui"):
       event.setCancelled(true)
       openWeaponSelect(player)
 
-    override def render(): ItemStack = I18n.translateItem(
-      Material.GHAST_TEAR -> 1,
-      "weapon-select",
-      "weapon" -> user.weapon.map(_.displayName(locale)).getOrElse("none".tl(locale)),
-    )(using module, player)
+    override def render(): ItemStack = ItemStackBuilder.from(
+      I18n.translateItem(
+        Material.GHAST_TEAR -> 1,
+        "weapon-select",
+        "weapon" -> user.weapon.map(_.displayName(locale)).getOrElse("none".tl(locale)),
+      )(using module, player),
+    ).flags(ItemFlag.HIDE_ATTRIBUTES, ItemFlag.HIDE_POTION_EFFECTS).build()
+
+  end WeaponSelectComponent
 
 end ClassesGUI

@@ -3,7 +3,7 @@ package commands
 
 import dev.hawu.plugins.api.commands.*
 import dev.hawu.plugins.xenocraft.UserMap.user
-import dev.hawu.plugins.xenocraft.gui.{MainGUI, StatsGui}
+import dev.hawu.plugins.xenocraft.gui.MainGUI
 
 /** The command handlers for /stats.
   */

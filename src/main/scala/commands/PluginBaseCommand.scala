@@ -4,7 +4,7 @@ package commands
 import dev.hawu.plugins.api.commands.*
 import dev.hawu.plugins.xenocraft.I18n.*
 import dev.hawu.plugins.xenocraft.data.{Character, ClassType}
-import dev.hawu.plugins.xenocraft.gui.{CharactersGUI, MainGUI, StatsGui}
+import dev.hawu.plugins.xenocraft.gui.{CharactersGUI, MainGUI}
 import org.bukkit.plugin.java.JavaPlugin
 
 import java.util
@@ -30,9 +30,7 @@ class PluginBaseCommand(private val plugin: JavaPlugin) extends CommandRegistrab
     reload(force)
     if force then sender.getBase.tl("overwritten-messages") else sender.getBase.tl("reloaded-messages")
 
-  private def reload(force: Boolean): Unit =
-    Xenocraft.getModels.foreach(_.reload(force))
-    StatsGui.reload(force)
+  private def reload(force: Boolean): Unit = Xenocraft.getModels.foreach(_.reload(force))
 
   @TabExecute("xenocraft reload") @CommandPermission(Array("xenocraft.reload"))
   def reloadTab(sender: CommandSource, args: CommandArgument): util.List[String] =
