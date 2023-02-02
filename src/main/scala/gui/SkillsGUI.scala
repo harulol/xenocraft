@@ -50,7 +50,8 @@ object SkillsGUI extends ModuleHolder("skills-ui"):
 
     // Retrieve class skills as this should not be customizable.
     val classSkills = Array.ofDim[SkillType](4)
-    SkillType.values.filter(_.cls.exists(_ == user.cls.orNull)).copyToArray(classSkills)
+    if user.cls.exists(_.isSoulhacker) then classSkills(0) = SkillType.SOUL_HACK
+    else SkillType.values.filter(_.cls.exists(_ == user.cls.orNull)).copyToArray(classSkills)
     (22 to 25).foreach(i => model.mount(i, StaticComponent(getSkillDisplay(classSkills(i - 22)))))
 
     // Master skills are however, customizable.
@@ -87,9 +88,8 @@ object SkillsGUI extends ModuleHolder("skills-ui"):
     val user = player.user.get
     var skills = SkillType.values
 
-    if user.cls.exists(_.isSoulhacker) then skills = skills.filter(_.isSoulhacker)
-    else if user.cls.exists(_.nation == ClassNation.KEVES) then skills = skills.filter(_.isAgnian).filter(_.isMaster)
-    else if user.cls.exists(_.nation == ClassNation.AGNUS) then skills = skills.filter(_.isKevesi).filter(_.isMaster)
+    if user.cls.exists(_.isSoulhacker) then skills = skills.filter(s => s.isSoulhacker && s != SkillType.SOUL_HACK)
+    else if user.cls.isDefined then skills = skills.filter(_.isMaster).filter(_.cls.get != user.cls.get)
     else skills = Array.ofDim(0)
 
     GuiPaginator.newBuilder[SkillType]().setCollection(skills.toList.asJava).setModelSupplier(() => {
@@ -105,7 +105,7 @@ object SkillsGUI extends ModuleHolder("skills-ui"):
 
         override def render(): ItemStack = getSkillDisplay(skill, true)
       },
-    ).setPreviousButtonSlots(Set(47).map(Integer.valueOf).asJava)
+    ).setPredicate(null).setPreviousButtonSlots(Set(47).map(Integer.valueOf).asJava)
       .setNextButtonSlots(Set(53).map(Integer.valueOf).asJava).setBackSlots(Set(2).map(Integer.valueOf).asJava)
       .setBackAction(_ => openSkills(player)).build(player)
 

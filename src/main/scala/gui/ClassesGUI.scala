@@ -107,12 +107,14 @@ object ClassesGUI extends ModuleHolder("classes-ui"):
       user.weapon = Some(weapon)
       MainGUI.openMain(player)
 
-    override def render(): ItemStack = I18n.translateItem(
-      weapon.material -> 1,
-      if upgraded then "upgraded-weapon" else "normal-weapon",
-      "name" -> weapon.displayName(locale),
-      "selection" -> (if user.weapon.contains(weapon) then "selected".tl(locale) else "not-selected".tl(locale)),
-    )(using module, player)
+    override def render(): ItemStack = ItemStackBuilder.from(
+      I18n.translateItem(
+        weapon.material -> 1,
+        if upgraded then "upgraded-weapon" else "normal-weapon",
+        "name" -> weapon.displayName(locale),
+        "selection" -> (if user.weapon.contains(weapon) then "selected".tl(locale) else "not-selected".tl(locale)),
+      )(using module, player),
+    ).flags(ItemFlag.HIDE_ATTRIBUTES, ItemFlag.HIDE_POTION_EFFECTS).build()
 
   end WeaponComponent
 
