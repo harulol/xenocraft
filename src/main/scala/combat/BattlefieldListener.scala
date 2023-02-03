@@ -36,8 +36,8 @@ object BattlefieldListener extends Listener:
 
     // The task to heal a player anytime they aren't in battle every second.
     Tasks.run(() =>
-      Bukkit.getOnlinePlayers.asScala.flatMap(_.user).filterNot(user => aggro.values.toList.contains(user.uuid))
-        .filterNot(_.bladeUnsheathed).filter(user => user.hp.intValue < user.maxHp.intValue)
+      Bukkit.getOnlinePlayers.asScala.filterNot(isInBattle).flatMap(_.user).filterNot(_.bladeUnsheathed)
+        .filter(user => user.hp.intValue < user.maxHp.intValue)
         .foreach(user => CombatManager.heal(user.player.get, math.floor(user.maxHp * 0.1))),
     ).delay(0).period(20).plugin(pl).run()
 
@@ -51,8 +51,7 @@ object BattlefieldListener extends Listener:
 
       // Auto-sheathe
       val values = aggro.values.toSet
-      Bukkit.getOnlinePlayers.asScala.filter(_ != null).filter(p => values.contains(p.getUniqueId)).flatMap(_.user)
-        .foreach(_.sheathe())
+      Bukkit.getOnlinePlayers.asScala.filter(_ != null).filterNot(isInBattle).flatMap(_.user).foreach(_.sheathe())
 
       aggro.map[LivingEntity, Player](entry =>
         Bukkit.getEntity(entry._1).asInstanceOf[LivingEntity] -> Bukkit.getPlayer(entry._2),
@@ -61,6 +60,15 @@ object BattlefieldListener extends Listener:
     }.delay(0).period(2).async(true).plugin(pl).run()
 
   end initialize
+
+  /** Checks if a player is in battle.
+    *
+    * @param player
+    *   the player to check.
+    * @return
+    *   true if the player is in battle, false otherwise.
+    */
+  def isInBattle(player: Player): Boolean = aggro.values.toList.contains(player.getUniqueId)
 
   @EventHandler
   private def onDamage(event: EntityDamageEvent): Unit = event.getEntity match
@@ -83,6 +91,7 @@ object BattlefieldListener extends Listener:
       val user = player.user.get
       val percentage = event.getFinalDamage / player.getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue
       CombatManager.damage(player, user.maxHp * percentage)
+      player.setNoDamageTicks(10)
     case _ => ()
 
   @EventHandler

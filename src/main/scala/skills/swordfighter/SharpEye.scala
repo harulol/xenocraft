@@ -6,7 +6,7 @@ import dev.hawu.plugins.xenocraft.skills.Skill
 import dev.hawu.plugins.xenocraft.data.User
 import dev.hawu.plugins.xenocraft.skills.SkillManager
 
-/** The skill handler for
+/** The skill handler for the skill that boosts your Dexterity.
   */
 object SharpEye extends Skill(SkillType.SHARP_EYE):
   private val DEXTERITY_VALUE = 0.5

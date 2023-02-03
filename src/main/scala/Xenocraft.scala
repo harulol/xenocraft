@@ -12,9 +12,12 @@ import dev.hawu.plugins.xenocraft.utils.Configuration
 import org.bukkit.configuration.file.YamlConfiguration
 import org.bukkit.configuration.serialization.ConfigurationSerialization
 import org.bukkit.plugin.java.JavaPlugin
-
+import org.bukkit.Bukkit
 import java.io.InputStreamReader
 import dev.hawu.plugins.xenocraft.skills.SkillManager
+import scala.jdk.CollectionConverters.*
+import dev.hawu.plugins.xenocraft.UserMap.user
+import _root_.combat.DropsListener
 
 /** Represents the plugin entrypoint.
   */
@@ -35,9 +38,11 @@ class Xenocraft extends JavaPlugin:
 
     ChatHologramListener.initialize(this)
     CommandRegistry.register(this, new StatsCommand, PluginBaseCommand(this), new ArtCommand)
-    Events.registerEvents(this, ChatHologramListener, UserMap)
+    Events.registerEvents(this, ChatHologramListener, UserMap, DropsListener)
 
   override def onDisable(): Unit =
+    Bukkit.getOnlinePlayers.asScala.flatMap(_.user).foreach(_.sheathe())
+
     UserMap.save(this)
     CommandRegistry.unregister(this)
     Tasks.cancelAllTasks(this)

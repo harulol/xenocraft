@@ -15,6 +15,14 @@ import scala.collection.{mutable, GenMap}
 import scala.jdk.CollectionConverters.*
 import scala.util.{Failure, Random, Success, Try}
 import dev.hawu.plugins.xenocraft.skills.SkillManager
+import dev.hawu.plugins.xenocraft.gui.ClassesGUI
+import dev.hawu.plugins.api.i18n.LanguageModule
+import dev.hawu.plugins.api.adapters.UserAdapter
+import org.bukkit.Material
+import dev.hawu.plugins.xenocraft.gui.ArtsGUI
+import dev.hawu.plugins.xenocraft.events.PlayerUnsheatheEvent
+import dev.hawu.plugins.xenocraft.events.PlayerSheatheEvent
+import dev.hawu.plugins.api.Tasks
 
 /** Represents a player's data.
   *
@@ -47,6 +55,7 @@ case class User(
 
   private val inventory = mutable.Map.empty[Int, ItemStack]
   private val classMemory = mutable.Map.empty[ClassType, ClassMemory]
+  private val cooldownMap = mutable.Map.empty[ArtType, Long]
   var bladeUnsheathed = false
   var lastSoulhackerSoul: Option[ClassType] = None
 
@@ -177,15 +186,47 @@ case class User(
   /** Unsheathe the blade.
     */
   def unsheathe(): Unit =
-    if bladeUnsheathed then return ()
+    if bladeUnsheathed || cls.isEmpty || weapon.isEmpty then return ()
+
     bladeUnsheathed = true
     inventory.clear()
     player.foreach(p => {
+      given Player = p
+      given LanguageModule = ClassesGUI.getModule
+
+      val event = PlayerUnsheatheEvent(p)
+      Tasks.run(() => Bukkit.getPluginManager.callEvent(event)).plugin(Xenocraft.getInstance).run()
+
+      val locale = UserAdapter.getAdapter().getUser(p).getLocale()
       p.getInventory.getContents.zipWithIndex.foreach((item, index) => {
         inventory += index -> item
         p.getInventory.setItem(index, null)
       })
+
+      // Layout the inventory, 1 -> weapon, 2 -> divider
+      // 3 to 5 -> master arts, 6 -> 8, arts, 9 -> talent art
+      val emptySpace = ItemStackBuilder.of(Material.GRAY_STAINED_GLASS_PANE).name(" ").build()
+
+      def tryPutting(index: Int, art: ArtType): Unit =
+        if art == null then p.getInventory().setItem(index, emptySpace)
+        else
+          val artItem = ArtsGUI.retrieveArtDisplay(art, locale, click = false)
+          val artDisplay = ItemStackBuilder.from(artItem).transform(_.setUnbreakable(true))
+            .flags(ItemFlag.HIDE_UNBREAKABLE, ItemFlag.HIDE_ATTRIBUTES, ItemFlag.HIDE_POTION_EFFECTS).build()
+          p.getInventory().setItem(index, artDisplay)
+
+      val weaponItem = I18n.translateItem(weapon.get.material -> 1, "weapon", "name" -> weapon.get.displayName(locale))
+      val weaponFlaggedItem = ItemStackBuilder.from(weaponItem).transform(_.setUnbreakable(true))
+        .flags(ItemFlag.HIDE_ATTRIBUTES, ItemFlag.HIDE_POTION_EFFECTS, ItemFlag.HIDE_UNBREAKABLE).build()
+      p.getInventory().setItem(0, weaponFlaggedItem)
+      p.getInventory().setItem(1, ItemStackBuilder.of(Material.BLACK_STAINED_GLASS_PANE).name(" ").build())
+
+      (2 to 4).zip(masterArts).foreach(tryPutting)
+      (5 to 7).zip(arts).foreach(tryPutting)
+      tryPutting(8, talentArt.orNull)
     })
+
+  end unsheathe
 
   /** Attempts to retrieve the player instance from the user.
     *
@@ -199,7 +240,11 @@ case class User(
   def sheathe(): Unit =
     if !bladeUnsheathed then return ()
     bladeUnsheathed = false
-    player.foreach(p => { inventory.foreach((index, item) => p.getInventory.setItem(index, item)) })
+    player.foreach { p =>
+      val event = PlayerSheatheEvent(p)
+      Tasks.run(() => Bukkit.getPluginManager.callEvent(event)).plugin(Xenocraft.getInstance).run()
+      inventory.foreach((index, item) => p.getInventory.setItem(index, item))
+    }
     inventory.clear()
 
   /** Sets the HP value of the player.
@@ -306,7 +351,6 @@ case class User(
     case GemType.IRON_CLAD           => flatHp -= gem.value1At(level)
     case GemType.STEADY_STRIKER      => rechargeSpeed -= gem.value1At(level)
     case GemType.DOUBLESTRIKE        => doubleHits -= gem.value1At(level)
-    case GemType.EMPOWERED_COMBO     => damageBonus3 -= gem.value1At(level)
     case GemType.DISPERSE_BLOODLUST  => artAggroGeneration += gem.value1At(level)
     case _                           => ()
 
@@ -342,7 +386,6 @@ case class User(
     case GemType.IRON_CLAD           => flatHp += gem.value1At(level)
     case GemType.STEADY_STRIKER      => rechargeSpeed += gem.value1At(level)
     case GemType.DOUBLESTRIKE        => doubleHits += gem.value1At(level)
-    case GemType.EMPOWERED_COMBO     => damageBonus3 += gem.value1At(level)
     case GemType.DISPERSE_BLOODLUST  => artAggroGeneration -= gem.value1At(level)
     case _                           => ()
 

@@ -36,6 +36,7 @@ trait Attributable(val uuid: UUID):
 
   // AGGRO CALCULATIONS
   var aggro = 0.0
+  var autoAggroGeneration = 1.0
   var artAggroGeneration = 1.0
 
   // RECHARGE CALCULATIONS
@@ -43,9 +44,6 @@ trait Attributable(val uuid: UUID):
   var doubleHits = 1.0
 
   // BATTLE CALCULATIONS
-  var damageBonus1 = 0.0
-  var damageBonus2 = 0.0
-  var damageBonus3 = 0.0
   var buffPower = 0.0
   var buffDurationBonus = 0.0
   var debuffPower = 0.0

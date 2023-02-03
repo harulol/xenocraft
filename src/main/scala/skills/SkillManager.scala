@@ -6,6 +6,8 @@ import scala.collection.mutable
 import dev.hawu.plugins.api.events.Events
 import org.bukkit.event.HandlerList
 import dev.hawu.plugins.xenocraft.skills.swordfighter.*
+import _root_.skills.swordfighter.CypherEdge
+import _root_.skills.swordfighter.CovertAttack
 
 /** Represents a single object to manage how skill types are bound to a specific skill object.
   */
@@ -15,16 +17,16 @@ object SkillManager:
 
   /** Attempts to initialize the skill manager.
     */
-  def initialize(): Unit = bind(SharpEye)
+  def initialize(): Unit = bind(SharpEye, CypherEdge, CovertAttack)
 
   /** Binds a skill.
     *
     * @param skill
     *   the skill
     */
-  def bind(skill: Skill): Unit =
-    map += skill.skillType -> skill
-    Events.registerEvents(Xenocraft.getInstance, skill)
+  def bind(skills: Skill*): Unit =
+    skills.foreach(it => map += it.skillType -> it)
+    Events.registerEvents(Xenocraft.getInstance, skills: _*)
 
   /** Unbinds a skill.
     *

@@ -132,7 +132,22 @@ object ArtsGUI extends ModuleHolder("arts-ui"):
     MainGUI.applyNavigationBar(model, '3', Material.LIGHT_BLUE_STAINED_GLASS_PANE)
     model
 
-  private def retrieveArtDisplay(art: ArtType, locale: Locale, detailed: Boolean = false)(using
+  /** Retrieves the display of the art.
+    *
+    * @param art
+    *   the art
+    * @param locale
+    *   the locale
+    * @param detailed
+    *   whether to display detailed information
+    * @param player
+    *   the player
+    * @param click
+    *   whether to include the "click to change" thing
+    * @return
+    *   the display
+    */
+  def retrieveArtDisplay(art: ArtType, locale: Locale, detailed: Boolean = false, click: Boolean = true)(using
     player: Player,
   ): ItemStack =
     val user = player.user.get
@@ -140,7 +155,7 @@ object ArtsGUI extends ModuleHolder("arts-ui"):
       if !detailed then
         I18n.translateItem(
           art.icon -> 1,
-          "art",
+          if click then "art" else "art-usage",
           "reaction" -> art.reaction.map(_.name(locale)).getOrElse("&7---"),
           "name" -> art.name(locale),
           "description" -> Strings.chop(art.description(locale), 32),
