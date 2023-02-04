@@ -1,3 +1,4 @@
+package dev.hawu.plugins.xenocraft
 package combat
 
 import org.bukkit.event.Listener
@@ -12,6 +13,7 @@ import org.bukkit.event.entity.EntityPickupItemEvent
 import org.bukkit.entity.Player
 import dev.hawu.plugins.xenocraft.UserMap.user
 import org.bukkit.event.player.PlayerPickupArrowEvent
+import dev.hawu.plugins.xenocraft.I18n.tl
 
 /** The listener for handling entity drops when the player goes into combat mode.
   */
@@ -31,8 +33,10 @@ object DropsListener extends Listener:
     )
 
   @EventHandler
-  private def onUnsheathe(event: PlayerUnsheatheEvent): Unit = if drops.contains(event.getPlayer().getUniqueId()) then
-    drops(event.getPlayer().getUniqueId()) = ArrayBuffer.empty[ItemStack]
+  private def onUnsheathe(event: PlayerUnsheatheEvent): Unit =
+    event.getPlayer().tl("unsheathed")
+    if drops.contains(event.getPlayer().getUniqueId()) then
+      drops(event.getPlayer().getUniqueId()) = ArrayBuffer.empty[ItemStack]
 
   @EventHandler
   private def onPickupArrow(event: PlayerPickupArrowEvent): Unit =

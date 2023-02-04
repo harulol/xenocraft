@@ -17,6 +17,7 @@ import org.bukkit.{Bukkit, EntityEffect}
 import java.util.UUID
 import scala.collection.mutable
 import scala.jdk.CollectionConverters.*
+import dev.hawu.plugins.xenocraft.I18n.tl
 
 /** The singleton object dedicated to listening for events related to fields.
   */
@@ -100,10 +101,11 @@ object BattlefieldListener extends Listener:
       val user = player.user.get
       if !user.bladeUnsheathed then
         event.getEntity match
-          case mob: Mob =>
-            if mob != null && mob.getTarget != null && mob.getTarget.getUniqueId == player.getUniqueId then
+          case mob: Mob => if mob != null && !mob.isInstanceOf[Animals] then
               user.unsheathe()
+              mob.setTarget(player)
               event.setCancelled(true)
+              aggro.put(mob.getUniqueId(), player.getUniqueId())
           case _ => ()
     case _ => ()
 

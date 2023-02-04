@@ -23,6 +23,8 @@ import dev.hawu.plugins.xenocraft.gui.ArtsGUI
 import dev.hawu.plugins.xenocraft.events.PlayerUnsheatheEvent
 import dev.hawu.plugins.xenocraft.events.PlayerSheatheEvent
 import dev.hawu.plugins.api.Tasks
+import org.bukkit.event.entity.PlayerDeathEvent
+import dev.hawu.plugins.xenocraft.combat.HotbarManager
 
 /** Represents a player's data.
   *
@@ -55,7 +57,6 @@ case class User(
 
   private val inventory = mutable.Map.empty[Int, ItemStack]
   private val classMemory = mutable.Map.empty[ClassType, ClassMemory]
-  private val cooldownMap = mutable.Map.empty[ArtType, Long]
   var bladeUnsheathed = false
   var lastSoulhackerSoul: Option[ClassType] = None
 
@@ -203,27 +204,8 @@ case class User(
         p.getInventory.setItem(index, null)
       })
 
-      // Layout the inventory, 1 -> weapon, 2 -> divider
-      // 3 to 5 -> master arts, 6 -> 8, arts, 9 -> talent art
-      val emptySpace = ItemStackBuilder.of(Material.GRAY_STAINED_GLASS_PANE).name(" ").build()
-
-      def tryPutting(index: Int, art: ArtType): Unit =
-        if art == null then p.getInventory().setItem(index, emptySpace)
-        else
-          val artItem = ArtsGUI.retrieveArtDisplay(art, locale, click = false)
-          val artDisplay = ItemStackBuilder.from(artItem).transform(_.setUnbreakable(true))
-            .flags(ItemFlag.HIDE_UNBREAKABLE, ItemFlag.HIDE_ATTRIBUTES, ItemFlag.HIDE_POTION_EFFECTS).build()
-          p.getInventory().setItem(index, artDisplay)
-
-      val weaponItem = I18n.translateItem(weapon.get.material -> 1, "weapon", "name" -> weapon.get.displayName(locale))
-      val weaponFlaggedItem = ItemStackBuilder.from(weaponItem).transform(_.setUnbreakable(true))
-        .flags(ItemFlag.HIDE_ATTRIBUTES, ItemFlag.HIDE_POTION_EFFECTS, ItemFlag.HIDE_UNBREAKABLE).build()
-      p.getInventory().setItem(0, weaponFlaggedItem)
-      p.getInventory().setItem(1, ItemStackBuilder.of(Material.BLACK_STAINED_GLASS_PANE).name(" ").build())
-
-      (2 to 4).zip(masterArts).foreach(tryPutting)
-      (5 to 7).zip(arts).foreach(tryPutting)
-      tryPutting(8, talentArt.orNull)
+      HotbarManager.setHotbar(this, p)
+      p.getInventory().setHeldItemSlot(0)
     })
 
   end unsheathe
@@ -261,12 +243,14 @@ case class User(
         val value = p.getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue * percentage
         if value <= 0 then
           setHp(maxHp)
-          p.teleport(p.getWorld.getSpawnLocation)
+          Tasks.run(_ => p.teleport(p.getWorld.getSpawnLocation)).plugin(Xenocraft.getInstance).run()
         else if value < p.getHealth then
           p.setHealth(value)
           p.playEffect(EntityEffect.HURT)
         else p.setHealth(value)
       })
+
+  end setHp
 
   override def maxHp: Double = Formulas.calculateHp(this)
 
