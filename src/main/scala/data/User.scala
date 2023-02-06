@@ -25,6 +25,7 @@ import dev.hawu.plugins.xenocraft.events.PlayerSheatheEvent
 import dev.hawu.plugins.api.Tasks
 import org.bukkit.event.entity.PlayerDeathEvent
 import dev.hawu.plugins.xenocraft.combat.HotbarManager
+import dev.hawu.plugins.xenocraft.events.PlayerIncapitateEvent
 
 /** Represents a player's data.
   *
@@ -245,7 +246,9 @@ case class User(
         val value = p.getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue * percentage
         if value <= 0 then
           setHp(maxHp)
-          Tasks.run(_ => p.teleport(p.getWorld.getSpawnLocation)).plugin(Xenocraft.getInstance).run()
+          val deathEvent = PlayerIncapitateEvent(p)
+          Bukkit.getPluginManager().callEvent(deathEvent)
+          Tasks.run(_ => p.teleport(p.getWorld.getSpawnLocation)).run()
         else if value < p.getHealth then
           p.setHealth(value)
           p.playEffect(EntityEffect.HURT)

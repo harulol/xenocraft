@@ -53,7 +53,7 @@ class PlayerDealDamageEvent(
     value
   }
 
-  val blockedMultiplier = if isBlocked then 1 - (if fusion then 0.75 else 0.5) else 1.0
+  val blockedMultiplier = if isBlocked then 1 - (if fusion then 0.75 else 0.5) - entity.flatBlockStrength else 1.0
   val backPreemptiveMultiplier = if isPreemptive && direction == Directional.BACK then 1.5 else 1.0
   val aoeMultiplier = if isAoE then 0.75 else 1.0
   val multiHitCorrection = if artType.isDefined then 1.0 / artType.get.hits else 1.0
@@ -68,7 +68,7 @@ class PlayerDealDamageEvent(
   var damageBonus3 = 0.0
   var damageReduction = 0.0
   var shackleRingMultiplier = 1.0
-  var isEvaded = false
+  var isEvaded = entity.isEvading
   var isHit = landedHit
 
   /** Checks if an art was used for this damage event.

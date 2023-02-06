@@ -60,6 +60,8 @@ trait Attributable(val uuid: UUID):
   var allyReviveSpeed = 1.0
   var reaction: Option[ArtReaction] = None
   var reactionFrames = 0
+  var isEvading = false
+  var isInAnimation = false
 
   // BUFFS AND DEBUFFS
   var accuracyUp = 0.0
@@ -74,6 +76,7 @@ trait Attributable(val uuid: UUID):
   var pctEtherDef = 0.0
   var flatEtherDef = 0.0
   var flatEtherDefReduction = 0.0
+  var flatBlockStrength = 0.0
   protected var _hp: Double = 0.0
 
   /** Starts the cooldown task.
@@ -137,7 +140,8 @@ trait Attributable(val uuid: UUID):
     *   the base value
     */
   def rechargeArt(art: ArtType, base: Double = 1.0): Unit =
-    if art.isKevesi then kevesiArts.put(art, kevesiArts.getOrElse(art, 0.0) + base * (1 + rechargeUp))
+    if art == null then return
+    else if art.isKevesi then kevesiArts.put(art, kevesiArts.getOrElse(art, 0.0) + base * (1 + rechargeUp))
     else if art.isAgnian then agnianArts.put(art, agnianArts.getOrElse(art, 0.0) + base * (1 + rechargeUp))
     else if art.isTalent then talentArt += base * (1 + rechargeUp)
 

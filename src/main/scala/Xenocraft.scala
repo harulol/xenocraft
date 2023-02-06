@@ -20,6 +20,8 @@ import dev.hawu.plugins.xenocraft.UserMap.user
 import dev.hawu.plugins.xenocraft.combat.HotbarManager
 import dev.hawu.plugins.xenocraft.combat.DropsListener
 import dev.hawu.plugins.xenocraft.combat.BossbarManager
+import org.bukkit.event.HandlerList
+import dev.hawu.plugins.xenocraft.arts.ArtManager
 
 /** Represents the plugin entrypoint.
   */
@@ -33,6 +35,7 @@ class Xenocraft extends JavaPlugin:
     modules.foreach(_.initialize(this))
     serializables.foreach(ConfigurationSerialization.registerClass)
 
+    ArtManager.initialize()
     SkillManager.initialize()
     UserMap.initialize(this)
     BattlefieldListener.initialize(this)
@@ -47,6 +50,7 @@ class Xenocraft extends JavaPlugin:
     Bukkit.getWorlds().asScala.flatMap(_.getEntities().asScala).filter(_ != null).foreach(BossbarManager.clear)
 
     UserMap.save(this)
+    HandlerList.unregisterAll(this)
     CommandRegistry.unregister(this)
     Tasks.cancelAllTasks(this)
 
