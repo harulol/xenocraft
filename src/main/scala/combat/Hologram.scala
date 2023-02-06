@@ -6,6 +6,7 @@ import org.bukkit.Location
 import org.bukkit.entity.ArmorStand
 
 import scala.collection.mutable
+import java.util.concurrent.ThreadLocalRandom
 
 /** Represents a floating text from an invisible armor stand, creating a holographic display.
   */
@@ -16,6 +17,14 @@ class Hologram(
 ):
 
   private val stands = mutable.ArrayBuffer.empty[ArmorStand]
+
+  private def randomGuassian: Double =
+    if ThreadLocalRandom.current().nextBoolean() then ThreadLocalRandom.current().nextGaussian() / 2
+    else -ThreadLocalRandom.current().nextGaussian() / 2
+
+  /** Nudges the hologram by a random amount.
+    */
+  def nudgeLocation(): Unit = location = location.add(randomGuassian, randomGuassian, randomGuassian)
 
   /** Adds one line to the hologram and immediately spawns it.
     *

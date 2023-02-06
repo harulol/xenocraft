@@ -7,6 +7,9 @@ import org.bukkit.entity.LivingEntity
 
 import java.security.SecureRandom
 import java.util.concurrent.ThreadLocalRandom
+import org.bukkit.entity.Mob
+import dev.hawu.plugins.xenocraft.data.Directional
+import dev.hawu.plugins.xenocraft.data.EnemyEntity
 
 /** Singleton object dedicated to calculating stats.
   */
@@ -119,13 +122,83 @@ object Formulas:
     val etherDef = user.cls.map(_.classEtherDef).getOrElse(0d)
     etherDef * (1 + user.pctEtherDef) + user.flatEtherDef
 
-  def calculateDamage(user: User, entity: LivingEntity, artCritMod: Double = 0): Unit =
+  /** Checks if the user should have a critical hit.
+    *
+    * @param user
+    *   the user
+    * @param artCritMod
+    *   whether an art was used, and the art has a modifier on crit rate
+    * @param preemptive
+    *   whether it was a preemptive attack
+    * @return
+    *   whether the user should have a critical hit
+    */
+  def canCrit(user: User, artCritMod: Double = 0, preemptive: Boolean = false): Boolean =
+    val critRate = user.critRate * (1 + user.combatPctCrit) * (1 + artCritMod) + user.combatFlatCrit
+    val roll = ThreadLocalRandom.current().nextDouble()
+    val actualRoll = if preemptive then roll * 0.57 else roll
+    actualRoll <= critRate
+
+  /** Runs a check whether the user can block a hit.
+    *
+    * @param user
+    *   the user
+    * @return
+    *   the result of the check
+    */
+  def canBlock(user: User): Boolean =
+    val blockRate = user.blockRate * (1 + user.combatPctBlock) + user.combatFlatBlock
+    val roll = ThreadLocalRandom.current().nextDouble()
+    roll <= blockRate
+
+  /** Checks if an enemy can block.
+    *
+    * @param entity
+    *   the entity
+    * @param directional
+    *   the directional
+    * @return
+    *   whether the enemy can block
+    */
+  def canBlock(entity: EnemyEntity, directional: Directional): Boolean =
+    val positionalBlockRate = directional match
+      case Directional.LEFT  => entity.guardLeft
+      case Directional.RIGHT => entity.guardRight
+      case Directional.FRONT => entity.guardFront
+      case Directional.BACK  => entity.guardBack
+    val other = positionalBlockRate + entity.combatFlatBlock
+    val blockRate = (0.015 min positionalBlockRate) max other
+
+    ThreadLocalRandom.current().nextDouble() <= blockRate
+
+  /** Attempts to calculate the damage to a mob.
+    *
+    * This method has a ton of params, it's not advised for them to be called.
+    */
+  @deprecated("Don't use this if you don't have a good reason.", "1.0.0")
+  def calculateDamage(
+    user: User,
+    entity: Mob,
+    physical: Boolean,
+    pierce: Boolean = false,
+    artPower: Double = 1,
+    damageBonus1: Double = 0,
+    damageBonus2: Double = 0,
+    damageBonus3: Double = 0,
+    damageReduction: Double = 0,
+    artCritMod: Double = 0,
+  ): Double =
     val critRate = user.critRate * (1 + user.combatPctCrit) * (1 + artCritMod) + user.combatFlatCrit
     val stabilityModifier = ThreadLocalRandom.current().nextDouble(0, user.weapon.map(_.weaponStability).get)
     val criticalModifier = if random.nextDouble() < critRate then 1.25 + user.critDamage else 1
     // TODO: Launch Modifier 1.25 if launched
+    val comboMultiplier = 1.0
 
-    val damage = (user.attack + stabilityModifier) * criticalModifier
-    CombatManager.damageEntity(entity, damage)
+    (user.attack + stabilityModifier) * artPower *
+      (1 + damageBonus1) *
+      (1 + damageBonus2) *
+      (1 + damageBonus3) *
+      (1 - damageReduction) * criticalModifier
+  end calculateDamage
 
 end Formulas

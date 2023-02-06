@@ -223,9 +223,9 @@ case class User(
     if !bladeUnsheathed then return ()
     bladeUnsheathed = false
     player.foreach { p =>
-      val event = PlayerSheatheEvent(p)
-      Tasks.run(() => Bukkit.getPluginManager.callEvent(event)).plugin(Xenocraft.getInstance).run()
       inventory.foreach((index, item) => p.getInventory.setItem(index, item))
+      val event = PlayerSheatheEvent(p)
+      Tasks.run(() => Bukkit.getPluginManager.callEvent(event)).run()
     }
     inventory.clear()
 

@@ -18,6 +18,12 @@ import java.util.UUID
 import scala.collection.mutable
 import scala.jdk.CollectionConverters.*
 import dev.hawu.plugins.xenocraft.I18n.tl
+import org.bukkit.event.EventPriority
+import dev.hawu.plugins.xenocraft.events.PlayerDealDamageEvent
+import scala.collection.mutable.ArrayBuffer
+import dev.hawu.plugins.xenocraft.data.Directional
+import dev.hawu.plugins.api.MathUtils
+import org.bukkit.GameMode
 
 /** The singleton object dedicated to listening for events related to fields.
   */
@@ -58,7 +64,7 @@ object BattlefieldListener extends Listener:
         Bukkit.getEntity(entry._1).asInstanceOf[LivingEntity] -> Bukkit.getPlayer(entry._2),
       ).filter(tup => tup._2 != null && tup._2.isOnline && tup._1 != null && !tup._1.isDead)
         .foreach(entry => CombatManager.drawAggroLine(entry._1, entry._2))
-    }.delay(0).period(2).async(true).plugin(pl).run()
+    }.delay(0).period(5).async(true).plugin(pl).run()
 
   end initialize
 
@@ -104,10 +110,38 @@ object BattlefieldListener extends Listener:
           case mob: Mob => if mob != null && !mob.isInstanceOf[Animals] then
               user.unsheathe()
               mob.setTarget(player)
+              BossbarManager.updateBossbar(mob).foreach(_.addPlayer(player))
               event.setCancelled(true)
               aggro.put(mob.getUniqueId(), player.getUniqueId())
           case _ => ()
+      else
+        event.getEntity match
+          case mob: Mob => if mob != null && !mob.isInstanceOf[Animals] then
+              mob.setTarget(player)
+              aggro.put(mob.getUniqueId(), player.getUniqueId())
+
+              val enemy = CombatManager.makeEnemy(mob)
+              val e = PlayerDealDamageEvent(player, calculateDirection(player, mob), enemy, true)
+              Bukkit.getPluginManager().callEvent(e)
+
+              if !e.isCancelled then
+                enemy.setHp(enemy.hp - e.finalDamage)
+                event.setCancelled(true)
+          case _ => ()
+      end if
     case _ => ()
+
+  private def calculateDirection(player: Player, target: Mob): Directional =
+    val direction = player.getLocation().getDirection().setY(0)
+    val enemyDirection = target.getLocation().getDirection().setY(0)
+
+    val angle = enemyDirection.angle(direction)
+    if angle <= 0.785398 then Directional.BACK // radians for 45 degrees, ranges from 45 -> 0, 0 -> -45
+    else if angle >= 2.35619 then Directional.FRONT // radians for 135 degrees, ranges from 135 -> 180 and 180 -> -135
+    else
+      val left = MathUtils.getLeftUnit(enemyDirection).angle(direction)
+      val right = MathUtils.getRightUnit(enemyDirection).angle(direction)
+      if left < right then Directional.LEFT else Directional.RIGHT
 
   @EventHandler
   private def onTarget(event: EntityTargetLivingEntityEvent): Unit =
@@ -116,9 +150,11 @@ object BattlefieldListener extends Listener:
 
   @EventHandler
   private def onDeath(event: EntityDeathEvent): Unit = event.getEntity match
-    case player: Player       => aggro.filterInPlace((_, v) => v != player.getUniqueId)
-    case entity: LivingEntity => aggro.remove(entity.getUniqueId)
-    case null                 => ()
+    case player: Player => aggro.filterInPlace((_, v) => v != player.getUniqueId)
+    case entity: Mob =>
+      aggro.remove(entity.getUniqueId)
+      BossbarManager.clear(entity)
+    case null => ()
 
   @EventHandler
   private def onQuit(event: PlayerQuitEvent): Unit = aggro.filterInPlace((_, v) => event.getPlayer.getUniqueId != v)
@@ -127,5 +163,18 @@ object BattlefieldListener extends Listener:
   private def onRegen(event: EntityRegainHealthEvent): Unit =
     // Only healing allowed is during non-battle or using healing arts.
     if event.getRegainReason != RegainReason.CUSTOM then event.setCancelled(true) // Cancel all natural healing ways
+
+  @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+  private def onPlayerDamageEntity(event: PlayerDealDamageEvent): Unit =
+    val holo =
+      if event.isPreemptive then
+        Hologram(event.entity.entity.getEyeLocation, ArrayBuffer(s"&e&l${event.finalDamage.round}"), 40)
+      else if event.isBlocked then
+        Hologram(event.entity.entity.getEyeLocation, ArrayBuffer(s"&7&l${event.finalDamage.round}"), 40)
+      else if event.isCritical then
+        Hologram(event.entity.entity.getEyeLocation, ArrayBuffer(s"&b&l${event.finalDamage.round}"), 40)
+      else Hologram(event.entity.entity.getEyeLocation, ArrayBuffer(s"&f&l${event.finalDamage.round}"), 40)
+    holo.nudgeLocation()
+    holo.spawn()
 
 end BattlefieldListener

@@ -1,0 +1,23 @@
+name: Pointy Zombie
+max-hp: 390625
+attack: 1321
+healing-power: 231
+dexterity: 235
+agility: 125
+crit-rate: 0.1
+phys-def: 0.0
+ether-def: 0.25
+guard-front: 0.15
+guard-left: 0.1
+guard-right: 0.1
+guard-back: 0.0
+break-resistance: 0.3
+topple-resistance: 0.0
+launch-resistance: 0.0
+smash-resistance: 0.0
+daze-resistance: 0.2
+burst-resistance: 0.0
+phys-debuff-resistance: 0.0
+ether-debuff-resistance: 0.2
+knockback-resistance: 0.0
+blowdown-resistance: 0.2

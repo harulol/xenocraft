@@ -50,12 +50,16 @@ trait Attributable(val uuid: UUID):
   var debuffDurationBonus = 0.0
   var allyHpRestore = 1.0
   var allyReviveSpeed = 1.0
+  var reaction: Option[ArtReaction] = None
+  var reactionFrames = 0
 
   // DEFENSE TYPE CALCULATIONS
   var pctPhysDef = 0.0
   var flatPhysDef = 0.0
+  var flatPhysDefReduction = 0.0
   var pctEtherDef = 0.0
   var flatEtherDef = 0.0
+  var flatEtherDefReduction = 0.0
   protected var _hp: Double = 0.0
 
   /** Retrieves the current value of the attributable.

@@ -9,12 +9,22 @@ import org.bukkit.{Color, Location, Particle}
 
 import java.security.SecureRandom
 import scala.collection.mutable.ArrayBuffer
+import org.bukkit.entity.Mob
+import java.util.concurrent.ThreadLocalRandom
+import org.bukkit.metadata.FixedMetadataValue
+import org.bukkit.attribute.Attribute
+import org.bukkit.EntityEffect
+import scala.jdk.CollectionConverters.*
+import scala.collection.mutable
+import java.util.UUID
+import dev.hawu.plugins.xenocraft.data.EnemyEntity
 
 /** The singleton object dedicated to managing the battlefield and spawning holograms in the right place.
   */
 object CombatManager:
 
   private val secureRandom = SecureRandom()
+  private val entities = mutable.Map.empty[UUID, EnemyEntity]
 
   /** Heals the player for the specified health value.
     *
@@ -43,9 +53,24 @@ object CombatManager:
     user.setHp(user.hp - damage)
     spawnHologramAround(player.getEyeLocation, s"&c${damage.intValue}")
 
-  def damageEntity(entity: LivingEntity, value: Double): Unit =
-    entity.setHealth((entity.getHealth - value) max 0)
-    spawnHologramAround(entity.getLocation.add(0, entity.getEyeHeight, 0), s"&c${value.intValue}")
+  /** Makes an enemy and retroeves it.
+    *
+    * @param entity
+    *   the entity
+    * @param state
+    *   the state
+    * @return
+    *   the enemy
+    */
+  def makeEnemy(entity: Mob, state: Int = -1): EnemyEntity =
+    if entities.contains(entity.getUniqueId) then return entities(entity.getUniqueId)
+    val enemy = if state >= 0 then EnemyEntity(state, entity) else EnemyEntity.apply(entity)
+    entities.put(entity.getUniqueId, enemy)
+    enemy
+
+  /** Clears the enemy from the manager.
+    */
+  def clearEnemy(entity: Mob): Unit = entities.remove(entity.getUniqueId)
 
   private def spawnHologramAround(location: Location, lines: String*): Unit =
     Hologram(location.clone().add(getOffset, getOffset, getOffset), ArrayBuffer.from(lines), 60).spawn()
