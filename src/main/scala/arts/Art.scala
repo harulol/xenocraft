@@ -103,7 +103,7 @@ abstract class Art(val artType: ArtType):
     * @return
     *   the list of entities in front of the player
     */
-  final def getEnemiesFront(player: Player, distance: Double = 3.0): Seq[EnemyEntity] =
+  final def getEnemiesFront(player: Player, distance: Double = 4.0): Seq[EnemyEntity] =
     val result = Raytracing.startNew().origin(player.getEyeLocation()).direction(player.getEyeLocation().getDirection())
       .distance(distance).step(0.2).raytrace()
     result.getEntities().asScala.filter(_ != null).filterNot(_.isDead()).filter(_.isInstanceOf[Mob])
@@ -118,7 +118,7 @@ abstract class Art(val artType: ArtType):
     * @return
     *   the list of enemies around the player
     */
-  final def getEnemiesAround(player: Player, distance: Double = 3.0): Seq[EnemyEntity] = player
+  final def getEnemiesAround(player: Player, distance: Double = 4.0): Seq[EnemyEntity] = player
     .getNearbyEntities(distance, distance, distance).asScala.filter(_.isInstanceOf[Mob]).map(_.asInstanceOf[Mob])
     .filter(CombatManager.isEnemy).map(CombatManager.makeEnemy(_)).toSeq
 

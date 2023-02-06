@@ -194,7 +194,7 @@ object HotbarManager extends Listener:
     case _              => ()
 
   @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
-  private def onHit(event: PlayerDealDamageEvent): Unit = if event.isHit then
+  private def onHit(event: PlayerDealDamageEvent): Unit = if event.isHit && !event.shouldOverride then
     val user = event.getPlayer().user.get
     user.masterArts.appendedAll(user.arts).filter(_ != null).filter(_.isAgnian).foreach(user.rechargeArt(_))
 

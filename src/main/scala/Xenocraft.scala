@@ -22,6 +22,7 @@ import dev.hawu.plugins.xenocraft.combat.DropsListener
 import dev.hawu.plugins.xenocraft.combat.BossbarManager
 import org.bukkit.event.HandlerList
 import dev.hawu.plugins.xenocraft.arts.ArtManager
+import dev.hawu.plugins.xenocraft.combat.CooldownsListener
 
 /** Represents the plugin entrypoint.
   */
@@ -43,7 +44,7 @@ class Xenocraft extends JavaPlugin:
 
     ChatHologramListener.initialize(this)
     CommandRegistry.register(this, new StatsCommand, PluginBaseCommand(this), new ArtCommand)
-    Events.registerEvents(this, ChatHologramListener, UserMap, DropsListener, HotbarManager)
+    Events.registerEvents(this, ChatHologramListener, UserMap, DropsListener, HotbarManager, CooldownsListener)
 
   override def onDisable(): Unit =
     Bukkit.getOnlinePlayers.asScala.flatMap(_.user).foreach(_.sheathe())

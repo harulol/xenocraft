@@ -92,16 +92,13 @@ object BattlefieldListener extends Listener:
   private def onDamage(event: EntityDamageEvent): Unit = event.getEntity match
     case player: Player =>
       event.getCause match
-        case DamageCause.BLOCK_EXPLOSION | DamageCause.ENTITY_EXPLOSION => player
-            .playEffect(EntityEffect.HURT_EXPLOSION)
-        case DamageCause.THORNS                             => player.playEffect(EntityEffect.THORNS_HURT)
-        case DamageCause.DROWNING                           => player.playEffect(EntityEffect.HURT_DROWN)
-        case DamageCause.CONTACT                            => player.playEffect(EntityEffect.HURT_BERRY_BUSH)
         case DamageCause.CUSTOM | DamageCause.ENTITY_ATTACK => return ()
         case _                                              => event.setCancelled(true)
       val user = player.user.get
       val percentage = event.getFinalDamage / player.getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue
       CombatManager.damage(player, user.maxHp * percentage, true)
+      player.playEffect(EntityEffect.HURT)
+      player.setNoDamageTicks(20)
     case mob: Mob => if CombatManager.isEnemy(mob) then event.setCancelled(event.getCause() != DamageCause.CUSTOM)
     case _        => ()
 
@@ -126,6 +123,7 @@ object BattlefieldListener extends Listener:
 
               val enemy = CombatManager.makeEnemy(mob)
               val e = PlayerDealDamageEvent(player, calculateDirection(player, mob), enemy, true)
+              e.shouldOverride = false
               Bukkit.getPluginManager().callEvent(e)
 
               // Leave handling to vanilla.
@@ -142,6 +140,7 @@ object BattlefieldListener extends Listener:
       val enemy = CombatManager.makeEnemy(mob)
 
       val e = EnemyDamagePlayerEvent(mob, enemy, player)
+      e.shouldOverride = false
       Bukkit.getPluginManager().callEvent(e)
 
       if e.isCancelled() then return
@@ -170,6 +169,14 @@ object BattlefieldListener extends Listener:
       val left = MathUtils.getLeftUnit(enemyDirection).angle(direction)
       val right = MathUtils.getRightUnit(enemyDirection).angle(direction)
       if left < right then Directional.LEFT else Directional.RIGHT
+
+  @EventHandler
+  private def onCombust(event: EntityCombustEvent): Unit = event.setCancelled(true)
+
+  @EventHandler
+  private def onTransform(event: EntityTransformEvent): Unit =
+    if event.getEntity().isInstanceOf[Mob] then CombatManager.clearEnemy(event.getEntity().asInstanceOf[Mob])
+    BossbarManager.clear(event.getEntity())
 
   @EventHandler
   private def onTarget(event: EntityTargetLivingEntityEvent): Unit =

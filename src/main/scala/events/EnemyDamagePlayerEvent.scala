@@ -36,6 +36,7 @@ class EnemyDamagePlayerEvent(entity: Mob, val enemy: EnemyEntity, val player: Pl
   var damageReduction = 0.0
   var isEvaded = user.isEvading
   var isHit = landedHit
+  var shouldOverride = true
 
   private var cancelled = false
 

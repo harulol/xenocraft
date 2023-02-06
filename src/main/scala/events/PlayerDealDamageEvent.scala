@@ -63,6 +63,7 @@ class PlayerDealDamageEvent(
     else ThreadLocalRandom.current().nextDouble(0.9, 1.1)
 
   var artPowerMultiplier = if artType.isDefined then artType.get.powerMultiplier else 1.0
+  var hits = artType.map(_.hits).getOrElse(1)
   var damageBonus1 = 0.0
   var damageBonus2 = 0.0
   var damageBonus3 = 0.0
@@ -70,6 +71,7 @@ class PlayerDealDamageEvent(
   var shackleRingMultiplier = 1.0
   var isEvaded = entity.isEvading
   var isHit = landedHit
+  var shouldOverride = true
 
   /** Checks if an art was used for this damage event.
     *
