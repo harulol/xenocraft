@@ -140,6 +140,18 @@ object Formulas:
     val actualRoll = if preemptive then roll * 0.57 else roll
     actualRoll <= critRate
 
+  /** Runs a check whether the entity has done a critical hit.
+    *
+    * @param enemy
+    *   the enemy
+    * @return
+    *   the result of the check
+    */
+  def canCrit(enemy: EnemyEntity): Boolean =
+    val critRate = enemy.critRate * (1 + enemy.combatPctCrit) + enemy.combatFlatCrit
+    val roll = ThreadLocalRandom.current().nextDouble()
+    roll <= critRate
+
   /** Runs a check whether the user can block a hit.
     *
     * @param user

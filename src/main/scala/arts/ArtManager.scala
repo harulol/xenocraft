@@ -5,12 +5,19 @@ import dev.hawu.plugins.xenocraft.data.{ArtRechargeType, ArtType, ClassType}
 import org.bukkit.Material
 
 import scala.collection.mutable
+import dev.hawu.plugins.xenocraft.arts.zephyr.WideSlash
 
 /** Manager for binding art types to arts.
   */
 object ArtManager:
 
   private val map = mutable.Map.empty[ArtType, Art]
+
+  /** Initializes the art manager.
+    */
+  def initialize(): Unit =
+    // Zephyr arts
+    Seq(WideSlash).foreach(bind)
 
   /** Retrieves an iterable of all arts.
     *

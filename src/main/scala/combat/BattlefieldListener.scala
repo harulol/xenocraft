@@ -13,7 +13,6 @@ import org.bukkit.event.player.PlayerQuitEvent
 import org.bukkit.event.{EventHandler, Listener}
 import org.bukkit.plugin.java.JavaPlugin
 import org.bukkit.{Bukkit, EntityEffect}
-
 import java.util.UUID
 import scala.collection.mutable
 import scala.jdk.CollectionConverters.*
@@ -24,6 +23,12 @@ import scala.collection.mutable.ArrayBuffer
 import dev.hawu.plugins.xenocraft.data.Directional
 import dev.hawu.plugins.api.MathUtils
 import org.bukkit.GameMode
+import dev.hawu.plugins.xenocraft.events.EnemyDamagePlayerEvent
+import dev.hawu.plugins.xenocraft.events.PlayerIncapitateEvent
+import org.bukkit.Effect
+import org.bukkit.Particle
+import org.bukkit.Sound
+import org.bukkit.event.player.PlayerInteractEvent
 
 /** The singleton object dedicated to listening for events related to fields.
   */
@@ -50,10 +55,16 @@ object BattlefieldListener extends Listener:
 
     // The task to draw an aggro line whenever an entity targets a player.
     Tasks.run { () =>
-      aggro.filterInPlace((entity, p) => {
+      aggro.foreach((entity, p) => {
         val mob = Bukkit.getEntity(entity)
-        mob != null && mob.asInstanceOf[Mob].getTarget != null &&
-        mob.asInstanceOf[Mob].getTarget.getUniqueId.equals(p) && Bukkit.getPlayer(p) != null
+        if mob == null || mob.isDead() || !mob.isInstanceOf[Mob] || Bukkit.getPlayer(p) == null then
+          aggro.remove(entity)
+        else
+          val mobInstance = mob.asInstanceOf[Mob]
+          if mobInstance.getTarget() == null then
+            aggro.remove(entity)
+            BossbarManager.makeBar(CombatManager.makeEnemy(mobInstance)).removePlayer(Bukkit.getPlayer(p))
+            Option(p).map(Bukkit.getPlayer).flatMap(_.user).foreach(_.sheathe())
       })
 
       // Auto-sheathe
@@ -81,31 +92,22 @@ object BattlefieldListener extends Listener:
   private def onDamage(event: EntityDamageEvent): Unit = event.getEntity match
     case player: Player =>
       event.getCause match
-        case DamageCause.BLOCK_EXPLOSION | DamageCause.ENTITY_EXPLOSION =>
-          event.setCancelled(true)
-          player.playEffect(EntityEffect.HURT_EXPLOSION)
-        case DamageCause.THORNS =>
-          event.setCancelled(true)
-          player.playEffect(EntityEffect.THORNS_HURT)
-        case DamageCause.DROWNING =>
-          event.setCancelled(true)
-          player.playEffect(EntityEffect.HURT_DROWN)
-        case DamageCause.CONTACT =>
-          event.setCancelled(true)
-          player.playEffect(EntityEffect.HURT_BERRY_BUSH)
-        case DamageCause.CUSTOM => ()
-        case _                  => event.setCancelled(true)
+        case DamageCause.BLOCK_EXPLOSION | DamageCause.ENTITY_EXPLOSION => player
+            .playEffect(EntityEffect.HURT_EXPLOSION)
+        case DamageCause.THORNS                             => player.playEffect(EntityEffect.THORNS_HURT)
+        case DamageCause.DROWNING                           => player.playEffect(EntityEffect.HURT_DROWN)
+        case DamageCause.CONTACT                            => player.playEffect(EntityEffect.HURT_BERRY_BUSH)
+        case DamageCause.CUSTOM | DamageCause.ENTITY_ATTACK => return ()
+        case _                                              => event.setCancelled(true)
       val user = player.user.get
       val percentage = event.getFinalDamage / player.getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue
-      CombatManager.damage(player, user.maxHp * percentage)
-      player.setNoDamageTicks(10)
-    case _ => ()
+      CombatManager.damage(player, user.maxHp * percentage, true)
+    case mob: Mob => if CombatManager.isEnemy(mob) then event.setCancelled(event.getCause() != DamageCause.CUSTOM)
+    case _        => ()
 
   @EventHandler
   private def onDamage(event: EntityDamageByEntityEvent): Unit = event.getDamager match
     case player: Player =>
-      if player.getGameMode() != GameMode.SURVIVAL && player.getGameMode() != GameMode.ADVENTURE then return
-
       val user = player.user.get
       if !user.bladeUnsheathed then
         event.getEntity match
@@ -134,9 +136,30 @@ object BattlefieldListener extends Listener:
               if !e.isEvaded && e.isHit then enemy.setHp(enemy.hp - e.finalDamage)
           case _ => ()
       end if
+    case mob: Mob =>
+      if !event.getEntity().isInstanceOf[Player] then return
+      val player = event.getEntity().asInstanceOf[Player]
+      val enemy = CombatManager.makeEnemy(mob)
+
+      val e = EnemyDamagePlayerEvent(mob, enemy, player)
+      Bukkit.getPluginManager().callEvent(e)
+
+      if e.isCancelled() then return
+      else
+        event.setCancelled(true)
+        if !e.isEvaded && e.isHit then CombatManager.damage(player, e.finalDamage)
     case _ => ()
 
-  private def calculateDirection(player: Player, target: Mob): Directional =
+  /** Calculates the direction of the target relative to the player.
+    *
+    * @param player
+    *   the player
+    * @param target
+    *   the target
+    * @return
+    *   the directiond
+    */
+  def calculateDirection(player: Player, target: Mob): Directional =
     val direction = player.getLocation().getDirection().setY(0)
     val enemyDirection = target.getLocation().getDirection().setY(0)
 
@@ -152,6 +175,26 @@ object BattlefieldListener extends Listener:
   private def onTarget(event: EntityTargetLivingEntityEvent): Unit =
     if event.getTarget.isInstanceOf[Player] && event.getEntity.isInstanceOf[LivingEntity] then
       aggro.put(event.getEntity.getUniqueId, event.getTarget.getUniqueId)
+      event.getTarget().asInstanceOf[Player].closeInventory()
+
+  @EventHandler
+  private def onItemUse(event: PlayerInteractEvent): Unit =
+    if event.getPlayer().user.exists(_.bladeUnsheathed) || isInBattle(event.getPlayer()) then event.setCancelled(true)
+
+  @EventHandler
+  private def onIncapitate(event: PlayerIncapitateEvent): Unit =
+    aggro.filter(_._2 == event.getPlayer().getUniqueId()).map((uuid, _) => Bukkit.getEntity(uuid).asInstanceOf[Mob])
+      .foreach(mob => {
+        mob.setTarget(null)
+        val bar = BossbarManager.makeBar(CombatManager.makeEnemy(mob))
+        bar.removePlayer(event.getPlayer())
+      })
+    aggro.filterInPlace((_, v) => v != event.getPlayer.getUniqueId)
+    Tasks.run { _ =>
+      val loc = event.getPlayer().getLocation().add(0.0, 1.0, 0.0)
+      loc.getWorld().spawnParticle(Particle.TOTEM, loc, 100, 0.7, 0.7, 0.7, 0.1)
+      event.getPlayer().playSound(loc, Sound.ITEM_TOTEM_USE, 1.0f, 1.0f)
+    }.delay(2).run()
 
   @EventHandler
   private def onDeath(event: EntityDeathEvent): Unit = event.getEntity match
@@ -186,6 +229,19 @@ object BattlefieldListener extends Listener:
       else if event.isCritical then
         Hologram(event.entity.entity.getEyeLocation, ArrayBuffer(s"&b&l${event.finalDamage.round}"), 40)
       else Hologram(event.entity.entity.getEyeLocation, ArrayBuffer(s"&f&l${event.finalDamage.round}"), 40)
+    holo.nudgeLocation()
+    holo.spawn()
+
+  @EventHandler
+  def onEntityDamagePlayer(event: EnemyDamagePlayerEvent): Unit =
+    val holo =
+      if event.isEvaded then Hologram(event.player.getEyeLocation, ArrayBuffer(s"&fEvaded!"), 40)
+      else if !event.isHit then Hologram(event.player.getEyeLocation, ArrayBuffer(s"&fMissed!"), 40)
+      else if event.isBlocked then
+        Hologram(event.player.getEyeLocation, ArrayBuffer(s"&7${event.finalDamage.round}"), 40)
+      else if event.isCritical then
+        Hologram(event.player.getEyeLocation, ArrayBuffer(s"&b${event.finalDamage.round}"), 40)
+      else Hologram(event.player.getEyeLocation, ArrayBuffer(s"&c${event.finalDamage.round}"), 40)
     holo.nudgeLocation()
     holo.spawn()
 

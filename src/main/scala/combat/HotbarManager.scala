@@ -33,6 +33,8 @@ import org.bukkit.event.EventPriority
 import java.text.DecimalFormat
 import org.bukkit.inventory.ItemStack
 import dev.hawu.plugins.api.i18n.Locale
+import dev.hawu.plugins.xenocraft.events.EnemyDamagePlayerEvent
+import dev.hawu.plugins.xenocraft.combat.BattlefieldListener
 
 /** Represents a listener that handles arts and damaging for battles.
   *
@@ -59,6 +61,18 @@ object HotbarManager extends Listener:
     val user = player.user.get
     setHotbar(user, player)
 
+  private def getBar(percentage: Double): String =
+    val builder = StringBuilder("&7[")
+    val value = (percentage * 100).round.intValue / 5
+
+    builder.append("&a&m")
+    builder.append(" " * value)
+    builder.append("&f&m")
+    builder.append(" " * (20 - value))
+    builder.append("&7] ")
+    builder.append(s"&a&l${(percentage * 100).round}%")
+    builder.toString()
+
   private def getCooldownItem(player: Player, art: ArtType, locale: Locale): ItemStack =
     val decimalFormatter = DecimalFormat("#,###.#")
     val cooldown = if art.isKevesi then decimalFormatter.format(art.cooldown) else art.cooldown.round
@@ -73,9 +87,12 @@ object HotbarManager extends Listener:
       "name" -> art.name(locale),
       placeholder(1) -> guage,
       "cooldown" -> cooldown,
+      "bar" -> getBar((if art.isKevesi then user.getCooldown(art) / 20 else user.getCooldown(art)) / art.cooldown),
     )(using ArtsGUI.getModule, player)
 
   private def tryPutting(player: Player, index: Int, art: ArtType): Unit =
+    if !BattlefieldListener.isInBattle(player) then return
+
     val emptySpace = ItemStackBuilder.of(Material.GRAY_STAINED_GLASS_PANE).name(" ").build()
     val locale = UserAdapter.getAdapter().getUser(player).getLocale()
     val user = player.user.get
@@ -91,6 +108,7 @@ object HotbarManager extends Listener:
       player.getInventory().setItem(index, artDisplay)
 
   private def putWeapons(player: Player, user: User): Unit =
+    if !BattlefieldListener.isInBattle(player) then return
     val locale = UserAdapter.getAdapter().getUser(player).getLocale()
 
     val weapon = I18n.translateItem(
@@ -130,9 +148,9 @@ object HotbarManager extends Listener:
 
   private def tryFusionAtSlot(player: Player, user: User, index: Int): Unit =
     if player.isSneaking() && !user.isOnCooldown(user.arts(index)) && !user.isOnCooldown(user.masterArts(index)) then
-      tryUsing(user, user.arts(index), true)
-      tryUsing(user, user.masterArts(index), true)
-    else tryUsing(user, user.arts(index))
+      tryUsing(user, player, user.arts(index), true)
+      tryUsing(user, player, user.masterArts(index), true)
+    else tryUsing(user, player, user.arts(index))
 
   @EventHandler
   private def onHotbarSwap(event: PlayerItemHeldEvent): Unit =
@@ -140,21 +158,20 @@ object HotbarManager extends Listener:
     if user.bladeUnsheathed then
       event.setCancelled(true)
       event.getNewSlot() match
-        case 2 => tryUsing(user, user.masterArts(0))
-        case 3 => tryUsing(user, user.masterArts(1))
-        case 4 => tryUsing(user, user.masterArts(2))
+        case 2 => tryUsing(user, event.getPlayer(), user.masterArts(0))
+        case 3 => tryUsing(user, event.getPlayer(), user.masterArts(1))
+        case 4 => tryUsing(user, event.getPlayer(), user.masterArts(2))
         case 5 => tryFusionAtSlot(event.getPlayer(), user, 0)
         case 6 => tryFusionAtSlot(event.getPlayer(), user, 1)
         case 7 => tryFusionAtSlot(event.getPlayer(), user, 2)
-        case 8 => tryUsing(user, user.talentArt.orNull)
+        case 8 => tryUsing(user, event.getPlayer(), user.talentArt.orNull)
         case _ => ()
 
   end onHotbarSwap
 
-  private def tryUsing(user: User, art: ArtType, fusion: Boolean = false): Unit =
+  private def tryUsing(user: User, player: Player, art: ArtType, fusion: Boolean = false): Unit =
     if art == null || user.isOnCooldown(art) then return
-    user.use(art)
-    ArtManager.get(art).foreach(_.use(user.player.get, user, fusion))
+    if user.isInAnimation || ArtManager.get(art).map(_.use(player, user, fusion)).contains(true) then user.use(art)
 
   @EventHandler
   private def onItemDrop(event: PlayerDropItemEvent): Unit =
@@ -179,7 +196,7 @@ object HotbarManager extends Listener:
   @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
   private def onHit(event: PlayerDealDamageEvent): Unit = if event.isHit then
     val user = event.getPlayer().user.get
-    user.masterArts.appendedAll(user.arts).filter(_.isAgnian).foreach(user.rechargeArt(_))
+    user.masterArts.appendedAll(user.arts).filter(_ != null).filter(_.isAgnian).foreach(user.rechargeArt(_))
 
   @EventHandler
   private def onUnsheathe(event: PlayerUnsheatheEvent): Unit =

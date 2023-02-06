@@ -18,6 +18,8 @@ import scala.jdk.CollectionConverters.*
 import scala.collection.mutable
 import java.util.UUID
 import dev.hawu.plugins.xenocraft.data.EnemyEntity
+import dev.hawu.plugins.xenocraft.events.PlayerDealDamageEvent
+import org.bukkit.Bukkit
 
 /** The singleton object dedicated to managing the battlefield and spawning holograms in the right place.
   */
@@ -47,11 +49,15 @@ object CombatManager:
     * @param value
     *   the damage
     */
-  def damage(player: Player, value: Double): Unit =
+  def damage(player: Player, value: Double, spawn: Boolean = false): Unit =
     val user = player.user.get
     val damage = value min 9999999 max 0
     user.setHp(user.hp - damage)
-    spawnHologramAround(player.getEyeLocation, s"&c${damage.intValue}")
+    if spawn then spawnHologramAround(player.getEyeLocation, s"&c${damage.intValue}")
+
+  def dealDamage(event: PlayerDealDamageEvent): Unit =
+    Bukkit.getPluginManager().callEvent(event)
+    if !event.isCancelled && !event.isEvaded && event.isHit then event.entity.setHp(event.entity.hp - event.finalDamage)
 
   /** Makes an enemy and retroeves it.
     *
@@ -67,6 +73,15 @@ object CombatManager:
     val enemy = if state >= 0 then EnemyEntity(state, entity) else EnemyEntity.apply(entity)
     entities.put(entity.getUniqueId, enemy)
     enemy
+
+  /** Checks if the mob is already made an enemy.
+    *
+    * @param entity
+    *   the entity
+    * @return
+    *   true if the entity is an enemy, false otherwise
+    */
+  def isEnemy(entity: Mob): Boolean = entities.contains(entity.getUniqueId)
 
   /** Clears the enemy from the manager.
     */
