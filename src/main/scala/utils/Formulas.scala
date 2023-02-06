@@ -10,6 +10,7 @@ import java.util.concurrent.ThreadLocalRandom
 import org.bukkit.entity.Mob
 import dev.hawu.plugins.xenocraft.data.Directional
 import dev.hawu.plugins.xenocraft.data.EnemyEntity
+import dev.hawu.plugins.xenocraft.data.Attributable
 
 /** Singleton object dedicated to calculating stats.
   */
@@ -151,6 +152,15 @@ object Formulas:
     val roll = ThreadLocalRandom.current().nextDouble()
     roll <= blockRate
 
+  /** Performs a check on whether the hit should land.
+    */
+  def canHit(source: Attributable, target: Attributable, artHitChance: Double = 0.0): Boolean =
+    val hitChance1 = ((0.75 * (source.dexterity) / (target.agility) * (1 + artHitChance)) min 0.97) max 0.0
+    val hitChance2 = hitChance1 * (1 + source.accuracyUp - target.evasionUp)
+    val hitChance3 = (hitChance2 min 0.97) max (0.015 min hitChance1)
+    val hitChance = hitChance3 * (1 - target.evasionChance)
+    ThreadLocalRandom.current().nextDouble() <= hitChance
+
   /** Checks if an enemy can block.
     *
     * @param entity
@@ -170,35 +180,5 @@ object Formulas:
     val blockRate = (0.015 min positionalBlockRate) max other
 
     ThreadLocalRandom.current().nextDouble() <= blockRate
-
-  /** Attempts to calculate the damage to a mob.
-    *
-    * This method has a ton of params, it's not advised for them to be called.
-    */
-  @deprecated("Don't use this if you don't have a good reason.", "1.0.0")
-  def calculateDamage(
-    user: User,
-    entity: Mob,
-    physical: Boolean,
-    pierce: Boolean = false,
-    artPower: Double = 1,
-    damageBonus1: Double = 0,
-    damageBonus2: Double = 0,
-    damageBonus3: Double = 0,
-    damageReduction: Double = 0,
-    artCritMod: Double = 0,
-  ): Double =
-    val critRate = user.critRate * (1 + user.combatPctCrit) * (1 + artCritMod) + user.combatFlatCrit
-    val stabilityModifier = ThreadLocalRandom.current().nextDouble(0, user.weapon.map(_.weaponStability).get)
-    val criticalModifier = if random.nextDouble() < critRate then 1.25 + user.critDamage else 1
-    // TODO: Launch Modifier 1.25 if launched
-    val comboMultiplier = 1.0
-
-    (user.attack + stabilityModifier) * artPower *
-      (1 + damageBonus1) *
-      (1 + damageBonus2) *
-      (1 + damageBonus3) *
-      (1 - damageReduction) * criticalModifier
-  end calculateDamage
 
 end Formulas

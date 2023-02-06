@@ -223,9 +223,11 @@ case class User(
     if !bladeUnsheathed then return ()
     bladeUnsheathed = false
     player.foreach { p =>
-      inventory.foreach((index, item) => p.getInventory.setItem(index, item))
-      val event = PlayerSheatheEvent(p)
-      Tasks.run(() => Bukkit.getPluginManager.callEvent(event)).run()
+      try {
+        val event = PlayerSheatheEvent(p)
+        Tasks.run(() => Bukkit.getPluginManager.callEvent(event)).run()
+      } catch { case _ => () }
+      finally { inventory.foreach((index, item) => p.getInventory.setItem(index, item)) }
     }
     inventory.clear()
 

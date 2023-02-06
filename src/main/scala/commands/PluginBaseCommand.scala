@@ -9,6 +9,7 @@ import org.bukkit.plugin.java.JavaPlugin
 
 import java.util
 import scala.jdk.CollectionConverters.*
+import dev.hawu.plugins.xenocraft.data.EnemyEntity
 
 /** The handlers for the base commands of this plugin Xenocraft.
   */
@@ -30,7 +31,9 @@ class PluginBaseCommand(private val plugin: JavaPlugin) extends CommandRegistrab
     reload(force)
     if force then sender.getBase.tl("overwritten-messages") else sender.getBase.tl("reloaded-messages")
 
-  private def reload(force: Boolean): Unit = Xenocraft.getModels.foreach(_.reload(force))
+  private def reload(force: Boolean): Unit =
+    Xenocraft.getModels.foreach(_.reload(force))
+    EnemyEntity.reloadConfig()
 
   @TabExecute("xenocraft reload") @CommandPermission(Array("xenocraft.reload"))
   def reloadTab(sender: CommandSource, args: CommandArgument): util.List[String] =

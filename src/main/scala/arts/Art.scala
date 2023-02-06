@@ -20,4 +20,4 @@ abstract class Art(val artType: ArtType):
     * @param user
     *   the user
     */
-  def startAnimation(player: Player, user: User): Unit
+  def use(player: Player, user: User, fusion: Boolean = false): Unit

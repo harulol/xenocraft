@@ -52,8 +52,8 @@ object BattlefieldListener extends Listener:
     Tasks.run { () =>
       aggro.filterInPlace((entity, p) => {
         val mob = Bukkit.getEntity(entity)
-        mob != null && mob.asInstanceOf[Mob].getTarget != null && mob.asInstanceOf[Mob].getTarget.getUniqueId == p &&
-        Bukkit.getPlayer(p) != null
+        mob != null && mob.asInstanceOf[Mob].getTarget != null &&
+        mob.asInstanceOf[Mob].getTarget.getUniqueId.equals(p) && Bukkit.getPlayer(p) != null
       })
 
       // Auto-sheathe
@@ -104,6 +104,8 @@ object BattlefieldListener extends Listener:
   @EventHandler
   private def onDamage(event: EntityDamageByEntityEvent): Unit = event.getDamager match
     case player: Player =>
+      if player.getGameMode() != GameMode.SURVIVAL && player.getGameMode() != GameMode.ADVENTURE then return
+
       val user = player.user.get
       if !user.bladeUnsheathed then
         event.getEntity match
@@ -124,9 +126,12 @@ object BattlefieldListener extends Listener:
               val e = PlayerDealDamageEvent(player, calculateDirection(player, mob), enemy, true)
               Bukkit.getPluginManager().callEvent(e)
 
-              if !e.isCancelled then
-                enemy.setHp(enemy.hp - e.finalDamage)
-                event.setCancelled(true)
+              // Leave handling to vanilla.
+              if e.isCancelled then return
+
+              // A successful hit has to be a hit that evaded or missed.
+              event.setCancelled(true)
+              if !e.isEvaded && e.isHit then enemy.setHp(enemy.hp - e.finalDamage)
           case _ => ()
       end if
     case _ => ()
@@ -154,7 +159,12 @@ object BattlefieldListener extends Listener:
     case entity: Mob =>
       aggro.remove(entity.getUniqueId)
       BossbarManager.clear(entity)
-    case null => ()
+    case _ => ()
+
+  @EventHandler
+  private def onExplode(event: EntityExplodeEvent): Unit =
+    aggro.remove(event.getEntity.getUniqueId)
+    BossbarManager.clear(event.getEntity)
 
   @EventHandler
   private def onQuit(event: PlayerQuitEvent): Unit = aggro.filterInPlace((_, v) => event.getPlayer.getUniqueId != v)
@@ -167,7 +177,9 @@ object BattlefieldListener extends Listener:
   @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
   private def onPlayerDamageEntity(event: PlayerDealDamageEvent): Unit =
     val holo =
-      if event.isPreemptive then
+      if event.isEvaded then Hologram(event.entity.entity.getEyeLocation, ArrayBuffer(s"&fEvaded!"), 40)
+      else if !event.isHit then Hologram(event.entity.entity.getEyeLocation, ArrayBuffer(s"&fMissed!"), 40)
+      else if event.isPreemptive then
         Hologram(event.entity.entity.getEyeLocation, ArrayBuffer(s"&e&l${event.finalDamage.round}"), 40)
       else if event.isBlocked then
         Hologram(event.entity.entity.getEyeLocation, ArrayBuffer(s"&7&l${event.finalDamage.round}"), 40)

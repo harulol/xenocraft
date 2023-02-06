@@ -27,6 +27,7 @@ class PlayerDealDamageEvent(
   val artType: Option[ArtType] = None,
   val fusion: Boolean = false,
   val artCritMod: Double = 0,
+  val artHitChance: Double = 0,
   val isPreemptive: Boolean = false,
   val isPiercing: Boolean = false,
   val isAoE: Boolean = false,
@@ -37,6 +38,7 @@ class PlayerDealDamageEvent(
   private val user = player.user.get
   private val criticalHit = Formulas.canCrit(user, artCritMod, isPreemptive)
   private val blockedHit = Formulas.canBlock(entity, direction)
+  private val landedHit = Formulas.canHit(user, entity, artHitChance)
 
   val stabilityModifier = random.nextDouble(0.0, user.weapon.get.weaponAttack * user.weapon.get.weaponStability)
   val critMultiplier = if isCritical then 1.25 + user.critDamage else 1.0
@@ -66,6 +68,8 @@ class PlayerDealDamageEvent(
   var damageBonus3 = 0.0
   var damageReduction = 0.0
   var shackleRingMultiplier = 1.0
+  var isEvaded = false
+  var isHit = landedHit
 
   /** Checks if an art was used for this damage event.
     *
@@ -94,11 +98,13 @@ class PlayerDealDamageEvent(
     *   the unlimited total damage
     */
   def totalDamage: Double =
+    // A blocked hit never crits.
+    val realCritMultiplier = if isBlocked then 1.0 else critMultiplier
     (user.attack + stabilityModifier) * artPowerMultiplier *
       (1 + damageBonus1) *
       (1 + damageBonus2) *
       (1 + damageBonus3) *
-      (1 - damageReduction) * typeDefenseMultiplier * blockedMultiplier * critMultiplier * comboMultiplier *
+      (1 - damageReduction) * typeDefenseMultiplier * blockedMultiplier * realCritMultiplier * comboMultiplier *
       backPreemptiveMultiplier * aoeMultiplier * multiHitCorrection * randomMultiplier * shackleRingMultiplier
 
   /** Finds the damage that is already coerced within the limit.

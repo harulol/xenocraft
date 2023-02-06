@@ -25,9 +25,7 @@ object BossbarManager:
     * @param entity
     *   the entity
     */
-  def clear(entity: Entity): Unit =
-    println("Clear was called for " + entity.getType().name())
-    bars.remove(entity.getUniqueId()).foreach(_.removeAll())
+  def clear(entity: Entity): Unit = bars.remove(entity.getUniqueId()).foreach(_.removeAll())
 
   /** Attempts to make an entity's bossbar.
     *

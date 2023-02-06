@@ -19,6 +19,7 @@ import scala.jdk.CollectionConverters.*
 import dev.hawu.plugins.xenocraft.UserMap.user
 import dev.hawu.plugins.xenocraft.combat.HotbarManager
 import dev.hawu.plugins.xenocraft.combat.DropsListener
+import dev.hawu.plugins.xenocraft.combat.BossbarManager
 
 /** Represents the plugin entrypoint.
   */
@@ -43,6 +44,7 @@ class Xenocraft extends JavaPlugin:
 
   override def onDisable(): Unit =
     Bukkit.getOnlinePlayers.asScala.flatMap(_.user).foreach(_.sheathe())
+    Bukkit.getWorlds().asScala.flatMap(_.getEntities().asScala).filter(_ != null).foreach(BossbarManager.clear)
 
     UserMap.save(this)
     CommandRegistry.unregister(this)
