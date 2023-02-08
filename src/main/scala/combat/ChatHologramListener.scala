@@ -1,8 +1,9 @@
 package dev.hawu.plugins.xenocraft
 package combat
 
+import combat.Hologram
+
 import dev.hawu.plugins.api.Tasks
-import dev.hawu.plugins.xenocraft.combat.Hologram
 import org.bukkit.Bukkit
 import org.bukkit.entity.Player
 import org.bukkit.event.player.{AsyncPlayerChatEvent, PlayerQuitEvent}
@@ -31,16 +32,24 @@ object ChatHologramListener extends Listener:
   }.run()
 
   /** Simulates that a chat event has been fired in case of any cancellations for other reasons by other plugins.
-    *
-    * This method should be called if you cancel the AsyncPlayerChatEvent to send your own message in your system, but
-    * still would like the hologram to be displayed.
-    *
-    * @param player
-    *   the player to spawn the hologram for
-    * @param message
-    *   the message to spawn
-    */
+   *
+   * This method should be called if you cancel the AsyncPlayerChatEvent to send your own message in your system, but still would like the
+   * hologram to be displayed.
+   *
+   * @param player
+   * the player to spawn the hologram for
+   * @param message
+   * the message to spawn
+   */
   def fireEventChat(player: Player, message: String): Unit = Tasks.run(_ => spawnHologram(player, message)).run()
+
+  @EventHandler
+  private def onPlayerQuit(event: PlayerQuitEvent): Unit = map.remove(event.getPlayer.getUniqueId).foreach(_.despawn())
+
+  @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+  private def onAsyncChat(event: AsyncPlayerChatEvent): Unit =
+    if !event.isAsynchronous then spawnHologram(event.getPlayer, event.getMessage)
+    else Tasks.run(_ => spawnHologram(event.getPlayer, event.getMessage)).run()
 
   private def spawnHologram(player: Player, message: String): Unit =
     map.remove(player.getUniqueId).foreach(_.despawn())
@@ -55,13 +64,5 @@ object ChatHologramListener extends Listener:
     hologram.spawn()
 
     map.put(player.getUniqueId, hologram)
-
-  @EventHandler
-  private def onPlayerQuit(event: PlayerQuitEvent): Unit = map.remove(event.getPlayer.getUniqueId).foreach(_.despawn())
-
-  @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
-  private def onAsyncChat(event: AsyncPlayerChatEvent): Unit =
-    if !event.isAsynchronous then spawnHologram(event.getPlayer, event.getMessage)
-    else Tasks.run(_ => spawnHologram(event.getPlayer, event.getMessage)).run()
 
 end ChatHologramListener

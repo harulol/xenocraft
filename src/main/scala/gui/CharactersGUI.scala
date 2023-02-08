@@ -1,16 +1,17 @@
 package dev.hawu.plugins.xenocraft
 package gui
 
+import UserMap.user
+import data.Character
+import I18n.tl
+
 import dev.hawu.plugins.api.Strings
 import dev.hawu.plugins.api.adapters.UserAdapter
 import dev.hawu.plugins.api.gui.GuiComponent
 import dev.hawu.plugins.api.gui.pagination.GuiPaginator
 import dev.hawu.plugins.api.i18n.LanguageModule
 import dev.hawu.plugins.api.items.ItemStackBuilder
-import dev.hawu.plugins.xenocraft.I18n.tl
 import dev.hawu.plugins.xenocraft.ModuleHolder
-import dev.hawu.plugins.xenocraft.UserMap.user
-import dev.hawu.plugins.xenocraft.data.Character
 import org.bukkit.Material
 import org.bukkit.entity.Player
 import org.bukkit.event.inventory.InventoryClickEvent
@@ -40,9 +41,9 @@ object CharactersGUI extends ModuleHolder("characters-ui"):
       val model = I18n.translateModel(54, "characters-ui-title")
       MainGUI.applyNavigationBar(model, '1', Material.GREEN_STAINED_GLASS_PANE)
       model
-    }).setAllowedSlots(MainGUI.getPaginationSlots).setBackSlots(Set.empty[Int].map(Integer.valueOf).asJava)
-      .setPredicate(null).setCollection(Character.values.toList.asJava)
-      .setFilterSlots(Set.empty[Int].map(Integer.valueOf).asJava).setItemGenerator((char, _) =>
+    }).setAllowedSlots(MainGUI.getPaginationSlots).setBackSlots(Set.empty[Int].map(Integer.valueOf).asJava).setPredicate(null)
+      .setCollection(Character.values.toList.asJava).setFilterSlots(Set.empty[Int].map(Integer.valueOf).asJava)
+      .setItemGenerator((char, _) =>
         new GuiComponent[Unit]() {
           private val item = I18n.translateItem(
             char.icon -> 1,
@@ -62,8 +63,8 @@ object CharactersGUI extends ModuleHolder("characters-ui"):
             user.applyCharacter(char)
             MainGUI.openMain(player)
 
-          override def render(): ItemStack = ItemStackBuilder.from(item)
-            .flags(ItemFlag.HIDE_ATTRIBUTES, ItemFlag.HIDE_POTION_EFFECTS).build()
+          override def render(): ItemStack = ItemStackBuilder.from(item).flags(ItemFlag.HIDE_ATTRIBUTES, ItemFlag.HIDE_POTION_EFFECTS)
+            .build()
         },
       ).build(player)
   end openCharacters

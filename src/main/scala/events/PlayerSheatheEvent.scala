@@ -2,8 +2,8 @@ package dev.hawu.plugins.xenocraft
 package events
 
 import org.bukkit.entity.Player
-import org.bukkit.event.player.PlayerEvent
 import org.bukkit.event.HandlerList
+import org.bukkit.event.player.PlayerEvent
 
 /** Called when the player sheathes their blade.
   *

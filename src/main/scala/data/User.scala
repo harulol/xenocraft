@@ -1,31 +1,28 @@
 package dev.hawu.plugins.xenocraft
 package data
 
+import combat.HotbarManager
+import events.{PlayerIncapitateEvent, PlayerSheatheEvent, PlayerUnsheatheEvent}
+import gui.{ArtsGUI, ClassesGUI}
+import skills.SkillManager
+import utils.Formulas
+
+import dev.hawu.plugins.api.Tasks
+import dev.hawu.plugins.api.adapters.UserAdapter
+import dev.hawu.plugins.api.i18n.LanguageModule
 import dev.hawu.plugins.api.items.ItemStackBuilder
-import dev.hawu.plugins.xenocraft.utils.Formulas
 import org.bukkit.attribute.Attribute
 import org.bukkit.configuration.serialization.ConfigurationSerializable
 import org.bukkit.entity.Player
+import org.bukkit.event.entity.PlayerDeathEvent
 import org.bukkit.inventory.{ItemFlag, ItemStack}
-import org.bukkit.{Bukkit, Effect, EntityEffect, OfflinePlayer}
+import org.bukkit.{Bukkit, Effect, EntityEffect, Material, OfflinePlayer}
 
 import java.util
 import java.util.UUID
-import scala.collection.{mutable, GenMap}
+import scala.collection.{GenMap, mutable}
 import scala.jdk.CollectionConverters.*
 import scala.util.{Failure, Random, Success, Try}
-import dev.hawu.plugins.xenocraft.skills.SkillManager
-import dev.hawu.plugins.xenocraft.gui.ClassesGUI
-import dev.hawu.plugins.api.i18n.LanguageModule
-import dev.hawu.plugins.api.adapters.UserAdapter
-import org.bukkit.Material
-import dev.hawu.plugins.xenocraft.gui.ArtsGUI
-import dev.hawu.plugins.xenocraft.events.PlayerUnsheatheEvent
-import dev.hawu.plugins.xenocraft.events.PlayerSheatheEvent
-import dev.hawu.plugins.api.Tasks
-import org.bukkit.event.entity.PlayerDeathEvent
-import dev.hawu.plugins.xenocraft.combat.HotbarManager
-import dev.hawu.plugins.xenocraft.events.PlayerIncapitateEvent
 
 /** Represents a player's data.
   *
@@ -125,8 +122,7 @@ case class User(
     // Other classes can not use Soulhacker's arts.
     what match
       case "master" =>
-        if cls.exists(_.isSoulhacker) then art.isAgnian && art.isSoulhacker
-        else art.isMaster && !art.isTalent && !art.isSoulhacker
+        if cls.exists(_.isSoulhacker) then art.isAgnian && art.isSoulhacker else art.isMaster && !art.isTalent && !art.isSoulhacker
       case "class" =>
         if cls.exists(_.isSoulhacker) then art.isKevesi && art.isSoulhacker
         else cls.isDefined && art.cls.contains(cls.get) && !art.isTalent && !art.isSoulhacker
@@ -148,8 +144,7 @@ case class User(
     else cls.foreach(classMemory.put(_, ClassMemory(this)))
 
     if cls.isDefined then
-      SkillType.values.filter(_.cls.get == cls.get).map(SkillManager.get).filter(_.isDefined).map(_.get)
-        .foreach(_.safeUnapply(this))
+      SkillType.values.filter(_.cls.get == cls.get).map(SkillManager.get).filter(_.isDefined).map(_.get).foreach(_.safeUnapply(this))
 
     if clazz.isDefined then
       val memory = classMemory.get(if clazz.exists(_.isSoulhacker) then ClassType.SOULHACKER_POWER else clazz.get)
@@ -167,8 +162,7 @@ case class User(
         talentArt = ArtType.values.filter(_.isTalent).find(_.cls.contains(clazz.get))
         applyClass(cls)
 
-      SkillType.values.filter(_.cls.get == clazz.get).map(SkillManager.get).filter(_.isDefined).map(_.get)
-        .foreach(_.safeApply(this))
+      SkillType.values.filter(_.cls.get == clazz.get).map(SkillManager.get).filter(_.isDefined).map(_.get).foreach(_.safeApply(this))
     end if
 
   end applyClass
@@ -181,8 +175,7 @@ case class User(
     *   the index if it is equipped, -1 if not
     */
   def isGemEquipped(gem: GemType, level: Int = 0): Int =
-    if level >= 1 then
-      gems.zipWithIndex.filter(_._1 != null).filter(_._1 == (gem, level)).map(_._2).headOption.getOrElse(-1)
+    if level >= 1 then gems.zipWithIndex.filter(_._1 != null).filter(_._1 == (gem, level)).map(_._2).headOption.getOrElse(-1)
     else gems.zipWithIndex.filter(_._1 != null).filter(_._1._1 == gem).map(_._2).headOption.getOrElse(-1)
 
   /** Unsheathe the blade.
@@ -193,20 +186,16 @@ case class User(
     bladeUnsheathed = true
     inventory.clear()
     player.foreach(p => {
-      given Player = p
-      given LanguageModule = ClassesGUI.getModule
-
       val event = PlayerUnsheatheEvent(p)
       Tasks.run(() => Bukkit.getPluginManager.callEvent(event)).plugin(Xenocraft.getInstance).run()
 
-      val locale = UserAdapter.getAdapter().getUser(p).getLocale()
       p.getInventory.getContents.zipWithIndex.foreach((item, index) => {
         inventory += index -> item
         p.getInventory.setItem(index, null)
       })
 
       HotbarManager.setHotbar(this, p)
-      p.getInventory().setHeldItemSlot(0)
+      p.getInventory.setHeldItemSlot(0)
     })
 
   end unsheathe
@@ -247,7 +236,7 @@ case class User(
         if value <= 0 then
           setHp(maxHp)
           val deathEvent = PlayerIncapitateEvent(p)
-          Bukkit.getPluginManager().callEvent(deathEvent)
+          Bukkit.getPluginManager.callEvent(deathEvent)
           Tasks.run(_ => p.teleport(p.getWorld.getSpawnLocation)).run()
         else if value < p.getHealth then
           p.setHealth(value)
@@ -404,8 +393,7 @@ object User:
       else null
     })
 
-    val memory = map.get("memory").asInstanceOf[util.Map[String, ClassMemory]].asScala
-      .map(entry => ClassType.valueOf(entry._1) -> entry._2)
+    val memory = map.get("memory").asInstanceOf[util.Map[String, ClassMemory]].asScala.map(entry => ClassType.valueOf(entry._1) -> entry._2)
 
     val user = User(uuid, cls, weapon, char, masterArts, arts, gems, masterSkills, talentArt)
     gems.filter(_ != null).foreach(user.applyGem)
@@ -422,9 +410,7 @@ object User:
       case Success(value) => Some(value)
       case Failure(_)     => None
 
-  private def tryGettingArray[T](key: String, f: String => T, size: Int = 3)(using
-    map: util.Map[String, Any],
-  ): List[T] = map.get(key).asInstanceOf[util.List[String]].asScala.take(size)
-    .map(s => if s != null then f(s) else null.asInstanceOf[T]).toList
+  private def tryGettingArray[T](key: String, f: String => T, size: Int = 3)(using map: util.Map[String, Any]): List[T] = map.get(key)
+    .asInstanceOf[util.List[String]].asScala.take(size).map(s => if s != null then f(s) else null.asInstanceOf[T]).toList
 
 end User

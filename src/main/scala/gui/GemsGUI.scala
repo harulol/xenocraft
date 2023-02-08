@@ -1,6 +1,11 @@
 package dev.hawu.plugins.xenocraft
 package gui
 
+import I18n.tl
+import UserMap.user
+import data.GemType
+import gui.GemsGUI.GemComponent
+
 import dev.hawu.plugins.api.Strings
 import dev.hawu.plugins.api.adapters.UserAdapter
 import dev.hawu.plugins.api.gui.GuiComponent
@@ -8,10 +13,6 @@ import dev.hawu.plugins.api.gui.brushes.BrushRegistry
 import dev.hawu.plugins.api.gui.pagination.GuiPaginator
 import dev.hawu.plugins.api.i18n.LanguageModule
 import dev.hawu.plugins.api.items.ItemStackBuilder
-import dev.hawu.plugins.xenocraft.I18n.tl
-import dev.hawu.plugins.xenocraft.UserMap.user
-import dev.hawu.plugins.xenocraft.data.GemType
-import dev.hawu.plugins.xenocraft.gui.GemsGUI.GemComponent
 import org.bukkit.Material
 import org.bukkit.entity.Player
 import org.bukkit.event.inventory.InventoryClickEvent
@@ -38,8 +39,8 @@ object GemsGUI extends ModuleHolder("gems-ui"):
     val user = player.user.get
     val locale = UserAdapter.getAdapter.getUser(player).getLocale
 
-    GuiPaginator.newBuilder[GemType]().setCollection(GemType.values.toList.asJava)
-      .setAllowedSlots(MainGUI.getPaginationSlots).setModelSupplier(() => {
+    GuiPaginator.newBuilder[GemType]().setCollection(GemType.values.toList.asJava).setAllowedSlots(MainGUI.getPaginationSlots)
+      .setModelSupplier(() => {
         val model = I18n.translateModel(54, "gems-ui-title")
         MainGUI.applyNavigationBar(model, '4', Material.ORANGE_STAINED_GLASS_PANE)
         model
@@ -104,8 +105,7 @@ object GemsGUI extends ModuleHolder("gems-ui"):
             "gem-type",
             "name" -> gem.category.colorize(gem.name(locale, level), true),
             "description" -> Strings.chop(gem.description(locale, level), 32),
-            "selection" ->
-              (if user.isGemEquipped(gem, level) >= 0 then "selected".tl(locale) else "not-selected".tl(locale)),
+            "selection" -> (if user.isGemEquipped(gem, level) >= 0 then "selected".tl(locale) else "not-selected".tl(locale)),
           )
         },
       ).build(player)
@@ -153,8 +153,7 @@ object GemsGUI extends ModuleHolder("gems-ui"):
 
     override def render(): ItemStack = if gemTuple == null then emptyGem else gemItem
 
-    private def emptyGem: ItemStack = I18n
-      .translateItem(Material.BLACK_STAINED_GLASS_PANE -> 1, "no-gem")(using module, player)
+    private def emptyGem: ItemStack = I18n.translateItem(Material.BLACK_STAINED_GLASS_PANE -> 1, "no-gem")(using module, player)
 
     private def gemItem: ItemStack =
       val (gem, level) = gemTuple

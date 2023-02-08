@@ -1,16 +1,17 @@
 package dev.hawu.plugins.xenocraft
 package data
 
+import data.ClassType.*
+import gui.ClassesGUI
+
 import dev.hawu.plugins.api.collections.tuples.Pair
 import dev.hawu.plugins.api.i18n.{LanguageModule, Locale}
-import dev.hawu.plugins.xenocraft.data.ClassType.*
-import dev.hawu.plugins.xenocraft.gui.ClassesGUI
 import org.bukkit.plugin.java.JavaPlugin
 
 import scala.collection.mutable
 
 /** Represents a type of class a player can pick.
-  */
+ */
 enum ClassType(
   val nation: ClassNation,
   val classRole: ClassRole,

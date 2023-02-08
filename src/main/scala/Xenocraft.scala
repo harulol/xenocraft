@@ -1,28 +1,26 @@
 package dev.hawu.plugins.xenocraft
 
+import UserMap.user
+import Xenocraft.instance
+import arts.ArtManager
+import combat.*
+import commands.{ArtCommand, PluginBaseCommand, StatsCommand}
+import data.{Character, ClassMemory, ClassType, User}
+import gui.*
+import skills.SkillManager
+import utils.Configuration
+
 import dev.hawu.plugins.api.Tasks
 import dev.hawu.plugins.api.commands.CommandRegistry
 import dev.hawu.plugins.api.events.Events
-import dev.hawu.plugins.xenocraft.Xenocraft.instance
-import dev.hawu.plugins.xenocraft.combat.{BattlefieldListener, ChatHologramListener}
-import dev.hawu.plugins.xenocraft.commands.{ArtCommand, PluginBaseCommand, StatsCommand}
-import dev.hawu.plugins.xenocraft.data.{Character, ClassMemory, ClassType, User}
-import dev.hawu.plugins.xenocraft.gui.*
-import dev.hawu.plugins.xenocraft.utils.Configuration
+import org.bukkit.Bukkit
 import org.bukkit.configuration.file.YamlConfiguration
 import org.bukkit.configuration.serialization.ConfigurationSerialization
-import org.bukkit.plugin.java.JavaPlugin
-import org.bukkit.Bukkit
-import java.io.InputStreamReader
-import dev.hawu.plugins.xenocraft.skills.SkillManager
-import scala.jdk.CollectionConverters.*
-import dev.hawu.plugins.xenocraft.UserMap.user
-import dev.hawu.plugins.xenocraft.combat.HotbarManager
-import dev.hawu.plugins.xenocraft.combat.DropsListener
-import dev.hawu.plugins.xenocraft.combat.BossbarManager
 import org.bukkit.event.HandlerList
-import dev.hawu.plugins.xenocraft.arts.ArtManager
-import dev.hawu.plugins.xenocraft.combat.CooldownsListener
+import org.bukkit.plugin.java.JavaPlugin
+
+import java.io.InputStreamReader
+import scala.jdk.CollectionConverters.*
 
 /** Represents the plugin entrypoint.
   */
@@ -48,7 +46,7 @@ class Xenocraft extends JavaPlugin:
 
   override def onDisable(): Unit =
     Bukkit.getOnlinePlayers.asScala.flatMap(_.user).foreach(_.sheathe())
-    Bukkit.getWorlds().asScala.flatMap(_.getEntities().asScala).filter(_ != null).foreach(BossbarManager.clear)
+    Bukkit.getWorlds.asScala.flatMap(_.getEntities.asScala).filter(_ != null).foreach(BossbarManager.clear)
 
     UserMap.save(this)
     HandlerList.unregisterAll(this)

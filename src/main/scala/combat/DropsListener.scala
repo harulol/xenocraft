@@ -1,22 +1,22 @@
 package dev.hawu.plugins.xenocraft
 package combat
 
-import org.bukkit.event.Listener
-import scala.collection.mutable
-import org.bukkit.inventory.ItemStack
-import java.util.UUID
-import org.bukkit.event.EventHandler
-import scala.collection.mutable.ArrayBuffer
-import dev.hawu.plugins.xenocraft.events.PlayerUnsheatheEvent
-import dev.hawu.plugins.xenocraft.events.PlayerSheatheEvent
-import org.bukkit.event.entity.EntityPickupItemEvent
+import I18n.tl
+import UserMap.user
+import events.{PlayerSheatheEvent, PlayerUnsheatheEvent}
+
 import org.bukkit.entity.Player
-import dev.hawu.plugins.xenocraft.UserMap.user
+import org.bukkit.event.entity.EntityPickupItemEvent
 import org.bukkit.event.player.PlayerPickupArrowEvent
-import dev.hawu.plugins.xenocraft.I18n.tl
+import org.bukkit.event.{EventHandler, Listener}
+import org.bukkit.inventory.ItemStack
+
+import java.util.UUID
+import scala.collection.mutable
+import scala.collection.mutable.ArrayBuffer
 
 /** The listener for handling entity drops when the player goes into combat mode.
-  */
+ */
 object DropsListener extends Listener:
 
   private val drops = mutable.Map.empty[UUID, ArrayBuffer[ItemStack]]
@@ -34,28 +34,26 @@ object DropsListener extends Listener:
 
   @EventHandler
   private def onUnsheathe(event: PlayerUnsheatheEvent): Unit =
-    event.getPlayer().tl("unsheathed")
-    if drops.contains(event.getPlayer().getUniqueId()) then
-      drops(event.getPlayer().getUniqueId()) = ArrayBuffer.empty[ItemStack]
+    event.getPlayer.tl("unsheathed")
+    if drops.contains(event.getPlayer.getUniqueId) then drops(event.getPlayer.getUniqueId) = ArrayBuffer.empty[ItemStack]
 
   @EventHandler
   private def onPickupArrow(event: PlayerPickupArrowEvent): Unit =
-    val player = event.getPlayer()
-    if player.user.exists(!_.bladeUnsheathed) then return
+    val player = event.getPlayer
+    if player.user.exists(_.bladeUnsheathed) then handlePickup(event, player)
 
+  private def handlePickup(event: EntityPickupItemEvent | PlayerPickupArrowEvent, player: Player) =
     val items = drops.getOrElseUpdate(player.getUniqueId, ArrayBuffer.empty)
     event.setCancelled(true)
-    items += event.getItem.getItemStack
-    event.getItem.remove()
+    val item = event match
+      case event: PlayerPickupArrowEvent => event.getItem
+      case event: EntityPickupItemEvent => event.getItem
+    items += item.getItemStack
+    item.remove()
 
   @EventHandler
-  private def onPickup(event: EntityPickupItemEvent): Unit = if event.getEntity().isInstanceOf[Player] then
-    val player = event.getEntity().asInstanceOf[Player]
-    if player.user.exists(!_.bladeUnsheathed) then return
-
-    val items = drops.getOrElseUpdate(player.getUniqueId, ArrayBuffer.empty)
-    event.setCancelled(true)
-    items += event.getItem.getItemStack
-    event.getItem.remove()
+  private def onPickup(event: EntityPickupItemEvent): Unit = event.getEntity match
+    case player: Player if player.user.exists(!_.bladeUnsheathed) => handlePickup(event, player)
+    case _ => ()
 
 end DropsListener

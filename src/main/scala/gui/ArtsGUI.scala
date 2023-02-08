@@ -1,6 +1,12 @@
 package dev.hawu.plugins.xenocraft
 package gui
 
+import I18n.tl
+import UserMap.user
+import arts.ArtManager
+import data.{ArtRechargeType, ArtType, ClassNation, User}
+import gui.ArtsGUI.{ArtComponent, TalentArtComponent}
+
 import dev.hawu.plugins.api.Strings
 import dev.hawu.plugins.api.adapters.UserAdapter
 import dev.hawu.plugins.api.collections.tuples.Pair
@@ -10,11 +16,6 @@ import dev.hawu.plugins.api.gui.templates.StaticComponent
 import dev.hawu.plugins.api.gui.{GuiComponent, GuiModel}
 import dev.hawu.plugins.api.i18n.{LanguageModule, Locale}
 import dev.hawu.plugins.api.items.ItemStackBuilder
-import dev.hawu.plugins.xenocraft.I18n.tl
-import dev.hawu.plugins.xenocraft.UserMap.user
-import dev.hawu.plugins.xenocraft.arts.ArtManager
-import dev.hawu.plugins.xenocraft.data.{ArtRechargeType, ArtType, ClassNation, User}
-import dev.hawu.plugins.xenocraft.gui.ArtsGUI.{ArtComponent, TalentArtComponent}
 import org.bukkit.Material
 import org.bukkit.entity.Player
 import org.bukkit.event.inventory.InventoryClickEvent
@@ -60,45 +61,16 @@ object ArtsGUI extends ModuleHolder("arts-ui"):
     ).setAllowedSlots(MainGUI.getPaginationSlots).setFilterTemplate(null).setBackAction(_ => openArts(player))
       .setBackSlots(Set(2).map(Integer.valueOf).asJava).setPreviousButtonSlots(Set(47).map(Integer.valueOf).asJava)
       .setNextButtonSlots(Set(53).map(Integer.valueOf).asJava).setItemGenerator((art, _) =>
-        new GuiComponent[Unit]() {
-          override def handleClick(event: InventoryClickEvent): Unit =
-            event.setCancelled(true)
-            user.equipArt(art, slot, master)
-            openArts(player)
+      new GuiComponent[Unit]() {
+        override def handleClick(event: InventoryClickEvent): Unit =
+          event.setCancelled(true)
+          user.equipArt(art, slot, master)
+          openArts(player)
 
-          override def render(): ItemStack = retrieveArtDisplay(art, locale, true)
-        },
-      ).setModelSupplier(() => retrieveModel(if master then "choose-master-art-title" else "choose-art-title"))
-      .build(player)
+        override def render(): ItemStack = retrieveArtDisplay(art, locale, true)
+      },
+    ).setModelSupplier(() => retrieveModel(if master then "choose-master-art-title" else "choose-art-title")).build(player)
   end openArtsSelection
-
-  /** Opens the menu for the player to select talent arts.
-    *
-    * @param player
-    *   the player
-    */
-  def openTalentArtsSelection(player: Player): Unit =
-    given Player = player
-
-    val user = player.user.get
-    val locale = UserAdapter.getAdapter.getUser(player).getLocale
-
-    GuiPaginator.newBuilder[ArtType]()
-      .setCollection(ArtManager.getAllArts(false, false).filter(user.canUseArtAs(_, "talent")).toList.asJava)
-      .setAllowedSlots(MainGUI.getPaginationSlots).setBackAction(_ => openArts(player))
-      .setBackSlots(Set(2).map(Integer.valueOf).asJava).setPreviousButtonSlots(Set(47).map(Integer.valueOf).asJava)
-      .setNextButtonSlots(Set(53).map(Integer.valueOf).asJava)
-      .setModelSupplier(() => retrieveModel("choose-talent-art-title")).setPredicate(null).setItemGenerator((art, _) =>
-        new GuiComponent[Unit]() {
-          override def handleClick(event: InventoryClickEvent): Unit =
-            event.setCancelled(true)
-            user.talentArt = Some(art)
-            openArts(player)
-
-          override def render(): ItemStack = retrieveArtDisplay(art, locale, true)
-        },
-      ).build(player)
-  end openTalentArtsSelection
 
   /** Opens the arts menu GUI.
     *
@@ -135,21 +107,19 @@ object ArtsGUI extends ModuleHolder("arts-ui"):
   /** Retrieves the display of the art.
     *
     * @param art
-    *   the art
+    * the art
     * @param locale
-    *   the locale
-    * @param detailed
-    *   whether to display detailed information
-    * @param player
-    *   the player
-    * @param click
-    *   whether to include the "click to change" thing
-    * @return
-    *   the display
-    */
-  def retrieveArtDisplay(art: ArtType, locale: Locale, detailed: Boolean = false, click: Boolean = true)(using
-    player: Player,
-  ): ItemStack =
+   *  the locale
+   * @param detailed
+   *  whether to display detailed information
+   * @param player
+   *  the player
+   * @param click
+   *  whether to include the "click to change" thing
+   * @return
+   * the display
+   */
+  def retrieveArtDisplay(art: ArtType, locale: Locale, detailed: Boolean = false, click: Boolean = true)(using player: Player): ItemStack =
     val user = player.user.get
     val item =
       if !detailed then
@@ -166,10 +136,8 @@ object ArtsGUI extends ModuleHolder("arts-ui"):
             val decimalFormat = DecimalFormat("#,###.#")
             val cooldown = decimalFormat.format(art.cooldown)
             module.get.translate(locale, "cooldown-time", Pair.of("time", cooldown))
-          case ArtRechargeType.AUTO_ATTACK => module.get
-              .translate(locale, "cooldown-auto-attack", Pair.of("count", art.cooldown.intValue))
-          case ArtRechargeType.ROLE_ACTION => module.get
-              .translate(locale, "cooldown-role-action", Pair.of("count", art.cooldown.intValue))
+          case ArtRechargeType.AUTO_ATTACK => module.get.translate(locale, "cooldown-auto-attack", Pair.of("count", art.cooldown.intValue))
+          case ArtRechargeType.ROLE_ACTION => module.get.translate(locale, "cooldown-role-action", Pair.of("count", art.cooldown.intValue))
 
         I18n.translateItem(
           art.icon -> 1,
@@ -189,10 +157,36 @@ object ArtsGUI extends ModuleHolder("arts-ui"):
     ItemStackBuilder.from(item).flags(ItemFlag.HIDE_ATTRIBUTES, ItemFlag.HIDE_POTION_EFFECTS).build()
   end retrieveArtDisplay
 
+  /** Opens the menu for the player to select talent arts.
+   *
+   * @param player
+   * the player
+   */
+  def openTalentArtsSelection(player: Player): Unit =
+    given Player = player
+
+    val user = player.user.get
+    val locale = UserAdapter.getAdapter.getUser(player).getLocale
+
+    GuiPaginator.newBuilder[ArtType]()
+      .setCollection(ArtManager.getAllArts(false, false).filter(user.canUseArtAs(_, "talent")).toList.asJava)
+      .setAllowedSlots(MainGUI.getPaginationSlots).setBackAction(_ => openArts(player)).setBackSlots(Set(2).map(Integer.valueOf).asJava)
+      .setPreviousButtonSlots(Set(47).map(Integer.valueOf).asJava).setNextButtonSlots(Set(53).map(Integer.valueOf).asJava)
+      .setModelSupplier(() => retrieveModel("choose-talent-art-title")).setPredicate(null).setItemGenerator((art, _) =>
+      new GuiComponent[Unit]() {
+        override def handleClick(event: InventoryClickEvent): Unit =
+          event.setCancelled(true)
+          user.talentArt = Some(art)
+          openArts(player)
+
+        override def render(): ItemStack = retrieveArtDisplay(art, locale, true)
+      },
+    ).build(player)
+  end openTalentArtsSelection
+
   /** The implementation of a GUI component that allows selecting arts.
-    */
-  class ArtComponent(private var player: Player, private val slot: Int, private val master: Boolean = false)
-    extends GuiComponent[Unit]():
+   */
+  class ArtComponent(private var player: Player, private val slot: Int, private val master: Boolean = false) extends GuiComponent[Unit]():
 
     private val locale = UserAdapter.getAdapter.getUser(player).getLocale
     private var user = player.user.get
@@ -208,8 +202,7 @@ object ArtsGUI extends ModuleHolder("arts-ui"):
       openArtsSelection(player, slot, master)
 
     override def render(): ItemStack =
-      if artOption.isEmpty then
-        I18n.translateItem(Material.BLACK_STAINED_GLASS_PANE -> 1, "empty-art")(using module, player)
+      if artOption.isEmpty then I18n.translateItem(Material.BLACK_STAINED_GLASS_PANE -> 1, "empty-art")(using module, player)
       else retrieveArtDisplay(artOption.get, locale)(using player)
     end render
 
@@ -231,8 +224,7 @@ object ArtsGUI extends ModuleHolder("arts-ui"):
       openTalentArtsSelection(player)
 
     override def render(): ItemStack =
-      if user.talentArt.isEmpty then
-        I18n.translateItem(Material.RED_STAINED_GLASS_PANE -> 1, "empty-talent-art")(using module, player)
+      if user.talentArt.isEmpty then I18n.translateItem(Material.RED_STAINED_GLASS_PANE -> 1, "empty-talent-art")(using module, player)
       else retrieveArtDisplay(user.talentArt.get, locale)(using player)
     end render
 

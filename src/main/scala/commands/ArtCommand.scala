@@ -1,8 +1,9 @@
 package dev.hawu.plugins.xenocraft
 package commands
 
+import UserMap.user
+
 import dev.hawu.plugins.api.commands.*
-import dev.hawu.plugins.xenocraft.UserMap.user
 
 class ArtCommand extends CommandRegistrable:
 

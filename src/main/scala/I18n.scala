@@ -71,22 +71,26 @@ object I18n extends ModuleHolder("messages"):
   ): GuiModel =
     val mod = matchModule(module)
     val locale = UserAdapter.getAdapter.getUser(p).getLocale
-    val title = mod.translate(locale, key, replacements.asLibrary: _*)
+    val title = mod.translate(locale, key, replacements.asLibrary *)
 
     size match
-      case i: Int                       => GuiModel(i, title)
+      case i: Int => GuiModel(i, title)
       case inventoryType: InventoryType => GuiModel(inventoryType, title)
   end translateModel
 
+  private def matchModule(module: Option[LanguageModule] | LanguageModule): LanguageModule = module match
+    case option: Option[LanguageModule] => option.get
+    case languageModule: LanguageModule => languageModule
+
   /** Translates an item with the provided key.
-    *
-    * @param template
-    *   the template item, could be a material tuple or a full item stack
-    * @param key
-    *   the key to translate
-    * @param replacements
-    *   the replacements to replace with
-    * @param module
+   *
+   * @param template
+   *    the template item, could be a material tuple or a full item stack
+   * @param key
+   *    the key to translate
+   * @param replacements
+   *    the replacements to replace with
+   * @param module
     *   the module to translate with
     * @param p
     *   the player to get the locale for
@@ -103,12 +107,8 @@ object I18n extends ModuleHolder("messages"):
       case stack: ItemStack              => stack
       case (mat, count): (Material, Int) => ItemStack(mat, count)
 
-    mod.translateItem(locale, item, key, replacements.asLibrary: _*)
+    mod.translateItem(locale, item, key, replacements.asLibrary *)
   end translateItem
-
-  private def matchModule(module: Option[LanguageModule] | LanguageModule): LanguageModule = module match
-    case option: Option[LanguageModule] => option.get
-    case languageModule: LanguageModule => languageModule
 
   /** Converts a scala tuple of 2 to the library's version of pair.
     *
@@ -137,24 +137,24 @@ object I18n extends ModuleHolder("messages"):
   extension (s: String) {
 
     /** Translates the [[s]] with the [[args]] provided.
-      *
-      * @param args
-      *   the arguments to replace
-      * @return
-      *   the translated string
-      */
-    def tl(args: (String, Any)*): String = getModule.translate(s, args.map(asLib): _*)
+     *
+     * @param args
+     * the arguments to replace
+     * @return
+     * the translated string
+     */
+    def tl(args: (String, Any)*): String = getModule.translate(s, args.map(asLib) *)
 
     /** Translates the [[s]] with the [[args]] provided in locale [[locale]].
-      *
-      * @param locale
-      *   the locale to translate in
-      * @param args
-      *   the arguments to replace
-      * @return
-      *   the translated string
-      */
-    def tl(locale: Locale, args: (String, Any)*): String = getModule.translate(locale, s, args.map(asLib): _*)
+     *
+     * @param locale
+     * the locale to translate in
+     * @param args
+     * the arguments to replace
+     * @return
+     * the translated string
+     */
+    def tl(locale: Locale, args: (String, Any)*): String = getModule.translate(locale, s, args.map(asLib) *)
 
   }
 
@@ -170,10 +170,10 @@ object I18n extends ModuleHolder("messages"):
     def tl(key: String, args: (String, Any)*): Unit = sender match
       case player: Player =>
         val extendedUser = UserAdapter.getAdapter.getUser(player)
-        val message = getModule.translate(extendedUser.getLocale, key, args.map(asLib): _*)
+        val message = getModule.translate(extendedUser.getLocale, key, args.map(asLib) *)
         player.sendMessage(message)
       case _ =>
-        val message = getModule.translate(key, args.map(asLib): _*)
+        val message = getModule.translate(key, args.map(asLib) *)
         sender.sendMessage(message)
 
   }

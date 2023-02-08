@@ -1,25 +1,23 @@
 package dev.hawu.plugins.xenocraft
 package arts
 
-import dev.hawu.plugins.xenocraft.data.{ArtCategory, ArtType, User}
-import org.bukkit.entity.Player
-import dev.hawu.plugins.xenocraft.data.Directional
-import dev.hawu.plugins.xenocraft.data.EnemyEntity
-import dev.hawu.plugins.xenocraft.events.PlayerDealDamageEvent
-import org.bukkit.Bukkit
+import combat.{BattlefieldListener, CombatManager}
+import data.*
+import events.PlayerDealDamageEvent
+
 import dev.hawu.plugins.api.misc.Raytracing
+import org.bukkit.Bukkit
+import org.bukkit.entity.{Mob, Player}
+
 import scala.jdk.CollectionConverters.*
-import org.bukkit.entity.Mob
-import dev.hawu.plugins.xenocraft.combat.CombatManager
-import dev.hawu.plugins.xenocraft.combat.BattlefieldListener
 
 /** The very abstract implementation of an art.
-  *
-  * This class only provides a skeleton for arts to implement.
-  *
-  * @param artType
-  *   the art enum type
-  */
+ *
+ * This class only provides a skeleton for arts to implement.
+ *
+ * @param artType
+ * the art enum type
+ */
 abstract class Art(val artType: ArtType):
 
   /** Retrieves an instance of the event.
@@ -72,16 +70,15 @@ abstract class Art(val artType: ArtType):
   end getEvent
 
   /** Retrieves the direction.
-    *
-    * @param player
-    *   the player
-    * @param enemy
-    *   the enemy
-    * @return
-    *   the direction
-    */
-  final def direction(player: Player, enemy: EnemyEntity): Directional = BattlefieldListener
-    .calculateDirection(player, enemy.entity)
+   *
+   * @param player
+   * the player
+   * @param enemy
+   * the enemy
+   * @return
+   * the direction
+   */
+  final def direction(player: Player, enemy: EnemyEntity): Directional = BattlefieldListener.calculateDirection(player, enemy.entity)
 
   /** Checks if the event should damage the entity.
     *
@@ -91,7 +88,7 @@ abstract class Art(val artType: ArtType):
     *   whether the event should damage the entity
     */
   final def shouldDamage(event: PlayerDealDamageEvent): Boolean =
-    Bukkit.getPluginManager().callEvent(event)
+    Bukkit.getPluginManager.callEvent(event)
     !event.isEvaded && event.isHit && !event.isCancelled
 
   /** Attempts to retrieve a list of entities in front of the player.
@@ -104,10 +101,10 @@ abstract class Art(val artType: ArtType):
     *   the list of entities in front of the player
     */
   final def getEnemiesFront(player: Player, distance: Double = 4.0): Seq[EnemyEntity] =
-    val result = Raytracing.startNew().origin(player.getEyeLocation()).direction(player.getEyeLocation().getDirection())
-      .distance(distance).step(0.2).raytrace()
-    result.getEntities().asScala.filter(_ != null).filterNot(_.isDead()).filter(_.isInstanceOf[Mob])
-      .map(_.asInstanceOf[Mob]).filter(CombatManager.isEnemy).map(CombatManager.makeEnemy(_)).toSeq
+    val result = Raytracing.startNew().origin(player.getEyeLocation).direction(player.getEyeLocation.getDirection).distance(distance)
+      .step(0.2).raytrace()
+    result.getEntities.asScala.filter(_ != null).filterNot(_.isDead()).filter(_.isInstanceOf[Mob]).map(_.asInstanceOf[Mob])
+      .filter(CombatManager.isEnemy).map(CombatManager.makeEnemy(_)).toSeq
 
   /** Gets all enemies around the player.
     *

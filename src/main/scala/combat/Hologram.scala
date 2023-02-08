@@ -5,8 +5,8 @@ import dev.hawu.plugins.api.{Strings, Tasks}
 import org.bukkit.Location
 import org.bukkit.entity.ArmorStand
 
-import scala.collection.mutable
 import java.util.concurrent.ThreadLocalRandom
+import scala.collection.mutable
 
 /** Represents a floating text from an invisible armor stand, creating a holographic display.
   */
@@ -18,13 +18,13 @@ class Hologram(
 
   private val stands = mutable.ArrayBuffer.empty[ArmorStand]
 
-  private def randomGuassian: Double =
-    if ThreadLocalRandom.current().nextBoolean() then ThreadLocalRandom.current().nextGaussian() / 2
-    else -ThreadLocalRandom.current().nextGaussian() / 2
-
   /** Nudges the hologram by a random amount.
     */
-  def nudgeLocation(): Unit = location = location.add(randomGuassian, randomGuassian, randomGuassian)
+  def nudgeLocation(): Unit = location = location.add(randomGaussian, randomGaussian, randomGaussian)
+
+  private def randomGaussian: Double =
+    if ThreadLocalRandom.current().nextBoolean() then ThreadLocalRandom.current().nextGaussian() / 2
+    else -ThreadLocalRandom.current().nextGaussian() / 2
 
   /** Adds one line to the hologram and immediately spawns it.
     *
@@ -40,6 +40,15 @@ class Hologram(
       despawn()
       lines.clear()
     }).delay(selfDestruct).run()
+
+  /** Attempts to spawn all holograms.
+    */
+  def spawn(): Unit =
+    despawn()
+    val current = location.clone()
+    for line <- lines do
+      stands += makeArmorStand(current, line)
+      current.subtract(0.0, 0.3, 0.0)
 
   private def makeArmorStand(location: Location, name: String): ArmorStand =
     val stand: ArmorStand = location.getWorld.spawn[ArmorStand](
@@ -58,15 +67,6 @@ class Hologram(
     )
     stand
 
-  /** Attempts to spawn all holograms.
-    */
-  def spawn(): Unit =
-    despawn()
-    val current = location.clone()
-    for line <- lines do
-      stands += makeArmorStand(current, line)
-      current.subtract(0.0, 0.3, 0.0)
-
   /** Despawns all armor stands and clears all references.
     */
   def despawn(): Unit =
@@ -78,7 +78,7 @@ class Hologram(
     * @return
     *   whether it is spawned
     */
-  def isSpawned: Boolean = !stands.isEmpty
+  def isSpawned: Boolean = stands.nonEmpty
 
   /** Updates one line of the hologram and immediately updates it.
     *

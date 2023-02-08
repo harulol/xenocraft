@@ -1,39 +1,33 @@
 package dev.hawu.plugins.xenocraft
 package arts
 
-import dev.hawu.plugins.xenocraft.data.{ArtRechargeType, ArtType, ClassType}
+import data.{ArtRechargeType, ArtType, ClassType}
+
 import org.bukkit.Material
 
 import scala.collection.mutable
 
 /** Manager for binding art types to arts.
-  */
+ */
 object ArtManager:
 
   private val map = mutable.Map.empty[ArtType, Art]
 
   /** Initializes the art manager.
-    */
-  def initialize(): Unit =
-    // Zephyr arts
-    import dev.hawu.plugins.xenocraft.arts.zephyr.*
-    Seq(WideSlash, AirFang).foreach(bind)
+   */
+  def initialize(): Unit = ()
 
   /** Retrieves an iterable of all arts.
-    *
-    * @param includesKeves
-    *   whether to include kevesi arts
-    * @param includesAgnus
-    *   whether to include agnian arts
-    * @param includesTalent
-    *   whether to include talent arts
-    * @return
-    */
-  def getAllArts(
-    includesKeves: Boolean = true,
-    includesAgnus: Boolean = true,
-    includesTalent: Boolean = true,
-  ): Iterable[ArtType] =
+   *
+   * @param includesKeves
+   * whether to include kevesi arts
+   * @param includesAgnus
+   * whether to include agnian arts
+   * @param includesTalent
+   * whether to include talent arts
+   * @return
+   */
+  def getAllArts(includesKeves: Boolean = true, includesAgnus: Boolean = true, includesTalent: Boolean = true): Iterable[ArtType] =
     var values = ArtType.values
     if !includesKeves then values = values.filterNot(_.isKevesi)
     if !includesAgnus then values = values.filterNot(_.isAgnian)
@@ -73,7 +67,7 @@ object ArtManager:
     *   the material
     */
   def getIcon(art: ArtType): Material =
-    import dev.hawu.plugins.xenocraft.data.ArtCategory
+    import data.ArtCategory
     art match
       case ArtType.INFINITY_BLADE  => return Material.DIAMOND_SWORD
       case ArtType.UNLIMITED_SWORD => return Material.NETHERITE_SWORD

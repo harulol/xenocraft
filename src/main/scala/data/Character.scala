@@ -1,16 +1,17 @@
 package dev.hawu.plugins.xenocraft
 package data
 
+import gui.CharactersGUI
+
 import dev.hawu.plugins.api.i18n.{LanguageModule, Locale}
-import dev.hawu.plugins.xenocraft.gui.CharactersGUI
 import org.bukkit.Material
 import org.bukkit.plugin.java.JavaPlugin
 
 /** Represents a character that a user can select as the base stats holder.
-  */
+ */
 enum Character(
-  val icon: Material,
-  val baseHp: Double,
+                val icon: Material,
+                val baseHp: Double,
   val baseAttack: Double,
   val baseHealingPower: Double,
   val baseDexterity: Double,

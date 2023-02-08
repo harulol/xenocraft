@@ -1,7 +1,8 @@
 package dev.hawu.plugins.xenocraft
 
+import data.User
+
 import dev.hawu.plugins.api.misc.ConsoleLogger
-import dev.hawu.plugins.xenocraft.data.User
 import org.bukkit.configuration.file.YamlConfiguration
 import org.bukkit.event.player.PlayerJoinEvent
 import org.bukkit.event.{EventHandler, Listener}
@@ -36,12 +37,10 @@ object UserMap extends Listener:
         } catch
           case e: Exception =>
             e.printStackTrace()
-            ConsoleLogger.severef(pl, "Couldn't properly load %s: %s", file.getName, e.getMessage)
+            ConsoleLogger.severef(pl, s"Couldn't properly load ${file.getName}: ${e.getMessage}")
       }
 
-    Bukkit.getOfflinePlayers.filter(p => !map.contains(p.getUniqueId)).foreach { p =>
-      map.put(p.getUniqueId, User(p.getUniqueId))
-    }
+    Bukkit.getOfflinePlayers.map(_.getUniqueId).filterNot(map.contains).foreach { u => map += u -> User(u) }
 
   end initialize
 
@@ -64,14 +63,14 @@ object UserMap extends Listener:
       } catch
         case e: Exception =>
           e.printStackTrace()
-          ConsoleLogger.severef(pl, "Couldn't properly save %s.yml: %s", uuid.toString, e.getMessage),
+          ConsoleLogger.severef(pl, s"Couldn't properly save $uuid.yml: ${e.getMessage}"),
     )
 
   end save
 
   @EventHandler
-  private def onJoin(event: PlayerJoinEvent): Unit = if !map.contains(event.getPlayer.getUniqueId) then
-    map.put(event.getPlayer.getUniqueId, User(event.getPlayer.getUniqueId))
+  private def onJoin(event: PlayerJoinEvent): Unit =
+    if !map.contains(event.getPlayer.getUniqueId) then map += event.getPlayer.getUniqueId -> User(event.getPlayer.getUniqueId)
 
   extension (player: OfflinePlayer) {
 

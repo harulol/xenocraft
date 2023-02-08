@@ -1,18 +1,18 @@
 package dev.hawu.plugins.xenocraft
 package commands
 
+import I18n.*
+import data.{Character, ClassType, EnemyEntity}
+import gui.{CharactersGUI, MainGUI}
+
 import dev.hawu.plugins.api.commands.*
-import dev.hawu.plugins.xenocraft.I18n.*
-import dev.hawu.plugins.xenocraft.data.{Character, ClassType}
-import dev.hawu.plugins.xenocraft.gui.{CharactersGUI, MainGUI}
 import org.bukkit.plugin.java.JavaPlugin
 
 import java.util
 import scala.jdk.CollectionConverters.*
-import dev.hawu.plugins.xenocraft.data.EnemyEntity
 
 /** The handlers for the base commands of this plugin Xenocraft.
-  */
+ */
 class PluginBaseCommand(private val plugin: JavaPlugin) extends CommandRegistrable:
 
   @Command("xenocraft") @CommandPermission(Array("xenocraft.base"))

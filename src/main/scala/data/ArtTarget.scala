@@ -1,16 +1,17 @@
 package dev.hawu.plugins.xenocraft
 package data
 
+import gui.ArtsGUI
+
 import dev.hawu.plugins.api.i18n.Locale
-import dev.hawu.plugins.xenocraft.gui.ArtsGUI
 
 /** Represents a type of target an art can have.
-  */
+ */
 enum ArtTarget:
 
   /** Retrieves the name of the target localized.
-    *
-    * @param locale
+   *
+   * @param locale
     *   the locale to localize to.
     * @return
     *   the localized name of the target

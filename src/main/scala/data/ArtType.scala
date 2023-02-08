@@ -1,17 +1,18 @@
 package dev.hawu.plugins.xenocraft
 package data
 
+import arts.ArtManager
+import gui.ArtsGUI
+
 import dev.hawu.plugins.api.i18n.Locale
-import dev.hawu.plugins.xenocraft.arts.ArtManager
-import dev.hawu.plugins.xenocraft.gui.ArtsGUI
 import org.bukkit.Material
 
 /** Enumerations for all art types. One art type should only correspond to one art object.
-  */
+ */
 enum ArtType(
-  val cls: Option[ClassType] = None,
-  val category: ArtCategory,
-  val target: ArtTarget,
+              val cls: Option[ClassType] = None,
+              val category: ArtCategory,
+              val target: ArtTarget,
   val powerMultiplier: Double = 0,
   val cooldown: Double,
   val cooldownType: ArtRechargeType,
@@ -38,27 +39,26 @@ enum ArtType(
   def name(locale: Locale): String = ArtsGUI.getModule.translate(locale, s"${toString.toLowerCase.replace('_', '-')}")
 
   /** Attempts to retrieve the description for this specific art type.
-    *
-    * @param locale
-    *   The locale to use.
-    * @return
-    *   the description
-    */
-  def description(locale: Locale): String = ArtsGUI.getModule
-    .translate(locale, s"${toString.toLowerCase.replace('_', '-')}-desc")
+   *
+   * @param locale
+   * The locale to use.
+   * @return
+   * the description
+   */
+  def description(locale: Locale): String = ArtsGUI.getModule.translate(locale, s"${toString.toLowerCase.replace('_', '-')}-desc")
 
-  /** Checks if this art is a soulhacker art. Soulhacker is annoyingly different as it is a class that has its own set
-    * of arts and skills, completely unrelated.
-    *
-    * And also talent arts are not available for soulhacker except Final Countdown, but Noah and Mio can use their
-    * respective exclusive arts still.
-    *
-    * @return
-    */
+  /** Checks if this art is a soulhacker art. Soulhacker is annoyingly different as it is a class that has its own set of arts and skills,
+   * completely unrelated.
+   *
+   * And also talent arts are not available for soulhacker except Final Countdown, but Noah and Mio can use their respective exclusive arts
+   * still.
+   *
+   * @return
+   */
   def isSoulhacker: Boolean = cls.exists(_.isSoulhacker)
 
   /** Checks if this art type is a talent art.
-    *
+   *
     * @return
     *   whether it is
     */
@@ -2662,12 +2662,7 @@ enum ArtType(
     )
 
   case UNLIMITED_SWORD
-    extends ArtType(
-      category = ArtCategory.BUFF,
-      target = ArtTarget.SELF,
-      cooldown = 10,
-      cooldownType = ArtRechargeType.ROLE_ACTION,
-    )
+    extends ArtType(category = ArtCategory.BUFF, target = ArtTarget.SELF, cooldown = 10, cooldownType = ArtRechargeType.ROLE_ACTION)
 
   // ================================== //
   // LUCKY SEVEN ARTS

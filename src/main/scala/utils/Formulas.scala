@@ -1,22 +1,17 @@
 package dev.hawu.plugins.xenocraft
 package utils
 
-import dev.hawu.plugins.xenocraft.combat.CombatManager
-import dev.hawu.plugins.xenocraft.data.User
-import org.bukkit.entity.LivingEntity
+import combat.CombatManager
+import data.{Attributable, Directional, EnemyEntity, User}
+
+import org.bukkit.entity.{LivingEntity, Mob}
 
 import java.security.SecureRandom
 import java.util.concurrent.ThreadLocalRandom
-import org.bukkit.entity.Mob
-import dev.hawu.plugins.xenocraft.data.Directional
-import dev.hawu.plugins.xenocraft.data.EnemyEntity
-import dev.hawu.plugins.xenocraft.data.Attributable
 
 /** Singleton object dedicated to calculating stats.
   */
 object Formulas:
-
-  private val random = SecureRandom()
 
   /** Calculates the display attack value of a user.
     *

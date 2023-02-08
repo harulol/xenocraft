@@ -1,16 +1,17 @@
 package dev.hawu.plugins.xenocraft
 package data
 
-import org.bukkit.Material
+import gui.SkillsGUI
+
 import dev.hawu.plugins.api.i18n.Locale
-import dev.hawu.plugins.xenocraft.gui.SkillsGUI
+import org.bukkit.Material
 
 /** Represents a skill type.
-  */
+ */
 enum SkillType(val cls: Option[ClassType] = None, val material: Material, val isMaster: Boolean = false):
 
   /** Checks if this skill belongs to an agnian class.
-    *
+   *
     * @return
     *   whether it is agnian
     */
@@ -38,12 +39,11 @@ enum SkillType(val cls: Option[ClassType] = None, val material: Material, val is
   def name(locale: Locale) = SkillsGUI.getModule.translate(locale, toString.toLowerCase().replace('_', '-'))
 
   /** Retrieves the properly formatted description of the skill type.
-    *
-    * @return
-    *   the description
-    */
-  def description(locale: Locale) = SkillsGUI.getModule
-    .translate(locale, s"${toString.toLowerCase().replace('_', '-')}-desc")
+   *
+   * @return
+   * the description
+   */
+  def description(locale: Locale) = SkillsGUI.getModule.translate(locale, s"${toString.toLowerCase().replace('_', '-')}-desc")
 
   case SHARP_EYE extends SkillType(Some(ClassType.SWORDFIGHTER), Material.SPECTRAL_ARROW, false)
   case COVERT_ATTACK extends SkillType(Some(ClassType.SWORDFIGHTER), Material.ENDER_EYE, true)

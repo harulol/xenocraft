@@ -1,22 +1,22 @@
 package dev.hawu.plugins.xenocraft
 package gui
 
+import I18n.tl
+import UserMap.user
+import data.{ClassType, User}
+
 import dev.hawu.plugins.api.adapters.UserAdapter
 import dev.hawu.plugins.api.gui.GuiComponent
 import dev.hawu.plugins.api.gui.brushes.BrushRegistry
 import dev.hawu.plugins.api.gui.pagination.GuiPaginator
 import dev.hawu.plugins.api.i18n.LanguageModule
 import dev.hawu.plugins.api.items.ItemStackBuilder
-import dev.hawu.plugins.xenocraft.I18n.tl
-import dev.hawu.plugins.xenocraft.UserMap.user
-import dev.hawu.plugins.xenocraft.data.ClassType
 import org.bukkit.Material
 import org.bukkit.entity.Player
 import org.bukkit.event.inventory.InventoryClickEvent
 import org.bukkit.inventory.{ItemFlag, ItemStack}
 
 import scala.jdk.CollectionConverters.*
-import dev.hawu.plugins.xenocraft.data.User
 
 /** The singleton object dedicated to working with the GUI to select classes.
   */
@@ -40,9 +40,9 @@ object ClassesGUI extends ModuleHolder("classes-ui"):
       MainGUI.applyNavigationBar(model, '2', Material.PINK_STAINED_GLASS_PANE)
       if user.canChooseWeapon then model.mount(2, WeaponSelectComponent(user, player))
       model
-    }).setCollection(ClassType.values.filter(_.shouldDisplay).toList.asJava).setAllowedSlots(MainGUI.getPaginationSlots)
-      .setPredicate(null).setPreviousButtonSlots(Set(47).map(Integer.valueOf).asJava)
-      .setNextButtonSlots(Set(53).map(Integer.valueOf).asJava).setItemGenerator((cls, _) =>
+    }).setCollection(ClassType.values.filter(_.shouldDisplay).toList.asJava).setAllowedSlots(MainGUI.getPaginationSlots).setPredicate(null)
+      .setPreviousButtonSlots(Set(47).map(Integer.valueOf).asJava).setNextButtonSlots(Set(53).map(Integer.valueOf).asJava)
+      .setItemGenerator((cls, _) =>
         new GuiComponent[Unit]() {
           override def handleClick(event: InventoryClickEvent): Unit =
             event.setCancelled(true)
@@ -86,19 +86,18 @@ object ClassesGUI extends ModuleHolder("classes-ui"):
     model.open(player)
 
   /** The implementation of a weapon component for selecting the weapon
-    *
-    * @param user
-    *   the user
-    * @param player
-    *   the player
-    * @param upgraded
-    *   whether this is upgraded
-    */
-  class WeaponComponent(private val user: User, private var player: Player, private val upgraded: Boolean)
-    extends GuiComponent[Unit]():
+   *
+   * @param user
+   * the user
+   * @param player
+   * the player
+   * @param upgraded
+   * whether this is upgraded
+   */
+  class WeaponComponent(private val user: User, private var player: Player, private val upgraded: Boolean) extends GuiComponent[Unit]():
 
     private val weapon = if !upgraded then user.cls.get.weaponType else user.cls.get.upgradedWeaponType.get
-    private val locale = UserAdapter.getAdapter().getUser(user.uuid).getLocale()
+    private val locale = UserAdapter.getAdapter.getUser(user.uuid).getLocale
 
     override def componentWillUnmount(): Unit = player = null
 
@@ -124,7 +123,7 @@ object ClassesGUI extends ModuleHolder("classes-ui"):
     *   the user related
     */
   class WeaponSelectComponent(private val user: User, private var player: Player) extends GuiComponent[Unit]():
-    private val locale = UserAdapter.getAdapter().getUser(player).getLocale()
+    private val locale = UserAdapter.getAdapter.getUser(player).getLocale
 
     override def componentWillUnmount(): Unit = player = null
 

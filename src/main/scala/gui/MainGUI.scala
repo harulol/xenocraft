@@ -1,14 +1,15 @@
 package dev.hawu.plugins.xenocraft
 package gui
 
+import I18n.*
+import UserMap.user
+
 import dev.hawu.plugins.api.adapters.UserAdapter
 import dev.hawu.plugins.api.gui.brushes.{BrushRegistry, LayoutBrush}
 import dev.hawu.plugins.api.gui.templates.{CloseInventoryComponent, StaticComponent}
 import dev.hawu.plugins.api.gui.{GuiComponent, GuiModel}
 import dev.hawu.plugins.api.i18n.{LanguageModule, Locale}
 import dev.hawu.plugins.api.items.ItemStackBuilder
-import dev.hawu.plugins.xenocraft.I18n.*
-import dev.hawu.plugins.xenocraft.UserMap.user
 import org.bukkit.entity.Player
 import org.bukkit.event.inventory.{InventoryClickEvent, InventoryType}
 import org.bukkit.inventory.meta.SkullMeta
@@ -19,9 +20,8 @@ import org.bukkit.{Material, Sound}
 import java.util
 import scala.jdk.CollectionConverters.*
 
-/** The singleton object for dealing with the very main character building UIs, as all other UIs are accessible from
-  * this UI.
-  */
+/** The singleton object for dealing with the very main character building UIs, as all other UIs are accessible from this UI.
+ */
 object MainGUI extends ModuleHolder("main-ui"):
 
   private val navigationMap = Map(
@@ -91,8 +91,7 @@ object MainGUI extends ModuleHolder("main-ui"):
     val locale = UserAdapter.getAdapter.getUser(player).getLocale
 
     val model = I18n.translateModel(45, "main-ui-title")
-    val layout = BrushRegistry.layout().setModel(model)
-      .setLayout("123456***", "*-------*", "*---P---*", "*-------*", "****X****").build()
+    val layout = BrushRegistry.layout().setModel(model).setLayout("123456***", "*-------*", "*---P---*", "*-------*", "****X****").build()
 
     layout.apply('*', () => ItemStackBuilder.of(Material.BLACK_STAINED_GLASS_PANE).toStaticComponent)
     layout.apply('X', () => CloseInventoryComponent())
@@ -158,11 +157,11 @@ object MainGUI extends ModuleHolder("main-ui"):
   end applyNavigationButtons
 
   /** Retrieves the slots needed for pagination within an enclosed space.
-    *
-    * @return
-    *   the slots needed
-    */
-  def getPaginationSlots: util.List[Integer] = (0 to 54).filter(i => i % 9 >= 3 && i % 9 <= 7).filterNot(_ < 9)
-    .filterNot(_ > 44).map(Integer.valueOf).asJava
+   *
+   * @return
+   * the slots needed
+   */
+  def getPaginationSlots: util.List[Integer] = (0 to 54).filter(i => i % 9 >= 3 && i % 9 <= 7).filterNot(_ < 9).filterNot(_ > 44)
+    .map(Integer.valueOf).asJava
 
 end MainGUI

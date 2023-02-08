@@ -1,9 +1,10 @@
 package dev.hawu.plugins.xenocraft
 package data
 
+import gui.GemsGUI
+
 import dev.hawu.plugins.api.collections.tuples.Pair
 import dev.hawu.plugins.api.i18n.Locale
-import dev.hawu.plugins.xenocraft.gui.GemsGUI
 
 /** Represents the gem that a player can equip.
   */

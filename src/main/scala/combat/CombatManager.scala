@@ -1,28 +1,25 @@
 package dev.hawu.plugins.xenocraft
 package combat
 
-import dev.hawu.plugins.xenocraft.UserMap.user
-import dev.hawu.plugins.xenocraft.data.ClassRole
+import UserMap.user
+import data.{ClassRole, EnemyEntity}
+import events.PlayerDealDamageEvent
+
+import org.bukkit.*
 import org.bukkit.Particle.{DustOptions, TOTEM, TOWN_AURA}
-import org.bukkit.entity.{LivingEntity, Player}
-import org.bukkit.{Color, Location, Particle}
+import org.bukkit.attribute.Attribute
+import org.bukkit.entity.{LivingEntity, Mob, Player}
+import org.bukkit.metadata.FixedMetadataValue
 
 import java.security.SecureRandom
-import scala.collection.mutable.ArrayBuffer
-import org.bukkit.entity.Mob
-import java.util.concurrent.ThreadLocalRandom
-import org.bukkit.metadata.FixedMetadataValue
-import org.bukkit.attribute.Attribute
-import org.bukkit.EntityEffect
-import scala.jdk.CollectionConverters.*
-import scala.collection.mutable
 import java.util.UUID
-import dev.hawu.plugins.xenocraft.data.EnemyEntity
-import dev.hawu.plugins.xenocraft.events.PlayerDealDamageEvent
-import org.bukkit.Bukkit
+import java.util.concurrent.ThreadLocalRandom
+import scala.collection.mutable
+import scala.collection.mutable.ArrayBuffer
+import scala.jdk.CollectionConverters.*
 
 /** The singleton object dedicated to managing the battlefield and spawning holograms in the right place.
-  */
+ */
 object CombatManager:
 
   private val secureRandom = SecureRandom()
@@ -32,9 +29,9 @@ object CombatManager:
     *
     * @param player
     *   the player
-    * @param value
-    *   the value
-    */
+   * @param value
+   *    the value
+   */
   def heal(player: Player, value: Double): Unit =
     val user = player.user.get
     val oldHp = user.hp
@@ -43,20 +40,28 @@ object CombatManager:
     spawnHologramAround(player.getEyeLocation, s"&a${change.intValue}")
 
   /** Damages the player for the specified damage value.
-    *
-    * @param player
-    *   the player
-    * @param value
-    *   the damage
-    */
+   *
+   * @param player
+   * the player
+   * @param value
+   * the damage
+   */
   def damage(player: Player, value: Double, spawn: Boolean = false): Unit =
     val user = player.user.get
     val damage = value min 9999999 max 0
     user.setHp(user.hp - damage)
     if spawn then spawnHologramAround(player.getEyeLocation, s"&c${damage.intValue}")
 
+  private def spawnHologramAround(location: Location, lines: String*): Unit =
+    Hologram(location.clone().add(getOffset, getOffset, getOffset), ArrayBuffer.from(lines), 60).spawn()
+
+  private def getOffset: Double =
+    val value = secureRandom.nextGaussian() / 2
+    val signum = if secureRandom.nextBoolean() then -1 else 1
+    signum * value
+
   def dealDamage(event: PlayerDealDamageEvent): Unit =
-    Bukkit.getPluginManager().callEvent(event)
+    Bukkit.getPluginManager.callEvent(event)
     if !event.isCancelled && !event.isEvaded && event.isHit then event.entity.setHp(event.entity.hp - event.finalDamage)
 
   /** Makes an enemy and retroeves it.
@@ -87,14 +92,6 @@ object CombatManager:
     */
   def clearEnemy(entity: Mob): Unit = entities.remove(entity.getUniqueId)
 
-  private def spawnHologramAround(location: Location, lines: String*): Unit =
-    Hologram(location.clone().add(getOffset, getOffset, getOffset), ArrayBuffer.from(lines), 60).spawn()
-
-  private def getOffset: Double =
-    val value = secureRandom.nextGaussian() / 2
-    val signum = if secureRandom.nextBoolean() then -1 else 1
-    signum * value
-
   /** Draws the aggro target line from an entity to a player.
     *
     * @param entity
@@ -104,9 +101,7 @@ object CombatManager:
     */
   def drawAggroLine(entity: LivingEntity, player: Player): Unit =
     val user = player.user.get
-    val dustOptions =
-      if user.cls.exists(_.classRole == ClassRole.DEFENDER) then DustOptions(Color.AQUA, 1)
-      else DustOptions(Color.RED, 1)
+    val dustOptions = if user.cls.exists(_.classRole == ClassRole.DEFENDER) then DustOptions(Color.AQUA, 1) else DustOptions(Color.RED, 1)
     drawLine(entity.getEyeLocation.add(0.0, 1.0, 0.0), player.getEyeLocation.add(0.0, 1.0, 0.0), dustOptions)
 
   private def drawLine(from: Location, to: Location, dustOptions: DustOptions): Unit =
