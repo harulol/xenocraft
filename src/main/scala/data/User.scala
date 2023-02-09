@@ -2,7 +2,7 @@ package dev.hawu.plugins.xenocraft
 package data
 
 import combat.HotbarManager
-import events.{PlayerIncapitateEvent, PlayerSheatheEvent, PlayerUnsheatheEvent}
+import events.{PlayerIncapacitateEvent, PlayerSheatheEvent, PlayerUnsheatheEvent}
 import gui.{ArtsGUI, ClassesGUI}
 import skills.SkillManager
 import utils.Formulas
@@ -55,6 +55,7 @@ case class User(
 
   private val inventory = mutable.Map.empty[Int, ItemStack]
   private val classMemory = mutable.Map.empty[ClassType, ClassMemory]
+
   var bladeUnsheathed = false
   var lastSoulhackerSoul: Option[ClassType] = None
 
@@ -220,31 +221,6 @@ case class User(
       finally { inventory.foreach((index, item) => p.getInventory.setItem(index, item)) }
     }
     inventory.clear()
-
-  /** Sets the HP value of the player.
-    *
-    * @param value
-    *   the HP value
-    */
-  override def setHp(value: Double): Unit =
-    val maxHealth = maxHp
-    _hp = value min maxHealth max 0
-    if maxHealth != 0 then
-      val percentage = _hp / maxHealth
-      player.foreach(p => {
-        val value = p.getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue * percentage
-        if value <= 0 then
-          setHp(maxHp)
-          val deathEvent = PlayerIncapitateEvent(p)
-          Bukkit.getPluginManager.callEvent(deathEvent)
-          Tasks.run(_ => p.teleport(p.getWorld.getSpawnLocation)).run()
-        else if value < p.getHealth then
-          p.setHealth(value)
-          p.playEffect(EntityEffect.HURT)
-        else p.setHealth(value)
-      })
-
-  end setHp
 
   override def maxHp: Double = Formulas.calculateHp(this)
 

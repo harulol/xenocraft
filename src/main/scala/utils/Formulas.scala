@@ -118,6 +118,21 @@ object Formulas:
     val etherDef = user.cls.map(_.classEtherDef).getOrElse(0d)
     etherDef * (1 + user.pctEtherDef) + user.flatEtherDef
 
+  /** Calculates the multiplier that accounts for the defense of, usually an enemy, against a type of attack.
+    *
+    * @param enemy
+    *   the enemy
+    * @param physical
+    *   whether the attack was physical
+    * @param piercing
+    *   whether the attack was piercing
+    * @return
+    *   the type defense multiplier
+    */
+  def calculateTypeDefenseMultiplier(enemy: Attributable, physical: Boolean, piercing: Boolean = false): Double =
+    val value = if physical then 1 - enemy.physicalDef + enemy.flatPhysDefReduction else 1 - enemy.etherDef + enemy.flatEtherDefReduction
+    if piercing then value max 1.0 else value
+
   /** Checks if the user should have a critical hit.
     *
     * @param user

@@ -6,17 +6,17 @@ import data.{ArtReaction, ArtType, Directional, EnemyEntity}
 import utils.Formulas
 
 import org.bukkit.entity.{Mob, Player}
-import org.bukkit.event.{Cancellable, Event, HandlerList}
 import org.bukkit.event.player.PlayerEvent
+import org.bukkit.event.{Cancellable, Event, HandlerList}
 
 import java.util.concurrent.ThreadLocalRandom
 
 /** The event is called when a player attempts to deal damage to a mob.
- *
- * Cancelling this event will prevent the mob from taking any damage.
- */
+  *
+  * Cancelling this event will prevent the mob from taking any damage.
+  */
 class PlayerDealDamageEvent(
-                             player: Player,
+  player: Player,
   val direction: Directional,
   val entity: EnemyEntity,
   val physical: Boolean,
@@ -27,29 +27,23 @@ class PlayerDealDamageEvent(
   val isPreemptive: Boolean = false,
   val isPiercing: Boolean = false,
   val isAoE: Boolean = false,
-) extends PlayerEvent(player) with Cancellable:
+) extends PlayerEvent(player) with Cancellable with UserEvent(player.user.get):
 
-  val stabilityModifier = random.nextDouble(0.0, user.weapon.get.weaponAttack * user.weapon.get.weaponStability)
-  val critMultiplier = if isCritical then 1.25 + user.critDamage else 1.0
-  val comboMultiplier = if entity.reaction.contains(ArtReaction.LAUNCH) then 1.5 else 1.0
-  val typeDefenseMultiplier = {
-    var value =
-      if physical then 1 - entity.physicalDef + entity.flatPhysDefReduction else 1 - entity.etherDef + entity.flatEtherDefReduction
-
-    if isPiercing then value = value max 1.0
-    value
-  }
-  val blockedMultiplier = if isBlocked then 1 - (if fusion then 0.75 else 0.5) - entity.flatBlockStrength else 1.0
-  val backPreemptiveMultiplier = if isPreemptive && direction == Directional.BACK then 1.5 else 1.0
-  val aoeMultiplier = if isAoE then 0.75 else 1.0
-  val multiHitCorrection = if artType.isDefined then 1.0 / artType.get.hits else 1.0
-  val randomMultiplier =
-    if isPreemptive then ThreadLocalRandom.current().nextDouble(1.0, 1.1) else ThreadLocalRandom.current().nextDouble(0.9, 1.1)
   private val random = ThreadLocalRandom.current()
-  private val user = player.user.get
   private val criticalHit = Formulas.canCrit(user, artCritMod, isPreemptive)
   private val blockedHit = Formulas.canBlock(entity, direction)
   private val landedHit = Formulas.canHit(user, entity, artHitChance)
+
+  private val _stabilityModifier = random.nextDouble(0.0, user.weapon.get.weaponAttack * user.weapon.get.weaponStability)
+  private val _critMultiplier = if isCritical then 1.25 + user.critDamage else 1.0
+  private val _comboMultiplier = if entity.reaction.contains(ArtReaction.LAUNCH) then 1.5 else 1.0
+  private val _typeDefenseMultiplier = Formulas.calculateTypeDefenseMultiplier(entity, physical, isPiercing)
+  private val _blockedMultiplier = if isBlocked then 1 - (if fusion then 0.75 else 0.5) - entity.flatBlockStrength else 1.0
+  private val _backPreemptiveMultiplier = if isPreemptive && direction == Directional.BACK then 1.5 else 1.0
+  private val _aoeMultiplier = if isAoE then 0.75 else 1.0
+  private val _multiHitCorrection = if artType.isDefined then 1.0 / artType.get.hits else 1.0
+  private val _randomMultiplier = if isPreemptive then random.nextDouble(1.0, 1.1) else random.nextDouble(0.9, 1.1)
+
   var artPowerMultiplier = if artType.isDefined then artType.get.powerMultiplier else 1.0
   var hits = artType.map(_.hits).getOrElse(1)
   var damageBonus1 = 0.0
@@ -60,14 +54,75 @@ class PlayerDealDamageEvent(
   var isEvaded = entity.isEvading
   var isHit = landedHit
   var shouldOverride = true
+
   private var cancelled = false
 
-  /** Checks if an art was used for this damage event.
+  // Create getters using `def` for the private val fields with an underscore before name.
+  // Please Copilot
+
+  /** Gets the stability modifier of the damage event. This depends on the weapon's stability, and accounts for how consistent the attack
+    * increase is.
     *
     * @return
-    *   the art power multiplier
+    *   the stability modifier
     */
-  def isArtUsed: Boolean = artPowerMultiplier.intValue <= 1
+  def stabilityModifier: Double = _stabilityModifier
+
+  /** Gets the critical hit multiplier of the damage event. [[1.25 + user.critDamage]] if this was a critical hit.
+    *
+    * @return
+    *   the critical hit multiplier
+    */
+  def critMultiplier: Double = _critMultiplier
+
+  /** Gets the combo multiplier of the damage event.
+    *
+    * @return
+    *   the combo multiplier
+    */
+  def comboMultiplier: Double = _comboMultiplier
+
+  /** Gets the type defense multiplier of the damage event.
+    *
+    * @return
+    *   the type defense multiplier
+    */
+  def typeDefenseMultiplier: Double = _typeDefenseMultiplier
+
+  /** Gets the blocked multiplier of the damage event.
+    *
+    * @return
+    *   the blocked multiplier
+    */
+  def blockedMultiplier: Double = _blockedMultiplier
+
+  /** Gets the back preemptive multiplier of the damage event.
+    *
+    * @return
+    *   the back preemptive multiplier
+    */
+  def backPreemptiveMultiplier: Double = _backPreemptiveMultiplier
+
+  /** Gets the AoE multiplier of the damage event.
+    *
+    * @return
+    *   the AoE multiplier
+    */
+  def aoeMultiplier: Double = _aoeMultiplier
+
+  /** Gets the multi-hit correction of the damage event.
+    *
+    * @return
+    *   the multi-hit correction
+    */
+  def multiHitCorrection: Double = _multiHitCorrection
+
+  /** Gets the random multiplier of the damage event.
+    *
+    * @return
+    *   the random multiplier
+    */
+  def randomMultiplier: Double = _randomMultiplier
 
   /** Checks if this damage event is a critical hit.
     *
@@ -77,10 +132,10 @@ class PlayerDealDamageEvent(
   def isCritical: Boolean = criticalHit
 
   /** Finds the damage that is already coerced within the limit.
-   *
-   * @return
-   * the coerced damage
-   */
+    *
+    * @return
+    *   the coerced damage
+    */
   def finalDamage: Double = totalDamage min 9999999 max 0
 
   /** Calculates the total damage without accounting for the limit.
@@ -89,20 +144,20 @@ class PlayerDealDamageEvent(
     *   the unlimited total damage
     */
   def totalDamage: Double =
-    // A blocked hit never crits.
-    val realCritMultiplier = if isBlocked then 1.0 else critMultiplier
-    (user.attack + stabilityModifier) * artPowerMultiplier *
+    // A blocked hit can never crit.
+    val realCritMultiplier = if isBlocked then 1.0 else _critMultiplier
+    (user.attack + _stabilityModifier) * artPowerMultiplier *
       (1 + damageBonus1) *
       (1 + damageBonus2) *
       (1 + damageBonus3) *
-      (1 - damageReduction) * typeDefenseMultiplier * blockedMultiplier * realCritMultiplier * comboMultiplier * backPreemptiveMultiplier *
-      aoeMultiplier * multiHitCorrection * randomMultiplier * shackleRingMultiplier
+      (1 - damageReduction) * _typeDefenseMultiplier * _blockedMultiplier * realCritMultiplier * _comboMultiplier *
+      _backPreemptiveMultiplier * _aoeMultiplier * _multiHitCorrection * _randomMultiplier * shackleRingMultiplier
 
   /** Checks if this damage event is a blocked hit.
-   *
-   * @return
-   * true if the damage event is a blocked hit, false otherwise
-   */
+    *
+    * @return
+    *   true if the damage event is a blocked hit, false otherwise
+    */
   def isBlocked: Boolean = blockedHit
 
   /** Gets whether the event is cancelled.
@@ -120,10 +175,10 @@ class PlayerDealDamageEvent(
   override def setCancelled(cancelled: Boolean): Unit = this.cancelled = cancelled
 
   /** Gets the list of handlers for this event.
-   *
-   * @return
-   * the list of handlers
-   */
+    *
+    * @return
+    *   the list of handlers
+    */
   override def getHandlers: HandlerList = PlayerDealDamageEvent.getHandlerList
 
 end PlayerDealDamageEvent

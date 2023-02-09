@@ -5,6 +5,7 @@ import combat.BossbarManager
 import data.EnemyEntity.{kebabCase, standardize}
 
 import org.bukkit.EntityEffect
+import org.bukkit.attribute.Attribute
 import org.bukkit.configuration.file.{FileConfiguration, FileConfigurationOptions, YamlConfiguration}
 import org.bukkit.entity.{Entity, Mob}
 
@@ -15,8 +16,9 @@ import scala.ref.WeakReference
 import scala.util.{Success, Try}
 
 /** Represents an enemy.
- */
+  */
 class EnemyEntity(val entity: Mob) extends Attributable(entity.getUniqueId):
+
   var name: String = standardize(entity)
   var guardFront = 0.0
   var guardBack = 0.0
@@ -32,6 +34,7 @@ class EnemyEntity(val entity: Mob) extends Attributable(entity.getUniqueId):
   var etherDebuffResistance = 0.0
   var knockbackResistance = 0.0
   var blowdownResistance = 0.0
+
   private var _maxHp = 0.0
   private var _attack = 50.0
   private var _healing = 0.0
@@ -41,26 +44,19 @@ class EnemyEntity(val entity: Mob) extends Attributable(entity.getUniqueId):
   private var _physDef = 0.0
   private var _etherDef = 0.0
 
-  // Reset
-  if entity != null && !entity.isDead then
-    entity.setHealth(entity.getMaxHealth)
-    _maxHp = entity.getMaxHealth
-    _hp = _maxHp
-
   override def setHp(value: Double): Unit =
     if entity != null && !entity.isDead then
-      val percentage = value / _maxHp
-      val realHealth = (percentage * entity.getMaxHealth) min entity.getMaxHealth max 0
-
-      if realHealth < entity.getHealth then
-        entity.playEffect(EntityEffect.HURT)
-        entity.setNoDamageTicks(10)
-
-      val bar = BossbarManager.makeBar(this)
-      entity.setHealth(realHealth)
-      bar.setProgress(percentage min 1 max 0)
-      _hp = value
+      super.setHp(value)
+      BossbarManager.makeBar(this).setProgress((value / maxHp) min 1 max 0)
     else BossbarManager.clear(entity)
+
+  // Reset
+  if entity != null && !entity.isDead then
+    entity.setHealth(getMaxHealth)
+    _maxHp = getMaxHealth
+    _hp = _maxHp
+
+  override def maxHp: Double = _maxHp
 
   override def attack: Double = _attack
 
@@ -74,9 +70,13 @@ class EnemyEntity(val entity: Mob) extends Attributable(entity.getUniqueId):
 
   override def physicalDef: Double = _physDef
 
-  override def maxHp: Double = _maxHp
-
   override def agility: Double = _agility
+
+  private def getMaxHealth: Double =
+    if entity != null then
+      val attribute = entity.getAttribute(Attribute.GENERIC_MAX_HEALTH)
+      attribute.getValue
+    else 0
 
 end EnemyEntity
 
@@ -87,35 +87,35 @@ object EnemyEntity:
   private val configs = mutable.Map.empty[String, FileConfiguration]
 
   /** Standardizes the name of the entity type.
-   *
-   * @param entity
-   * the entity
-   * @return
-   * the standardized name
-   */
+    *
+    * @param entity
+    *   the entity
+    * @return
+    *   the standardized name
+    */
   def standardize(entity: Entity): String = entity.getType.name().split("_").map(_.toLowerCase().capitalize).mkString(" ")
 
   /** Creates an enemy entity with a random state.
     *
-   * @param entity
-   * the entity
-   * @return
-   * the enemy entity
-   */
+    * @param entity
+    *   the entity
+    * @return
+    *   the enemy entity
+    */
   def apply(entity: Mob): EnemyEntity =
     val result = ThreadLocalRandom.current().nextInt(100)
     val state = if result < 75 then 0 else if result < 95 then 1 else 2
     EnemyEntity(state, entity)
 
   /** Attempts to create an enemy entity.
-   *
-   * @param state
-   * 0 is a normal enemy, 1 is an elite, 2 is a unique one.
-   * @param entity
-   * the entity
-   * @return
-   * the enemy entity
-   */
+    *
+    * @param state
+    *   0 is a normal enemy, 1 is an elite, 2 is a unique one.
+    * @param entity
+    *   the entity
+    * @return
+    *   the enemy entity
+    */
   def apply(state: Int, entity: Mob): EnemyEntity =
     val enemy = new EnemyEntity(entity)
     val configName = state match
@@ -128,12 +128,12 @@ object EnemyEntity:
     enemy
 
   /** Makes the name of the entity type in kebab case
-   *
-   * @param entity
-   * the entity
-   * @return
-   * the standardized name
-   */
+    *
+    * @param entity
+    *   the entity
+    * @return
+    *   the standardized name
+    */
   def kebabCase(entity: Entity): String = entity.getType.name().toLowerCase().replace('_', '-')
 
   // PATH DOES NOT INCLUDE .YML
@@ -167,10 +167,6 @@ object EnemyEntity:
 
   end applyFromConfig
 
-  /** Clears all cached configs.
-   */
-  def reloadConfig(): Unit = configs.clear()
-
   private def canLoadConfig(path: String): Boolean =
     val file = File(Xenocraft.getInstance.getDataFolder, s"$path.yml")
     if file.exists() then
@@ -187,5 +183,9 @@ object EnemyEntity:
     Xenocraft.getInstance.saveResource(s"$path.yml", true)
     configs(path) = YamlConfiguration.loadConfiguration(InputStreamReader(resource))
     true
+
+  /** Clears all cached configs.
+    */
+  def reloadConfig(): Unit = configs.clear()
 
 end EnemyEntity

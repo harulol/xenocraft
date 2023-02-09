@@ -4,7 +4,7 @@ package combat
 import I18n.tl
 import UserMap.{save, user}
 import data.Directional
-import events.{EnemyDamagePlayerEvent, PlayerDealDamageEvent, PlayerIncapitateEvent}
+import events.{EnemyDamagePlayerEvent, PlayerDealDamageEvent, PlayerIncapacitateEvent}
 
 import dev.hawu.plugins.api.events.Events
 import dev.hawu.plugins.api.{MathUtils, Tasks}
@@ -24,7 +24,7 @@ import scala.collection.mutable.ArrayBuffer
 import scala.jdk.CollectionConverters.*
 
 /** The singleton object dedicated to listening for events related to fields.
- */
+  */
 object BattlefieldListener extends Listener:
 
   private val aggro = mutable.Map.empty[UUID, UUID] // entity -> player
@@ -71,12 +71,12 @@ object BattlefieldListener extends Listener:
   end initialize
 
   /** Checks if a player is in battle.
-   *
-   * @param player
-   * the player to check.
-   * @return
-   * true if the player is in battle, false otherwise.
-   */
+    *
+    * @param player
+    *   the player to check.
+    * @return
+    *   true if the player is in battle, false otherwise.
+    */
   def isInBattle(player: Player): Boolean = aggro.values.toList.contains(player.getUniqueId)
 
   @EventHandler
@@ -95,14 +95,14 @@ object BattlefieldListener extends Listener:
     case player: Player =>
       event.getCause match
         case DamageCause.CUSTOM | DamageCause.ENTITY_ATTACK => return ()
-        case _ => event.setCancelled(true)
+        case _                                              => event.setCancelled(true)
       val user = player.user.get
       val percentage = event.getFinalDamage / player.getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue
       CombatManager.damage(player, user.maxHp * percentage, true)
       player.playEffect(EntityEffect.HURT)
       player.setNoDamageTicks(20)
     case mob: Mob => if CombatManager.isEnemy(mob) then event.setCancelled(event.getCause != DamageCause.CUSTOM)
-    case _ => ()
+    case _        => ()
 
   @EventHandler
   private def onDamage(event: EntityDamageByEntityEvent): Unit = event.getDamager match
@@ -110,7 +110,8 @@ object BattlefieldListener extends Listener:
       val user = player.user.get
       if !user.bladeUnsheathed then
         event.getEntity match
-          case mob: Mob => if mob != null && !mob.isInstanceOf[Animals] then
+          case mob: Mob =>
+            if mob != null && !mob.isInstanceOf[Animals] then
               user.unsheathe()
               mob.setTarget(player)
               BossbarManager.updateBossbar(mob).foreach(_.addPlayer(player))
@@ -120,20 +121,20 @@ object BattlefieldListener extends Listener:
       else
         event.getEntity match
           case mob: Mob => if mob != null && !mob.isInstanceOf[Animals] then
-            mob.setTarget(player)
-            aggro.put(mob.getUniqueId, player.getUniqueId)
+              mob.setTarget(player)
+              aggro.put(mob.getUniqueId, player.getUniqueId)
 
               val enemy = CombatManager.makeEnemy(mob)
               val e = PlayerDealDamageEvent(player, calculateDirection(player, mob), enemy, true)
-            e.shouldOverride = false
-            Bukkit.getPluginManager.callEvent(e)
+              e.shouldOverride = false
+              Bukkit.getPluginManager.callEvent(e)
 
-            // Leave handling to vanilla.
-            if e.isCancelled then return ()
+              // Leave handling to vanilla.
+              if e.isCancelled then return ()
 
-            // A successful hit has to be a hit that evaded or missed.
-            event.setCancelled(true)
-            if !e.isEvaded && e.isHit then enemy.setHp(enemy.hp - e.finalDamage)
+              // A successful hit has to be a hit that evaded or missed.
+              event.setCancelled(true)
+              if !e.isEvaded && e.isHit then enemy.setHp(enemy.hp - e.finalDamage)
           case _ => ()
     case mob: Mob if event.getEntity.isInstanceOf[Player] =>
       val player = event.getEntity.asInstanceOf[Player]
@@ -153,10 +154,10 @@ object BattlefieldListener extends Listener:
     * @param player
     *   the player
     * @param target
-   *    the target
-   * @return
-   * the directional
-   */
+    *   the target
+    * @return
+    *   the directional
+    */
   def calculateDirection(player: Player, target: Mob): Directional =
     val direction = player.getLocation().getDirection.setY(0)
     val enemyDirection = target.getLocation().getDirection.setY(0)
@@ -176,7 +177,7 @@ object BattlefieldListener extends Listener:
   private def onTransform(event: EntityTransformEvent): Unit =
     event.getEntity match
       case mob: Mob => CombatManager.clearEnemy(mob)
-      case _ => ()
+      case _        => ()
     BossbarManager.clear(event.getEntity)
 
   @EventHandler
@@ -191,7 +192,7 @@ object BattlefieldListener extends Listener:
     if event.getPlayer.user.exists(_.bladeUnsheathed) || isInBattle(event.getPlayer) then event.setCancelled(true)
 
   @EventHandler
-  private def onIncapitate(event: PlayerIncapitateEvent): Unit =
+  private def onIncapacitate(event: PlayerIncapacitateEvent): Unit =
     aggro.filter(_._2 == event.getPlayer.getUniqueId).map((uuid, _) => Bukkit.getEntity(uuid).asInstanceOf[Mob]).foreach(mob => {
       mob.setTarget(null)
       val bar = BossbarManager.makeBar(CombatManager.makeEnemy(mob))
@@ -202,11 +203,13 @@ object BattlefieldListener extends Listener:
       val loc = event.getPlayer.getLocation().add(0.0, 1.0, 0.0)
       loc.getWorld.spawnParticle(Particle.TOTEM, loc, 100, 0.7, 0.7, 0.7, 0.1)
       event.getPlayer.playSound(loc, Sound.ITEM_TOTEM_USE, 1.0f, 1.0f)
-    }.delay(2).run()
+    }.run()
 
   @EventHandler
   private def onDeath(event: EntityDeathEvent): Unit = event.getEntity match
-    case player: Player => aggro.filterInPlace((_, v) => v != player.getUniqueId)
+    case player: Player =>
+      println("Bro...")
+      aggro.filterInPlace((_, v) => v != player.getUniqueId)
     case entity: Mob =>
       aggro.remove(entity.getUniqueId)
       BossbarManager.clear(entity)
