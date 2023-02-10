@@ -1,6 +1,8 @@
 package dev.hawu.plugins.xenocraft
 package data
 
+import managers.GemsManager
+
 import org.bukkit.configuration.serialization.ConfigurationSerializable
 
 import java.util
@@ -44,9 +46,9 @@ case class ClassMemory(
 
     masterSkills.copyToArray(user.masterSkills)
 
-    user.gems.filter(_ != null).foreach(user.unapplyGem)
+    user.gems.filter(_ != null).foreach((gem, lvl) => GemsManager.unapplyGem(user, gem, lvl))
     gems.copyToArray(user.gems)
-    gems.filter(_ != null).foreach(user.applyGem)
+    gems.filter(_ != null).foreach((gem, lvl) => GemsManager.applyGem(user, gem, lvl))
 
     if talentArt.isDefined then user.talentArt = if user.canUseArtAs(talentArt.get, "talent") then talentArt else None
     else user.talentArt = None
@@ -88,8 +90,7 @@ object ClassMemory:
   def deserialize(map: util.Map[String, Any]): ClassMemory = ClassMemory(
     masterArts = map.get("master-arts").asInstanceOf[util.List[String]].asScala
       .map(art => if art != null then ArtType.valueOf(art) else null).toArray,
-    arts = map.get("arts").asInstanceOf[util.List[String]].asScala
-      .map(art => if art != null then ArtType.valueOf(art) else null).toArray,
+    arts = map.get("arts").asInstanceOf[util.List[String]].asScala.map(art => if art != null then ArtType.valueOf(art) else null).toArray,
     gems = map.get("gems").asInstanceOf[util.List[String]].asScala.map(gem =>
       if gem != null then
         val arr = gem.split(":")

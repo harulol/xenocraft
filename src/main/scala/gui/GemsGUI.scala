@@ -1,10 +1,11 @@
 package dev.hawu.plugins.xenocraft
 package gui
 
-import I18n.tl
+import I18n.{tl, translateItem}
 import UserMap.user
 import data.GemType
 import gui.GemsGUI.GemComponent
+import managers.GemsManager
 
 import dev.hawu.plugins.api.Strings
 import dev.hawu.plugins.api.adapters.UserAdapter
@@ -55,7 +56,7 @@ object GemsGUI extends ModuleHolder("gems-ui"):
             "gem-type",
             "name" -> gem.category.colorize(gem.name(locale), true),
             "description" -> Strings.chop(gem.description(locale), 32),
-            "selection" -> (if user.isGemEquipped(gem) >= 0 then "selected".tl(locale) else "not-selected".tl(locale)),
+            "selection" -> (if GemsManager.isGemEquipped(user, gem) >= 0 then "selected".tl(locale) else "not-selected".tl(locale)),
           )
         },
       ).build(player)
@@ -85,27 +86,15 @@ object GemsGUI extends ModuleHolder("gems-ui"):
         new GuiComponent[Unit]() {
           override def handleClick(event: InventoryClickEvent): Unit =
             event.setCancelled(true)
-            val generalIndex = user.isGemEquipped(gem)
-            if generalIndex >= 0 && generalIndex != index then
-              // Unapply the effects first.
-              Option(user.gems(generalIndex)).foreach((g, lvl) => user.unapplyGem(g, lvl))
-              user.gems(generalIndex) = user.gems(index) // Just moving, no need to apply effects.
-              user.gems(index) = gem -> level
-              user.applyGem(gem, level) // Apply.
-              openGems(player)
-            else
-              // Unapply the effects first, then bind gem, then apply the new effects.
-              Option(user.gems(index)).foreach((g, lvl) => user.unapplyGem(g, lvl))
-              user.gems(index) = gem -> level
-              user.applyGem(gem, level)
-              openGems(player)
+            GemsManager.bindGem(user, gem, level, index)
+            openGems(player)
 
           override def render(): ItemStack = I18n.translateItem(
             gem.category.icon -> 1,
             "gem-type",
             "name" -> gem.category.colorize(gem.name(locale, level), true),
             "description" -> Strings.chop(gem.description(locale, level), 32),
-            "selection" -> (if user.isGemEquipped(gem, level) >= 0 then "selected".tl(locale) else "not-selected".tl(locale)),
+            "selection" -> (if GemsManager.isGemEquipped(user, gem, level) >= 0 then "selected".tl(locale) else "not-selected".tl(locale)),
           )
         },
       ).build(player)
