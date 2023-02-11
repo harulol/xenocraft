@@ -1,9 +1,11 @@
 package dev.hawu.plugins.xenocraft
 package data
 
-import combat.HotbarManager
+import data.User.{deserialize, tryGetting}
+import events.blades.{PlayerPostSheatheEvent, PlayerPostUnsheatheEvent, PlayerPreSheatheEvent}
 import events.{PlayerIncapacitateEvent, PlayerSheatheEvent, PlayerUnsheatheEvent}
 import gui.{ArtsGUI, ClassesGUI}
+import managers.{GemsManager, HotbarManager}
 import skills.SkillManager
 import utils.Formulas
 
@@ -168,38 +170,46 @@ case class User(
 
   end applyClass
 
-  /** Attempts to check if the provided gem is already equipped.
-    *
-    * @param gem
-    *   the gem to check
-    * @return
-    *   the index if it is equipped, -1 if not
-    */
-  def isGemEquipped(gem: GemType, level: Int = 0): Int =
-    if level >= 1 then gems.zipWithIndex.filter(_._1 != null).filter(_._1 == (gem, level)).map(_._2).headOption.getOrElse(-1)
-    else gems.zipWithIndex.filter(_._1 != null).filter(_._1._1 == gem).map(_._2).headOption.getOrElse(-1)
-
   /** Unsheathe the blade.
     */
   def unsheathe(): Unit =
     if bladeUnsheathed || cls.isEmpty || weapon.isEmpty then return ()
-
     bladeUnsheathed = true
+
     inventory.clear()
     player.foreach(p => {
-      val event = PlayerUnsheatheEvent(p)
-      Tasks.run(() => Bukkit.getPluginManager.callEvent(event)).plugin(Xenocraft.getInstance).run()
+      val preEvent = PlayerPreSheatheEvent(p)
+      Tasks.run(() => Bukkit.getPluginManager.callEvent(preEvent)).plugin(Xenocraft.getInstance).run()
+      if !preEvent.isCancelled then
+        // Main unsheathing logic
+        p.getInventory.getContents.zipWithIndex.foreach((item, index) => {
+          inventory += index -> item
+          p.getInventory.setItem(index, null)
+        })
 
-      p.getInventory.getContents.zipWithIndex.foreach((item, index) => {
-        inventory += index -> item
-        p.getInventory.setItem(index, null)
-      })
-
-      HotbarManager.setHotbar(this, p)
-      p.getInventory.setHeldItemSlot(0)
+        val postEvent = PlayerPostUnsheatheEvent(p)
+        Tasks.run(() => Bukkit.getPluginManager.callEvent(postEvent)).plugin(Xenocraft.getInstance).run()
+        p.getInventory.setHeldItemSlot(0)
     })
 
   end unsheathe
+
+  /** Sheathes the blade back and disables combat.
+    */
+  def sheathe(): Unit =
+    if !bladeUnsheathed then return ()
+    bladeUnsheathed = false
+
+    player.foreach { p =>
+      val preEvent = PlayerPreSheatheEvent(p)
+      Tasks.run(() => Bukkit.getPluginManager.callEvent(preEvent)).plugin(Xenocraft.getInstance).run()
+      if !preEvent.isCancelled then
+        inventory.foreach((index, item) => p.getInventory.setItem(index, item))
+
+        val postEvent = PlayerPostSheatheEvent(p)
+        Tasks.run(() => Bukkit.getPluginManager.callEvent(postEvent)).plugin(Xenocraft.getInstance).run()
+    }
+    inventory.clear()
 
   /** Attempts to retrieve the player instance from the user.
     *
@@ -207,20 +217,6 @@ case class User(
     *   the player instance
     */
   def player: Option[Player] = Option(Bukkit.getPlayer(uuid))
-
-  /** Sheathes the blade back and disables combat.
-    */
-  def sheathe(): Unit =
-    if !bladeUnsheathed then return ()
-    bladeUnsheathed = false
-    player.foreach { p =>
-      try {
-        val event = PlayerSheatheEvent(p)
-        Tasks.run(() => Bukkit.getPluginManager.callEvent(event)).run()
-      } catch { case _ => () }
-      finally { inventory.foreach((index, item) => p.getInventory.setItem(index, item)) }
-    }
-    inventory.clear()
 
   override def maxHp: Double = Formulas.calculateHp(this)
 
@@ -275,74 +271,6 @@ case class User(
     "latestSoul" -> lastSoulhackerSoul.map(_.toString()).orNull,
   ).asJava
 
-  /** Logic to unapply a gem, removing the gem's special buffs.
-    *
-    * This only removes the effects, it doesn't actually unbind the gem from the gems array.
-    *
-    * @param gem
-    *   the gem to unapply
-    * @param level
-    *   the level of the gem
-    */
-  def unapplyGem(gem: GemType, level: Int): Unit = gem match
-    case GemType.TAILWIND         => flatAgility -= gem.value1At(level)
-    case GemType.STEEL_PROTECTION => noncombatFlatBlock -= (gem.value1At(level) / 100.0)
-    case GemType.BRIMMING_SPIRIT  => artAggroGeneration -= gem.value1At(level)
-    case GemType.LIFEBEARER       => flatHealing -= gem.value1At(level)
-    case GemType.SOOTHING_BREATH =>
-      allyHpRestore -= gem.value1At(level)
-      flatHealing -= gem.value2At(level)
-    case GemType.LIFESAVING_EXPERTISE =>
-      allyReviveSpeed -= gem.value1At(level)
-      flatHealing -= gem.value2At(level)
-    case GemType.SWELLING_BLESSING   => buffPower -= gem.value1At(level)
-    case GemType.REFINED_BLESSING    => buffDurationBonus -= gem.value1At(level)
-    case GemType.STEELCLEAVER        => flatAttack -= gem.value1At(level)
-    case GemType.ACCURATE_GRACE      => flatDexterity -= gem.value1At(level)
-    case GemType.ANALYZE_WEAKNESS    => critDamage -= gem.value1At(level)
-    case GemType.SWELLING_SCOURGE    => debuffPower -= gem.value1At(level)
-    case GemType.REFINED_INCANTATION => debuffDurationBonus -= gem.value1At(level)
-    case GemType.IRON_CLAD           => flatHp -= gem.value1At(level)
-    case GemType.STEADY_STRIKER      => rechargeSpeed -= gem.value1At(level)
-    case GemType.DOUBLESTRIKE        => doubleHits -= gem.value1At(level)
-    case GemType.DISPERSE_BLOODLUST  => artAggroGeneration += gem.value1At(level)
-    case _                           => ()
-
-  /** Apply the gem's effects.
-    *
-    * This may cause duplicate effects if you don't [[unapplyGem]] first.
-    *
-    * This only applies the effects, it doesn't actually bind the gem to the gems array.
-    *
-    * @param gem
-    *   the gem
-    * @param level
-    *   the level
-    */
-  def applyGem(gem: GemType, level: Int): Unit = gem match
-    case GemType.TAILWIND         => flatAgility += gem.value1At(level)
-    case GemType.STEEL_PROTECTION => noncombatFlatBlock += (gem.value1At(level) / 100.0)
-    case GemType.BRIMMING_SPIRIT  => artAggroGeneration += gem.value1At(level)
-    case GemType.LIFEBEARER       => flatHealing += gem.value1At(level)
-    case GemType.SOOTHING_BREATH =>
-      allyHpRestore += gem.value1At(level)
-      flatHealing += gem.value2At(level)
-    case GemType.LIFESAVING_EXPERTISE =>
-      allyReviveSpeed += gem.value1At(level)
-      flatHealing += gem.value2At(level)
-    case GemType.SWELLING_BLESSING   => buffPower += gem.value1At(level)
-    case GemType.REFINED_BLESSING    => buffDurationBonus += gem.value1At(level)
-    case GemType.STEELCLEAVER        => flatAttack += gem.value1At(level)
-    case GemType.ACCURATE_GRACE      => flatDexterity += gem.value1At(level)
-    case GemType.ANALYZE_WEAKNESS    => critDamage += gem.value1At(level)
-    case GemType.SWELLING_SCOURGE    => debuffPower += gem.value1At(level)
-    case GemType.REFINED_INCANTATION => debuffDurationBonus += gem.value1At(level)
-    case GemType.IRON_CLAD           => flatHp += gem.value1At(level)
-    case GemType.STEADY_STRIKER      => rechargeSpeed += gem.value1At(level)
-    case GemType.DOUBLESTRIKE        => doubleHits += gem.value1At(level)
-    case GemType.DISPERSE_BLOODLUST  => artAggroGeneration -= gem.value1At(level)
-    case _                           => ()
-
 end User
 
 /** Companion object for [[User]].
@@ -372,7 +300,7 @@ object User:
     val memory = map.get("memory").asInstanceOf[util.Map[String, ClassMemory]].asScala.map(entry => ClassType.valueOf(entry._1) -> entry._2)
 
     val user = User(uuid, cls, weapon, char, masterArts, arts, gems, masterSkills, talentArt)
-    gems.filter(_ != null).foreach(user.applyGem)
+    gems.filter(_ != null).foreach((gem, lvl) => GemsManager.applyGem(user, gem, lvl))
     user.classMemory ++= memory
     user.lastSoulhackerSoul = lastSoulhackerSoul
     user

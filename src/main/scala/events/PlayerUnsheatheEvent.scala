@@ -9,6 +9,7 @@ import org.bukkit.event.{Event, HandlerList}
 
 /** An event called when the player unsheathes their blade.
   */
+@deprecated
 class PlayerUnsheatheEvent(player: Player) extends PlayerEvent(player) with UserEvent(player.user.get):
   override def getHandlers: HandlerList = PlayerUnsheatheEvent.handlers
 

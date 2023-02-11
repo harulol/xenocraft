@@ -12,6 +12,7 @@ import org.bukkit.event.player.PlayerEvent
   * @param player
   *   the player
   */
+@deprecated
 class PlayerSheatheEvent(player: Player) extends PlayerEvent(player) with UserEvent(player.user.get):
   override def getHandlers: HandlerList = PlayerSheatheEvent.handlers
 

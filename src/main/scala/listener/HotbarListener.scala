@@ -4,8 +4,8 @@ package listener
 import UserMap.user
 import arts.ArtManager
 import data.ArtType
+import events.blades.{PlayerPostUnsheatheEvent, PlayerPreSheatheEvent}
 import events.combat.PlayerAutoAttackEvent
-import events.{PlayerSheatheEvent, PlayerUnsheatheEvent}
 import managers.HotbarManager
 
 import dev.hawu.plugins.api.Tasks
@@ -52,7 +52,7 @@ object HotbarListener extends Listener:
     case _              => ()
 
   @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
-  private def onUnsheathe(event: PlayerUnsheatheEvent): Unit = startTask(event.getPlayer)
+  private def onUnsheathe(event: PlayerPostUnsheatheEvent): Unit = startTask(event.getPlayer)
 
   private def startTask(player: Player): Unit =
     removeTask(player)
@@ -105,8 +105,8 @@ object HotbarListener extends Listener:
   @EventHandler
   private def onQuit(event: PlayerQuitEvent): Unit = removeTask(event.getPlayer)
 
-  @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
-  private def onSheathe(event: PlayerSheatheEvent): Unit = removeTask(event.getPlayer)
+  @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+  private def onSheathe(event: PlayerPreSheatheEvent): Unit = removeTask(event.getPlayer)
 
   private def removeTask(player: Player): Unit =
     tasks.remove(player.getUniqueId).foreach(_.cancel())
