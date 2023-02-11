@@ -1,18 +1,16 @@
 package dev.hawu.plugins.xenocraft
-package events
+package events.combat
 
 import UserMap.user
 import data.EnemyEntity
-import events.PlayerAutoAttackEvent.handlers
+import events.UserEvent
+import events.combat.PlayerAutoAttackEvent.handlers
 
 import org.bukkit.entity.Player
 import org.bukkit.event.HandlerList
 import org.bukkit.event.player.PlayerEvent
 
-/** This event is called when the player attempt an auto attack at an enemy. Whether it has landed or not.
-  *
-  * @param who
-  *   the player
+/** This event is called when the player successfully lands an auto attack at an enemy.
   */
 class PlayerAutoAttackEvent(who: Player, val enemy: EnemyEntity) extends PlayerEvent(who) with UserEvent(who.user.get):
 

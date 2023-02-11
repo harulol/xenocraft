@@ -8,7 +8,7 @@ trait Initializable:
 
   /** Initializes said object.
     */
-  def setUp(pl: JavaPlugin): Unit
+  def setUp(pl: JavaPlugin): Unit = ()
 
   /** Cleans up the object.
     */

@@ -1,32 +1,35 @@
 package dev.hawu.plugins.xenocraft
 package arts
 
+import UserMap.{save, user}
 import data.{ArtRechargeType, ArtType, ClassType}
+import events.arts.{PlayerUseArtEvent, PlayerUseFusionArtEvent}
 
-import org.bukkit.Material
+import org.bukkit.entity.Player
+import org.bukkit.{Bukkit, Material}
 
 import scala.collection.mutable
 
 /** Manager for binding art types to arts.
- */
+  */
 object ArtManager:
 
   private val map = mutable.Map.empty[ArtType, Art]
 
   /** Initializes the art manager.
-   */
+    */
   def initialize(): Unit = ()
 
   /** Retrieves an iterable of all arts.
-   *
-   * @param includesKeves
-   * whether to include kevesi arts
-   * @param includesAgnus
-   * whether to include agnian arts
-   * @param includesTalent
-   * whether to include talent arts
-   * @return
-   */
+    *
+    * @param includesKeves
+    *   whether to include kevesi arts
+    * @param includesAgnus
+    *   whether to include agnian arts
+    * @param includesTalent
+    *   whether to include talent arts
+    * @return
+    */
   def getAllArts(includesKeves: Boolean = true, includesAgnus: Boolean = true, includesTalent: Boolean = true): Iterable[ArtType] =
     var values = ArtType.values
     if !includesKeves then values = values.filterNot(_.isKevesi)
@@ -50,6 +53,23 @@ object ArtManager:
     case art: Art         => map -= art.artType
     case artType: ArtType => map -= artType
 
+  /** Acts if the [[player]] has used a single art.
+    *
+    * [[art]] can not be null.
+    */
+  def useSingleArt(player: Player, art: ArtType): Unit =
+    val user = player.user.get
+    if user.isInAnimation then return ()
+
+    val event = PlayerUseArtEvent(player, art)
+    Bukkit.getPluginManager.callEvent(event)
+    if event.isCancelled then return ()
+
+    user.use(art)
+
+    val artObj = get(art).orNull
+    if !user.isOnCooldown(art) && artObj != null then artObj.use(player, user, false)
+
   /** Retrieves the art bound to the art type.
     *
     * @param artType
@@ -58,6 +78,21 @@ object ArtManager:
     *   the art, if any
     */
   def get(artType: ArtType): Option[Art] = map.get(artType)
+
+  /** Acts if the [[player]] has used a fusion art. Both [[art]] and [[master]] should not be null.
+    */
+  def useFusionArt(player: Player, art: ArtType, master: ArtType): Unit =
+    val user = player.user.get
+    if user.isInAnimation then return ()
+
+    val event = PlayerUseFusionArtEvent(player, art, master)
+    Bukkit.getPluginManager.callEvent(event)
+    if event.isCancelled then return ()
+
+    user.use(art)
+    user.use(master)
+
+    Seq(art, master).filterNot(user.isOnCooldown).map(get(_).orNull).filter(_ != null).foreach(_.use(player, user, true))
 
   /** Retrieves the icon of this art, calculated based on its category and its effects.
     *

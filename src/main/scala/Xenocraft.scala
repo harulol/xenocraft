@@ -3,10 +3,11 @@ package dev.hawu.plugins.xenocraft
 import UserMap.user
 import Xenocraft.instance
 import arts.ArtManager
-import combat.*
 import commands.{ArtCommand, PluginBaseCommand, StatsCommand}
 import data.{Character, ClassMemory, ClassType, User}
 import gui.*
+import listener.*
+import managers.*
 import skills.SkillManager
 import utils.Configuration
 
@@ -27,11 +28,13 @@ import scala.jdk.CollectionConverters.*
 class Xenocraft extends JavaPlugin:
 
   private val modules = List(CharactersGUI, ClassesGUI, GemsGUI, MainGUI, ArtsGUI, SkillsGUI, I18n)
+  private val initializables = List(AggroManager, EnemyManager, GemsManager, HotbarManager)
   private val serializables = List(classOf[User], classOf[ClassMemory])
 
   override def onEnable(): Unit =
     instance = this
     modules.foreach(_.initialize(this))
+    initializables.foreach(_.setUp(this))
     serializables.foreach(ConfigurationSerialization.registerClass)
 
     ArtManager.initialize()
@@ -42,9 +45,11 @@ class Xenocraft extends JavaPlugin:
 
     ChatHologramListener.initialize(this)
     CommandRegistry.register(this, new StatsCommand, PluginBaseCommand(this), new ArtCommand)
-    Events.registerEvents(this, ChatHologramListener, UserMap, DropsListener, HotbarManager, CooldownsListener)
+    Events.registerEvents(this, ChatHologramListener, UserMap, DropsListener, CooldownsListener)
 
   override def onDisable(): Unit =
+    initializables.foreach(_.tearDown(this))
+
     Bukkit.getOnlinePlayers.asScala.flatMap(_.user).foreach(_.sheathe())
     Bukkit.getWorlds.asScala.flatMap(_.getEntities.asScala).filter(_ != null).foreach(BossbarManager.clear)
 

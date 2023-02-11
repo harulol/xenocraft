@@ -1,9 +1,10 @@
 package dev.hawu.plugins.xenocraft
 package arts
 
-import combat.{BattlefieldListener, CombatManager}
 import data.*
-import events.PlayerDealDamageEvent
+import events.combat.PlayerDealDamageEvent
+import listener.BattlefieldListener
+import managers.CombatManager
 
 import dev.hawu.plugins.api.misc.Raytracing
 import org.bukkit.Bukkit
@@ -12,12 +13,12 @@ import org.bukkit.entity.{Mob, Player}
 import scala.jdk.CollectionConverters.*
 
 /** The very abstract implementation of an art.
- *
- * This class only provides a skeleton for arts to implement.
- *
- * @param artType
- * the art enum type
- */
+  *
+  * This class only provides a skeleton for arts to implement.
+  *
+  * @param artType
+  *   the art enum type
+  */
 abstract class Art(val artType: ArtType):
 
   /** Retrieves an instance of the event.
@@ -70,14 +71,14 @@ abstract class Art(val artType: ArtType):
   end getEvent
 
   /** Retrieves the direction.
-   *
-   * @param player
-   * the player
-   * @param enemy
-   * the enemy
-   * @return
-   * the direction
-   */
+    *
+    * @param player
+    *   the player
+    * @param enemy
+    *   the enemy
+    * @return
+    *   the direction
+    */
   final def direction(player: Player, enemy: EnemyEntity): Directional = BattlefieldListener.calculateDirection(player, enemy.entity)
 
   /** Checks if the event should damage the entity.
