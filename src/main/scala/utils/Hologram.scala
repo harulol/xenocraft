@@ -1,5 +1,5 @@
 package dev.hawu.plugins.xenocraft
-package combat
+package utils
 
 import dev.hawu.plugins.api.{Strings, Tasks}
 import org.bukkit.Location
@@ -7,6 +7,7 @@ import org.bukkit.entity.ArmorStand
 
 import java.util.concurrent.ThreadLocalRandom
 import scala.collection.mutable
+import scala.collection.mutable.ArrayBuffer
 
 /** Represents a floating text from an invisible armor stand, creating a holographic display.
   */
@@ -20,11 +21,12 @@ class Hologram(
 
   /** Nudges the hologram by a random amount.
     */
-  def nudgeLocation(): Unit = location = location.add(randomGaussian, randomGaussian, randomGaussian)
+  def nudgeLocation(units: Double = 2.0): Unit =
+    location = location.add(randomGaussian / units, randomGaussian / units, randomGaussian / units)
 
   private def randomGaussian: Double =
-    if ThreadLocalRandom.current().nextBoolean() then ThreadLocalRandom.current().nextGaussian() / 2
-    else -ThreadLocalRandom.current().nextGaussian() / 2
+    if ThreadLocalRandom.current().nextBoolean() then ThreadLocalRandom.current().nextGaussian()
+    else -ThreadLocalRandom.current().nextGaussian()
 
   /** Adds one line to the hologram and immediately spawns it.
     *
@@ -115,3 +117,25 @@ class Hologram(
     })
 
 end Hologram
+
+/** The companion object for a [[Hologram]].
+  */
+object Hologram:
+
+  /** Spawns a hologram around a certain [[location]], and configure whether it should self destruct after [[delay]] ticks, displaying the
+    * [[lines]] as a list of armor stands.
+    *
+    * [[value]] is for calibration purposes.
+    */
+  def spawnAround(location: Location, delay: Long, value: Double, lines: String*): Unit =
+    val hologram = Hologram(location, ArrayBuffer.from(lines), delay)
+    hologram.nudgeLocation(value)
+    hologram.spawn()
+
+  /** Spawns a hologram around a certain [[location]], and configure whether it should self destruct after [[delay]] ticks, displaying the
+    * [[lines]] as a list of armor stands.
+    */
+  def spawnAround(location: Location, delay: Long, lines: String*): Unit =
+    val hologram = Hologram(location, ArrayBuffer.from(lines), delay)
+    hologram.nudgeLocation()
+    hologram.spawn()

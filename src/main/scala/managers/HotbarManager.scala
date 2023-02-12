@@ -4,9 +4,11 @@ package managers
 import UserMap.{initialize, user}
 import data.{ArtRechargeType, ArtType, User}
 import gui.{ArtsGUI, ClassesGUI}
+import listener.HotbarListener
 import managers.AggroManager
 
 import dev.hawu.plugins.api.adapters.UserAdapter
+import dev.hawu.plugins.api.events.Events
 import dev.hawu.plugins.api.i18n.LanguageModule
 import dev.hawu.plugins.api.items.ItemStackBuilder
 import org.bukkit.Material
@@ -21,6 +23,8 @@ import java.text.DecimalFormat
 object HotbarManager extends Initializable:
 
   private val formatter = DecimalFormat("#,###.#")
+
+  override def setUp(pl: JavaPlugin) = Events.registerEvents(pl, HotbarListener)
 
   /** Applies the arts palette hotbar to the [[player]].
     */

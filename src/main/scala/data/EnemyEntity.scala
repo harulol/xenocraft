@@ -1,7 +1,6 @@
 package dev.hawu.plugins.xenocraft
 package data
 
-import combat.BossbarManager
 import data.EnemyEntity.{kebabCase, standardize}
 
 import org.bukkit.EntityEffect
@@ -43,12 +42,6 @@ class EnemyEntity(val entity: Mob) extends Attributable(entity.getUniqueId):
   private var _critRate = 0.0
   private var _physDef = 0.0
   private var _etherDef = 0.0
-
-  override def setHp(value: Double): Unit =
-    if entity != null && !entity.isDead then
-      super.setHp(value)
-      BossbarManager.makeBar(this).setProgress((value / maxHp) min 1 max 0)
-    else BossbarManager.clear(entity)
 
   // Reset
   if entity != null && !entity.isDead then
@@ -118,7 +111,7 @@ object EnemyEntity:
     */
   def apply(state: Int, entity: Mob): EnemyEntity =
     val enemy = new EnemyEntity(entity)
-    val configName = state match
+    state match
       case 0 => applyFromConfig(enemy, s"entities/${kebabCase(entity)}/${kebabCase(entity)}_normal")
       case 1 => applyFromConfig(enemy, s"entities/${kebabCase(entity)}/${kebabCase(entity)}_elite")
       case 2 => applyFromConfig(enemy, s"entities/${kebabCase(entity)}/${kebabCase(entity)}_unique")

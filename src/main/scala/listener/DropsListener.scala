@@ -1,9 +1,9 @@
 package dev.hawu.plugins.xenocraft
-package combat
+package listener
 
 import I18n.tl
 import UserMap.user
-import events.{PlayerSheatheEvent, PlayerUnsheatheEvent}
+import events.blades.{PlayerPostSheatheEvent, PlayerPostUnsheatheEvent}
 
 import org.bukkit.entity.Player
 import org.bukkit.event.entity.EntityPickupItemEvent
@@ -22,7 +22,7 @@ object DropsListener extends Listener:
   private val drops = mutable.Map.empty[UUID, ArrayBuffer[ItemStack]]
 
   @EventHandler
-  private def onSheathe(event: PlayerSheatheEvent): Unit =
+  private def onPostSheathe(event: PlayerPostSheatheEvent): Unit =
     val items = drops.remove(event.getPlayer.getUniqueId).getOrElse(ArrayBuffer.empty)
     val leftover = ArrayBuffer.empty[ItemStack]
 
@@ -33,7 +33,7 @@ object DropsListener extends Listener:
     )
 
   @EventHandler
-  private def onUnsheathe(event: PlayerUnsheatheEvent): Unit =
+  private def onPostUnsheathe(event: PlayerPostUnsheatheEvent): Unit =
     event.getPlayer.tl("unsheathed")
     if drops.contains(event.getPlayer.getUniqueId) then drops(event.getPlayer.getUniqueId) = ArrayBuffer.empty[ItemStack]
 
@@ -41,6 +41,11 @@ object DropsListener extends Listener:
   private def onPickupArrow(event: PlayerPickupArrowEvent): Unit =
     val player = event.getPlayer
     if player.user.exists(_.bladeUnsheathed) then handlePickup(event, player)
+
+  @EventHandler
+  private def onPickup(event: EntityPickupItemEvent): Unit = event.getEntity match
+    case player: Player if player.user.exists(!_.bladeUnsheathed) => handlePickup(event, player)
+    case _ => ()
 
   private def handlePickup(event: EntityPickupItemEvent | PlayerPickupArrowEvent, player: Player) =
     val items = drops.getOrElseUpdate(player.getUniqueId, ArrayBuffer.empty)
@@ -50,10 +55,3 @@ object DropsListener extends Listener:
       case event: EntityPickupItemEvent => event.getItem
     items += item.getItemStack
     item.remove()
-
-  @EventHandler
-  private def onPickup(event: EntityPickupItemEvent): Unit = event.getEntity match
-    case player: Player if player.user.exists(!_.bladeUnsheathed) => handlePickup(event, player)
-    case _ => ()
-
-end DropsListener

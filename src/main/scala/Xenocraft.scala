@@ -28,7 +28,7 @@ import scala.jdk.CollectionConverters.*
 class Xenocraft extends JavaPlugin:
 
   private val modules = List(CharactersGUI, ClassesGUI, GemsGUI, MainGUI, ArtsGUI, SkillsGUI, I18n)
-  private val initializables = List(AggroManager, EnemyManager, GemsManager, HotbarManager)
+  private val initializables = List(AggroManager, EnemyManager, GemsManager, CombatManager, BattlefieldManager, HotbarManager, ChatHologramManager)
   private val serializables = List(classOf[User], classOf[ClassMemory])
 
   override def onEnable(): Unit =
@@ -40,18 +40,15 @@ class Xenocraft extends JavaPlugin:
     ArtManager.initialize()
     SkillManager.initialize()
     UserMap.initialize(this)
-    BattlefieldListener.initialize(this)
     Configuration.initialize(this)
 
-    ChatHologramListener.initialize(this)
     CommandRegistry.register(this, new StatsCommand, PluginBaseCommand(this), new ArtCommand)
-    Events.registerEvents(this, ChatHologramListener, UserMap, DropsListener, CooldownsListener)
+    Events.registerEvents(this, UserMap, DropsListener)
 
   override def onDisable(): Unit =
     initializables.foreach(_.tearDown(this))
 
     Bukkit.getOnlinePlayers.asScala.flatMap(_.user).foreach(_.sheathe())
-    Bukkit.getWorlds.asScala.flatMap(_.getEntities.asScala).filter(_ != null).foreach(BossbarManager.clear)
 
     UserMap.save(this)
     HandlerList.unregisterAll(this)

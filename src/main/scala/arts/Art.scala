@@ -3,8 +3,7 @@ package arts
 
 import data.*
 import events.combat.PlayerDealDamageEvent
-import listener.BattlefieldListener
-import managers.CombatManager
+import managers.{BattlefieldManager, CombatManager, EnemyManager}
 
 import dev.hawu.plugins.api.misc.Raytracing
 import org.bukkit.Bukkit
@@ -71,15 +70,15 @@ abstract class Art(val artType: ArtType):
   end getEvent
 
   /** Retrieves the direction.
-    *
-    * @param player
-    *   the player
-    * @param enemy
-    *   the enemy
-    * @return
-    *   the direction
-    */
-  final def direction(player: Player, enemy: EnemyEntity): Directional = BattlefieldListener.calculateDirection(player, enemy.entity)
+   *
+   * @param player
+   * the player
+   * @param enemy
+   * the enemy
+   * @return
+   * the direction
+   */
+  final def direction(player: Player, enemy: EnemyEntity): Directional = BattlefieldManager.calculateDirection(player, enemy.entity)
 
   /** Checks if the event should damage the entity.
     *
@@ -105,7 +104,7 @@ abstract class Art(val artType: ArtType):
     val result = Raytracing.startNew().origin(player.getEyeLocation).direction(player.getEyeLocation.getDirection).distance(distance)
       .step(0.2).raytrace()
     result.getEntities.asScala.filter(_ != null).filterNot(_.isDead()).filter(_.isInstanceOf[Mob]).map(_.asInstanceOf[Mob])
-      .filter(CombatManager.isEnemy).map(CombatManager.makeEnemy(_)).toSeq
+      .filter(EnemyManager.isMarked).flatMap(EnemyManager.getEnemy).toSeq
 
   /** Gets all enemies around the player.
     *
@@ -118,7 +117,7 @@ abstract class Art(val artType: ArtType):
     */
   final def getEnemiesAround(player: Player, distance: Double = 4.0): Seq[EnemyEntity] = player
     .getNearbyEntities(distance, distance, distance).asScala.filter(_.isInstanceOf[Mob]).map(_.asInstanceOf[Mob])
-    .filter(CombatManager.isEnemy).map(CombatManager.makeEnemy(_)).toSeq
+    .filter(EnemyManager.isMarked).flatMap(EnemyManager.getEnemy).toSeq
 
   /** Starts the animation for the art.
     *

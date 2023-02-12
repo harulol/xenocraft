@@ -1,8 +1,10 @@
 package dev.hawu.plugins.xenocraft
-package events
+package events.combat
 
 import UserMap.user
 import data.{ArtReaction, ArtType, Directional, EnemyEntity}
+import events.UserEvent
+import events.combat.PlayerDealDamageEvent
 import utils.Formulas
 
 import org.bukkit.entity.{Mob, Player}
@@ -53,7 +55,6 @@ class PlayerDealDamageEvent(
   var shackleRingMultiplier = 1.0
   var isEvaded = entity.isEvading
   var isHit = landedHit
-  var shouldOverride = true
 
   private var cancelled = false
 

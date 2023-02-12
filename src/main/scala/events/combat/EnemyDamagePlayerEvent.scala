@@ -1,8 +1,9 @@
 package dev.hawu.plugins.xenocraft
-package events
+package events.combat
 
 import UserMap.user
 import data.{ArtReaction, EnemyEntity}
+import events.combat.EnemyDamagePlayerEvent
 import utils.Formulas
 
 import org.bukkit.entity.{Mob, Player}
@@ -37,7 +38,6 @@ class EnemyDamagePlayerEvent(entity: Mob, val enemy: EnemyEntity, val player: Pl
   var damageReduction = 0.0
   var isEvaded = user.isEvading
   var isHit = landedHit
-  var shouldOverride = true
 
   private var cancelled = false
 

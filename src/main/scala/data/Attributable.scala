@@ -2,7 +2,8 @@ package dev.hawu.plugins.xenocraft
 package data
 
 import data.Attributable.EPSILON
-import events.PlayerIncapacitateEvent
+import events.{EntityHealthChangeEvent, PlayerIncapacitateEvent}
+import managers.EnemyManager
 
 import dev.hawu.plugins.api.Tasks
 import org.bukkit.attribute.Attribute
@@ -177,8 +178,11 @@ trait Attributable(val uuid: UUID):
     */
   def setHp(value: Double): Unit = Bukkit.getEntity(uuid) match
     case entity: LivingEntity if Option(entity).exists(!_.isDead) =>
-      resetMaxHealth(entity)
-      _hp = value min maxHp max 0
+      val event = EntityHealthChangeEvent(this, _hp, value min maxHp max 0)
+      Bukkit.getPluginManager.callEvent(event)
+      if event.isCancelled then return ()
+
+      _hp = event.newHp min maxHp max 0
 
       val maxRealHealth = getMaxHealth(entity)
       val realHealth = ((_hp / maxHp) * maxRealHealth) max 0 min maxRealHealth
@@ -195,20 +199,14 @@ trait Attributable(val uuid: UUID):
       player.setHealth(getMaxHealth(player))
       val event = PlayerIncapacitateEvent(player)
       Bukkit.getPluginManager.callEvent(event)
-    case mob: Mob => mob.setHealth(0)
-    case _        => ()
+    case mob: Mob =>
+      EnemyManager.unmark(mob)
+      mob.setHealth(0)
+    case _ => ()
 
   private def getMaxHealth(mob: LivingEntity): Double = mob.getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue
 
   private def closeEnough(value1: Double, value2: Double): Boolean = math.abs(value1 - value2) <= EPSILON
-
-  private def resetMaxHealth(mob: LivingEntity): Unit =
-    val attribute = mob.getAttribute(Attribute.GENERIC_MAX_HEALTH)
-    mob match
-      case player: Player =>
-        player.setHealthScaled(true)
-        player.setHealthScale(20)
-      case _ => ()
 
   /** The maximum value of the HP value.
     *

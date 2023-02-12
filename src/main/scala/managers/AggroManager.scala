@@ -8,7 +8,7 @@ import managers.AggroManager.drawAggroLines
 
 import dev.hawu.plugins.api.Tasks
 import dev.hawu.plugins.api.events.Events
-import org.bukkit.Particle.DustOptions
+import org.bukkit.Particle.{BLOCK_CRACK, DustOptions}
 import org.bukkit.entity.{Entity, LivingEntity, Mob, Player}
 import org.bukkit.plugin.java.JavaPlugin
 import org.bukkit.{Bukkit, Color, Location, Particle}
@@ -78,12 +78,17 @@ object AggroManager extends Initializable:
 
   override def tearDown(pl: JavaPlugin) = aggroMap.clear()
 
+  /** Gets all mobs recorded that currently has aggro on [[player]].
+   */
+  def getFor(player: Player): Seq[Mob] = aggroMap.toSeq.filter(_._2 == player.getUniqueId).map(_._1).map(Bukkit.getEntity)
+    .filter(_.isInstanceOf[Mob]).map(_.asInstanceOf[Mob])
+
   /** Binds an entity-player aggro pair.
-    */
+   */
   def map(entity: Mob, player: Player): Unit = aggroMap += entity.getUniqueId -> player.getUniqueId
 
   /** Clears a mob out of the map, regardless of the target and returns the optional value of the target UUID.
-    */
+   */
   def clear(entity: Mob): Option[UUID] = aggroMap.remove(entity.getUniqueId)
 
   /** Clears all aggro binding for a player.

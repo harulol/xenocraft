@@ -4,7 +4,7 @@ package listener
 import managers.EnemyManager
 
 import org.bukkit.entity.Mob
-import org.bukkit.event.entity.{EntityCombustEvent, EntityDeathEvent, EntitySpawnEvent, EntityTransformEvent}
+import org.bukkit.event.entity.*
 import org.bukkit.event.{EventHandler, EventPriority, Listener}
 
 import scala.util.Try
@@ -16,10 +16,13 @@ import scala.util.Try
 object EnemyListener extends Listener:
 
   // Unmark all mobs that die.
-  @EventHandler(priority = EventPriority.HIGHEST)
+  @EventHandler(priority = EventPriority.MONITOR)
   private def onEntityDeath(event: EntityDeathEvent): Unit = event.getEntity match
     case mob: Mob => EnemyManager.unmark(mob)
-    case _        =>
+    case _ =>
+
+  @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+  private def onEntityExplode(event: EntityExplodeEvent): Unit = Try(event.getEntity.asInstanceOf[Mob]).foreach(EnemyManager.unmark(_))
 
   // Stupid transforming mobs.
   @EventHandler

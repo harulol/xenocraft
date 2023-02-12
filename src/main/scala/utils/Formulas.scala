@@ -1,8 +1,8 @@
 package dev.hawu.plugins.xenocraft
 package utils
 
-import combat.CombatManager
 import data.{Attributable, Directional, EnemyEntity, User}
+import managers.CombatManager
 
 import org.bukkit.entity.{LivingEntity, Mob}
 

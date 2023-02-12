@@ -31,9 +31,12 @@ object EnemyManager extends Initializable:
     mob.setMetadata("xeno-enemy", FixedMetadataValue(Xenocraft.getInstance, EnemyEntity(mob)))
     mob.setMetadata("xeno-bossbar", FixedMetadataValue(Xenocraft.getInstance, createBossbar(mob)))
 
-  private def createBossbar(mob: Mob, color: BarColor = BarColor.RED, style: BarStyle = BarStyle.SEGMENTED_20): BossBar =
-    val enemy = getEnemy(mob).get
-    Bukkit.createBossBar(enemy.name, color, style)
+  /** Removes marks from a certain mob, and possibly heal them back if possible.
+    */
+  def unmark(mob: Mob, heal: Boolean = false): Unit =
+    getBossbar(mob).foreach(_.removeAll())
+    Seq("xeno-enemy", "xeno-bossbar").foreach(mob.removeMetadata(_, Xenocraft.getInstance))
+    if heal then mob.setHealth(getMaxHealth(mob))
 
   /** Returns true if the [[mob]] provided has been marked with a valid [[EnemyEntity]] instance.
     */
@@ -42,11 +45,9 @@ object EnemyManager extends Initializable:
   override def tearDown(pl: JavaPlugin) = Bukkit.getWorlds.asScala.flatMap(_.getLivingEntities.asScala).filter(_ != null)
     .filter(_.isInstanceOf[Mob]).map(_.asInstanceOf[Mob]).foreach(unmark(_, true))
 
-  /** Removes marks from a certain mob, and possibly heal them back if possible.
-    */
-  def unmark(mob: Mob, heal: Boolean = false): Unit =
-    Seq("xeno-enemy", "xeno-bossbar").foreach(mob.removeMetadata(_, Xenocraft.getInstance))
-    if heal then mob.setHealth(getMaxHealth(mob))
+  private def createBossbar(mob: Mob, color: BarColor = BarColor.RED, style: BarStyle = BarStyle.SEGMENTED_20): BossBar =
+    val enemy = getEnemy(mob).get
+    Bukkit.createBossBar(s"&f${enemy.name}", color, style)
 
   /** Syncs the [[mob]]'s bossbar with its health.
     */
