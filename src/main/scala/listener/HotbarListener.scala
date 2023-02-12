@@ -4,7 +4,7 @@ package listener
 import UserMap.user
 import data.ArtType
 import events.blades.{PlayerPostUnsheatheEvent, PlayerPreSheatheEvent}
-import events.combat.{PlayerAutoAttackEvent, PlayerDealDamageEvent}
+import events.combat.{PlayerAutoAttackEvent, PlayerAutoAttackSuccessEvent, PlayerDealDamageEvent}
 import managers.{ArtManager, HotbarManager}
 
 import dev.hawu.plugins.api.Tasks
@@ -24,10 +24,8 @@ object HotbarListener extends Listener:
   private val tasks = mutable.Map.empty[UUID, BukkitTask]
 
   // Recharge Agnian arts based on SUCCESSFUL auto-attacks.
-  @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
-  private def onAutoAttack(event: PlayerDealDamageEvent): Unit =
-    if event.isEvaded || !event.isHit then return ()
-
+  @EventHandler(priority = EventPriority.MONITOR)
+  private def onAutoAttack(event: PlayerAutoAttackSuccessEvent): Unit =
     val user = event.getPlayer.user.get
     user.masterArts.appendedAll(user.arts).filter(_ != null).filter(_.isAgnian).foreach(user.rechargeArt(_))
 

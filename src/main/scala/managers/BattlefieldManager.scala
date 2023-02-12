@@ -3,7 +3,7 @@ package managers
 
 import UserMap.user
 import data.Directional
-import events.combat.{EnemyAutoAttackEvent, PlayerAutoAttackEvent}
+import events.combat.{EnemyAutoAttackEvent, EnemyAutoAttackSuccessEvent, PlayerAutoAttackEvent, PlayerAutoAttackSuccessEvent}
 import listener.BattlefieldListener
 
 import dev.hawu.plugins.api.events.Events
@@ -40,6 +40,12 @@ object BattlefieldManager extends Initializable:
     val autoAttack = if fromPlayer then PlayerAutoAttackEvent(player, enemyEntity) else EnemyAutoAttackEvent(mob, enemyEntity, player)
     Bukkit.getPluginManager.callEvent(autoAttack)
     autoAttack.isCancelled
+
+  /** Calls an auto attack success event.
+   */
+  def callAutoAttackSuccessEvent(player: Player, mob: Mob, fromPlayer: Boolean): Unit =
+    val event = if fromPlayer then PlayerAutoAttackSuccessEvent(player) else EnemyAutoAttackSuccessEvent(mob)
+    Bukkit.getPluginManager.callEvent(event)
 
   /** Calculates the direction which the [[player]] is facing [[target]]. This is more like, relative direction, such as a player looking at
    * the [[target]]'s left will yield [[Directional.LEFT]].

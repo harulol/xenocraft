@@ -2,24 +2,25 @@ package dev.hawu.plugins.xenocraft
 package managers
 
 import data.SkillType
-import skills.Skill
+import skills.*
 
 import dev.hawu.plugins.api.events.Events
 import org.bukkit.event.HandlerList
+import org.bukkit.plugin.java.JavaPlugin
 
 import scala.collection.mutable
 
 /** Represents a single object to manage how skill types are bound to a specific skill object.
  */
-object SkillManager:
+object SkillManager extends Initializable:
 
   private val map = mutable.Map.empty[SkillType, Skill]
 
   /** Attempts to initialize the skill manager.
    */
-  def initialize(): Unit =
-    import skills.swordfighter.*
-    bind(SharpEye, CypherEdge, CovertAttack)
+  override def setUp(pl: JavaPlugin): Unit =
+    bind(swordfighter.SharpEye, swordfighter.CypherEdge, swordfighter.CovertAttack, swordfighter.Inspirit)
+    bind(zephyr.StormyGale, zephyr.IllDefendYou, zephyr.SplitSecondCounter, zephyr.EthersSanctuary)
 
   /** Binds a skill.
    *
@@ -30,11 +31,13 @@ object SkillManager:
     skills.foreach(it => map += it.skillType -> it)
     Events.registerEvents(Xenocraft.getInstance, skills *)
 
+  override def tearDown(pl: JavaPlugin): Unit = map.clear()
+
   /** Unbinds a skill.
-    *
-    * @param skill
-    *   the skill
-    */
+   *
+   * @param skill
+   * the skill
+   */
   def unbind(skill: Skill | SkillType): Unit = skill match
     case s: Skill =>
       map -= s.skillType

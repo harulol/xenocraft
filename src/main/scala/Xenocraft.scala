@@ -29,6 +29,8 @@ class Xenocraft extends JavaPlugin:
   private val serializables = List(classOf[User], classOf[ClassMemory])
 
   private val initializables = List(
+    ArtManager,
+    SkillManager,
     AggroManager,
     EnemyManager,
     GemsManager,
@@ -37,25 +39,22 @@ class Xenocraft extends JavaPlugin:
     HotbarManager,
     ChatHologramManager,
     UserMap,
-    ArtManager,
   )
 
   override def onEnable(): Unit =
     instance = this
     modules.foreach(_.initialize(this))
-    initializables.foreach(_.setUp(this))
     serializables.foreach(ConfigurationSerialization.registerClass)
+    initializables.foreach(_.setUp(this))
 
-    SkillManager.initialize()
     Configuration.initialize(this)
 
     CommandRegistry.register(this, new StatsCommand, PluginBaseCommand(this), new ArtCommand)
     Events.registerEvents(this, DropsListener)
 
   override def onDisable(): Unit =
-    initializables.foreach(_.tearDown(this))
-
     Bukkit.getOnlinePlayers.asScala.flatMap(_.user).foreach(_.sheathe())
+    initializables.reverse.foreach(_.tearDown(this))
 
     HandlerList.unregisterAll(this)
     CommandRegistry.unregister(this)

@@ -66,66 +66,12 @@ class PlayerDealDamageEvent(
   // Create getters using `def` for the private val fields with an underscore before name.
   // Please Copilot
 
-  /** Gets the stability modifier of the damage event. This depends on the weapon's stability, and accounts for how consistent the attack
-    * increase is.
-    *
-    * @return
-    *   the stability modifier
-    */
-  def stabilityModifier: Double = _stabilityModifier
-
   /** Gets the critical hit multiplier of the damage event. [[1.25 + user.critDamage]] if this was a critical hit.
     *
     * @return
     *   the critical hit multiplier
     */
   def critMultiplier: Double = _critMultiplier
-
-  /** Gets the combo multiplier of the damage event.
-    *
-    * @return
-    *   the combo multiplier
-    */
-  def comboMultiplier: Double = _comboMultiplier
-
-  /** Gets the type defense multiplier of the damage event.
-    *
-    * @return
-    *   the type defense multiplier
-    */
-  def typeDefenseMultiplier: Double = _typeDefenseMultiplier
-
-  /** Gets the blocked multiplier of the damage event.
-    *
-    * @return
-    *   the blocked multiplier
-    */
-  def blockedMultiplier: Double = _blockedMultiplier
-
-  /** The fusion damage multiplier if it is a fusion art.
-    */
-  def fusionDamageMultiplier: Double = _fusionDamageMultiplier
-
-  /** Gets the AoE multiplier of the damage event.
-    *
-    * @return
-    *   the AoE multiplier
-    */
-  def aoeMultiplier: Double = _aoeMultiplier
-
-  /** Gets the multi-hit correction of the damage event.
-    *
-    * @return
-    *   the multi-hit correction
-    */
-  def multiHitCorrection: Double = _multiHitCorrection
-
-  /** Gets the random multiplier of the damage event.
-    *
-    * @return
-    *   the random multiplier
-    */
-  def randomMultiplier: Double = _randomMultiplier
 
   /** Checks if this damage event is a critical hit.
     *
@@ -174,15 +120,69 @@ class PlayerDealDamageEvent(
     *
     * @param cancelled
     *   true if the event is cancelled, false otherwise
-    */
+   */
   override def setCancelled(cancelled: Boolean): Unit = this.cancelled = cancelled
 
   /** Gets the list of handlers for this event.
-    *
-    * @return
-    *   the list of handlers
-    */
+   *
+   * @return
+   * the list of handlers
+   */
   override def getHandlers: HandlerList = PlayerDealDamageEvent.getHandlerList
+
+  /** Gets the combo multiplier of the damage event.
+   *
+   * @return
+   * the combo multiplier
+   */
+  def comboMultiplier: Double = _comboMultiplier
+
+  /** Gets the AoE multiplier of the damage event.
+   *
+   * @return
+   * the AoE multiplier
+   */
+  def aoeMultiplier: Double = _aoeMultiplier
+
+  /** Gets the multi-hit correction of the damage event.
+   *
+   * @return
+   * the multi-hit correction
+   */
+  def multiHitCorrection: Double = _multiHitCorrection
+
+  /** Gets the random multiplier of the damage event.
+   *
+   * @return
+   * the random multiplier
+   */
+  def randomMultiplier: Double = _randomMultiplier
+
+  /** Gets the stability modifier of the damage event. This depends on the weapon's stability, and accounts for how consistent the attack
+   * increase is.
+   *
+   * @return
+   * the stability modifier
+   */
+  def stabilityModifier: Double = _stabilityModifier
+
+  /** Gets the type defense multiplier of the damage event.
+   *
+   * @return
+   * the type defense multiplier
+   */
+  def typeDefenseMultiplier: Double = _typeDefenseMultiplier
+
+  /** Gets the blocked multiplier of the damage event.
+   *
+   * @return
+   * the blocked multiplier
+   */
+  def blockedMultiplier: Double = _blockedMultiplier
+
+  /** The fusion damage multiplier if it is a fusion art.
+   */
+  def fusionDamageMultiplier: Double = _fusionDamageMultiplier
 
 end PlayerDealDamageEvent
 

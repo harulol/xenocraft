@@ -17,7 +17,7 @@ import scala.util.{Success, Try}
 
 /** Represents an enemy.
  */
-class EnemyEntity private(val entity: Mob) extends Attributable(entity.getUniqueId):
+class EnemyEntity private(val entity: Mob, val state: Int) extends Attributable(entity.getUniqueId):
 
   var name: String = standardize(entity)
   var guardFront = 0.0
@@ -49,6 +49,12 @@ class EnemyEntity private(val entity: Mob) extends Attributable(entity.getUnique
     entity.setHealth(getMaxHealth)
     _maxHp = getMaxHealth
     _hp = _maxHp
+
+  def isNormal: Boolean = state == 0
+
+  def isElite: Boolean = state == 1
+
+  def isUnique: Boolean = state == 2
 
   override def maxHp: Double = _maxHp
 
@@ -111,7 +117,7 @@ object EnemyEntity:
    * the enemy entity
    */
   def apply(state: Int, entity: Mob): EnemyEntity =
-    val enemy = new EnemyEntity(entity)
+    val enemy = new EnemyEntity(entity, state)
     state match
       case 0 => applyFromConfig(enemy, s"entities/${kebabCase(entity)}/${kebabCase(entity)}_normal")
       case 1 => applyFromConfig(enemy, s"entities/${kebabCase(entity)}/${kebabCase(entity)}_elite")

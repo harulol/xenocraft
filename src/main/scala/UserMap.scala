@@ -14,13 +14,13 @@ import java.util.UUID
 import scala.collection.mutable
 
 /** The data holders for players.
- */
+  */
 object UserMap extends Initializable with Listener:
 
   private val map = mutable.Map.empty[UUID, User]
 
   /** Initializes the user map.
-   */
+    */
   override def setUp(pl: JavaPlugin): Unit =
     val folder = File(pl.getDataFolder, "users")
     val files = folder.listFiles()
@@ -30,7 +30,6 @@ object UserMap extends Initializable with Listener:
           val config = YamlConfiguration.loadConfiguration(file)
           val user = config.get("data").asInstanceOf[User]
           map.put(user.uuid, user)
-          user.applyClass(user.cls)
         } catch
           case e: Exception =>
             e.printStackTrace()
@@ -41,7 +40,7 @@ object UserMap extends Initializable with Listener:
     pl.getServer.getPluginManager.registerEvents(this, pl)
 
   /** Saves all users.
-   */
+    */
   override def tearDown(pl: JavaPlugin): Unit =
     val folder = File(pl.getDataFolder, "users")
     if !folder.exists() then folder.mkdirs()
@@ -56,7 +55,7 @@ object UserMap extends Initializable with Listener:
       } catch
         case e: Exception =>
           e.printStackTrace()
-          ConsoleLogger.severef(pl, s"Couldn't properly save $uuid.yml: ${e.getMessage}")
+          ConsoleLogger.severef(pl, s"Couldn't properly save $uuid.yml: ${e.getMessage}"),
     )
 
   @EventHandler
@@ -66,10 +65,10 @@ object UserMap extends Initializable with Listener:
   extension (player: OfflinePlayer) {
 
     /** Retrieves the user data of the player.
-     *
-     * @return
-     * the user data
-     */
+      *
+      * @return
+      *   the user data
+      */
     def user: Option[User] = map.get(player.getUniqueId)
 
   }

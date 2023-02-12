@@ -69,7 +69,9 @@ object BattlefieldListener extends Listener:
       val damageEvent = new PlayerDealDamageEvent(player, BattlefieldManager.calculateDirection(player, mob), entity, true)
       Bukkit.getPluginManager.callEvent(damageEvent)
 
-      if !damageEvent.isCancelled && !damageEvent.isEvaded && damageEvent.isHit then CombatManager.damage(entity, damageEvent.finalDamage)
+      if !damageEvent.isCancelled && !damageEvent.isEvaded && damageEvent.isHit then
+        BattlefieldManager.callAutoAttackSuccessEvent(player, mob, true)
+        CombatManager.damage(entity, damageEvent.finalDamage)
 
     case mob: Mob if event.getEntity.isInstanceOf[Player] =>
       event.setCancelled(true)
@@ -82,4 +84,7 @@ object BattlefieldListener extends Listener:
       Bukkit.getPluginManager.callEvent(damageEvent)
 
       if !damageEvent.isCancelled && !damageEvent.isEvaded && damageEvent.isHit then
+        BattlefieldManager.callAutoAttackSuccessEvent(player, mob, false)
         CombatManager.damage(player.user.get, damageEvent.finalDamage)
+
+    case _ => ()

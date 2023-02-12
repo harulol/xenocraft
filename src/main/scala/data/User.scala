@@ -6,6 +6,7 @@ import events.PlayerIncapacitateEvent
 import events.blades.{PlayerPostSheatheEvent, PlayerPostUnsheatheEvent, PlayerPreSheatheEvent, PlayerPreUnsheatheEvent}
 import gui.{ArtsGUI, ClassesGUI}
 import managers.{GemsManager, HotbarManager, SkillManager}
+import skills.Skill
 import utils.Formulas
 
 import dev.hawu.plugins.api.Tasks
@@ -143,19 +144,16 @@ case class User(
    */
   def applyClass(clazz: Option[ClassType]): Unit =
     if cls.exists(_.isSoulhacker) then classMemory.put(ClassType.SOULHACKER_POWER, ClassMemory(this))
-    else cls.foreach(classMemory.put(_, ClassMemory(this)))
 
-    if cls.isDefined then
-      SkillType.values.filter(_.cls.get == cls.get).map(SkillManager.get).filter(_.isDefined).map(_.get).foreach(_.safeUnapply(this))
+    unapplySkills()
 
+    cls = clazz
     if clazz.isDefined then
       val memory = classMemory.get(if clazz.exists(_.isSoulhacker) then ClassType.SOULHACKER_POWER else clazz.get)
       if memory.isDefined then
         memory.get.apply(this)
-        cls = clazz
         if weapon.isEmpty then weapon = Some(cls.get.weaponType)
       else
-        cls = clazz
         weapon = Some(clazz.get.weaponType)
         Array.ofDim[ArtType](3).copyToArray(masterArts)
         Array.ofDim[ArtType](3).copyToArray(arts)
@@ -164,10 +162,8 @@ case class User(
         talentArt = ArtType.values.filter(_.isTalent).find(_.cls.contains(clazz.get))
         applyClass(cls)
 
-      SkillType.values.filter(_.cls.get == clazz.get).map(SkillManager.get).filter(_.isDefined).map(_.get).foreach(_.safeApply(this))
-    end if
-
-  end applyClass
+      // Apply all skills.
+      applySkills()
 
   /** Unsheathe the blade.
    */
@@ -191,14 +187,20 @@ case class User(
         p.getInventory.setHeldItemSlot(0)
     })
 
-  end unsheathe
-
   /** Attempts to retrieve the player instance from the user.
    *
    * @return
    * the player instance
    */
   def player: Option[Player] = Option(Bukkit.getPlayer(uuid))
+
+  /** Unapplies all skills.
+   */
+  def unapplySkills(): Unit = if cls.isDefined then getAllSkills(cls.get).foreach(_.safeUnapply(this))
+
+  /** Applies all skills.
+   */
+  def applySkills(): Unit = if cls.isDefined then getAllSkills(cls.get).foreach(_.safeApply(this))
 
   /** Sheathes the blade back and disables combat.
    */
@@ -270,6 +272,9 @@ case class User(
     "latestSoul" -> lastSoulhackerSoul.map(_.toString()).orNull,
   ).asJava
 
+  private def getAllSkills(cls: ClassType): Array[Skill] = SkillType.values.filter(_.cls.contains(cls)).appendedAll(masterSkills)
+    .flatMap(SkillManager.get)
+
 end User
 
 /** Companion object for [[User]].
@@ -302,6 +307,7 @@ object User:
     gems.filter(_ != null).foreach((gem, lvl) => GemsManager.applyGem(user, gem, lvl))
     user.classMemory ++= memory
     user.lastSoulhackerSoul = lastSoulhackerSoul
+    user.applyClass(user.cls)
     user
 
   end deserialize
