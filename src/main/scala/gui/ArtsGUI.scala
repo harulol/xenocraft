@@ -3,9 +3,9 @@ package gui
 
 import I18n.tl
 import UserMap.user
-import arts.ArtManager
 import data.{ArtRechargeType, ArtType, ClassNation, User}
 import gui.ArtsGUI.{ArtComponent, TalentArtComponent}
+import managers.ArtManager
 
 import dev.hawu.plugins.api.Strings
 import dev.hawu.plugins.api.adapters.UserAdapter
@@ -26,20 +26,20 @@ import java.text.DecimalFormat
 import scala.jdk.CollectionConverters.*
 
 /** The singleton object dedicated to arts GUIs.
-  */
+ */
 object ArtsGUI extends ModuleHolder("arts-ui"):
 
   given Option[LanguageModule] = module
 
   /** Opens the menu for the player to select and bind arts.
-    *
-    * @param player
-    *   the player
-    * @param slot
-    *   the slot to bind to
-    * @param master
-    *   whether this is to select master arts
-    */
+   *
+   * @param player
+   * the player
+   * @param slot
+   * the slot to bind to
+   * @param master
+   * whether this is to select master arts
+   */
   def openArtsSelection(player: Player, slot: Int, master: Boolean): Unit =
     given Player = player
 
@@ -51,8 +51,8 @@ object ArtsGUI extends ModuleHolder("arts-ui"):
 
     user.cls match
       case Some(cls) => cls.nation match
-          case ClassNation.KEVES => includesKeves = !master
-          case ClassNation.AGNUS => includesAgnus = !master
+        case ClassNation.KEVES => includesKeves = !master
+        case ClassNation.AGNUS => includesAgnus = !master
       case _ => ()
 
     GuiPaginator.newBuilder[ArtType]().setCollection(
@@ -72,11 +72,38 @@ object ArtsGUI extends ModuleHolder("arts-ui"):
     ).setModelSupplier(() => retrieveModel(if master then "choose-master-art-title" else "choose-art-title")).build(player)
   end openArtsSelection
 
+  /** Opens the menu for the player to select talent arts.
+   *
+   * @param player
+   * the player
+   */
+  def openTalentArtsSelection(player: Player): Unit =
+    given Player = player
+
+    val user = player.user.get
+    val locale = UserAdapter.getAdapter.getUser(player).getLocale
+
+    GuiPaginator.newBuilder[ArtType]()
+      .setCollection(ArtManager.getAllArts(false, false).filter(user.canUseArtAs(_, "talent")).toList.asJava)
+      .setAllowedSlots(MainGUI.getPaginationSlots).setBackAction(_ => openArts(player)).setBackSlots(Set(2).map(Integer.valueOf).asJava)
+      .setPreviousButtonSlots(Set(47).map(Integer.valueOf).asJava).setNextButtonSlots(Set(53).map(Integer.valueOf).asJava)
+      .setModelSupplier(() => retrieveModel("choose-talent-art-title")).setPredicate(null).setItemGenerator((art, _) =>
+      new GuiComponent[Unit]() {
+        override def handleClick(event: InventoryClickEvent): Unit =
+          event.setCancelled(true)
+          user.talentArt = Some(art)
+          openArts(player)
+
+        override def render(): ItemStack = retrieveArtDisplay(art, locale, true)
+      },
+    ).build(player)
+  end openTalentArtsSelection
+
   /** Opens the arts menu GUI.
-    *
-    * @param player
-    *   the player
-    */
+   *
+   * @param player
+   * the player
+   */
   def openArts(player: Player): Unit =
     given Player = player
 
@@ -105,17 +132,17 @@ object ArtsGUI extends ModuleHolder("arts-ui"):
     model
 
   /** Retrieves the display of the art.
-    *
-    * @param art
-    * the art
-    * @param locale
-   *  the locale
+   *
+   * @param art
+   * the art
+   * @param locale
+   * the locale
    * @param detailed
-   *  whether to display detailed information
+   * whether to display detailed information
    * @param player
-   *  the player
+   * the player
    * @param click
-   *  whether to include the "click to change" thing
+   * whether to include the "click to change" thing
    * @return
    * the display
    */
@@ -157,33 +184,6 @@ object ArtsGUI extends ModuleHolder("arts-ui"):
     ItemStackBuilder.from(item).flags(ItemFlag.HIDE_ATTRIBUTES, ItemFlag.HIDE_POTION_EFFECTS).build()
   end retrieveArtDisplay
 
-  /** Opens the menu for the player to select talent arts.
-   *
-   * @param player
-   * the player
-   */
-  def openTalentArtsSelection(player: Player): Unit =
-    given Player = player
-
-    val user = player.user.get
-    val locale = UserAdapter.getAdapter.getUser(player).getLocale
-
-    GuiPaginator.newBuilder[ArtType]()
-      .setCollection(ArtManager.getAllArts(false, false).filter(user.canUseArtAs(_, "talent")).toList.asJava)
-      .setAllowedSlots(MainGUI.getPaginationSlots).setBackAction(_ => openArts(player)).setBackSlots(Set(2).map(Integer.valueOf).asJava)
-      .setPreviousButtonSlots(Set(47).map(Integer.valueOf).asJava).setNextButtonSlots(Set(53).map(Integer.valueOf).asJava)
-      .setModelSupplier(() => retrieveModel("choose-talent-art-title")).setPredicate(null).setItemGenerator((art, _) =>
-      new GuiComponent[Unit]() {
-        override def handleClick(event: InventoryClickEvent): Unit =
-          event.setCancelled(true)
-          user.talentArt = Some(art)
-          openArts(player)
-
-        override def render(): ItemStack = retrieveArtDisplay(art, locale, true)
-      },
-    ).build(player)
-  end openTalentArtsSelection
-
   /** The implementation of a GUI component that allows selecting arts.
    */
   class ArtComponent(private var player: Player, private val slot: Int, private val master: Boolean = false) extends GuiComponent[Unit]():
@@ -209,7 +209,7 @@ object ArtsGUI extends ModuleHolder("arts-ui"):
   end ArtComponent
 
   /** The implementation of GUI Component to handle selecting talent arts.
-    */
+   */
   class TalentArtComponent(private var player: Player) extends GuiComponent[Unit]:
 
     private val locale = UserAdapter.getAdapter.getUser(player).getLocale

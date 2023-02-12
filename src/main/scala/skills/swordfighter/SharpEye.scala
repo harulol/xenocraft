@@ -2,7 +2,8 @@ package dev.hawu.plugins.xenocraft
 package skills.swordfighter
 
 import data.{SkillType, User}
-import skills.{Skill, SkillManager}
+import managers.SkillManager
+import skills.Skill
 
 /** The skill handler for the skill that boosts your Dexterity.
  */

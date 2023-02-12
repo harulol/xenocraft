@@ -1,7 +1,8 @@
 package dev.hawu.plugins.xenocraft
-package skills
+package managers
 
 import data.SkillType
+import skills.Skill
 
 import dev.hawu.plugins.api.events.Events
 import org.bukkit.event.HandlerList

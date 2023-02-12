@@ -1,8 +1,8 @@
 package dev.hawu.plugins.xenocraft
 package data
 
-import arts.ArtManager
 import gui.ArtsGUI
+import managers.ArtManager
 
 import dev.hawu.plugins.api.i18n.Locale
 import org.bukkit.Material

@@ -2,11 +2,10 @@ package dev.hawu.plugins.xenocraft
 package listener
 
 import UserMap.user
-import arts.ArtManager
 import data.ArtType
 import events.blades.{PlayerPostUnsheatheEvent, PlayerPreSheatheEvent}
-import events.combat.PlayerAutoAttackEvent
-import managers.HotbarManager
+import events.combat.{PlayerAutoAttackEvent, PlayerDealDamageEvent}
+import managers.{ArtManager, HotbarManager}
 
 import dev.hawu.plugins.api.Tasks
 import org.bukkit.entity.Player
@@ -19,14 +18,16 @@ import java.util.UUID
 import scala.collection.mutable
 
 /** Additional logic on events for hotbar or arts palette during battle.
-  */
+ */
 object HotbarListener extends Listener:
 
   private val tasks = mutable.Map.empty[UUID, BukkitTask]
 
-  // Recharge Agnian arts based on auto-attacks.
-  @EventHandler
-  private def onAutoAttack(event: PlayerAutoAttackEvent): Unit =
+  // Recharge Agnian arts based on SUCCESSFUL auto-attacks.
+  @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+  private def onAutoAttack(event: PlayerDealDamageEvent): Unit =
+    if event.isEvaded || !event.isHit then return ()
+
     val user = event.getPlayer.user.get
     user.masterArts.appendedAll(user.arts).filter(_ != null).filter(_.isAgnian).foreach(user.rechargeArt(_))
 
@@ -44,12 +45,12 @@ object HotbarListener extends Listener:
   @EventHandler
   private def onInventoryEvent(event: InventoryOpenEvent): Unit = event.getPlayer match
     case player: Player => if player.user.exists(_.bladeUnsheathed) then event.setCancelled(true)
-    case _              => ()
+    case _ => ()
 
   @EventHandler
   private def onInventoryClick(event: InventoryClickEvent): Unit = event.getWhoClicked match
     case player: Player => if player.user.exists(_.bladeUnsheathed) then event.setCancelled(true)
-    case _              => ()
+    case _ => ()
 
   @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
   private def onUnsheathe(event: PlayerPostUnsheatheEvent): Unit = startTask(event.getPlayer)
@@ -58,6 +59,11 @@ object HotbarListener extends Listener:
     removeTask(player)
     tasks += player.getUniqueId -> Tasks.run(_ => HotbarManager.applyHotbar(player)).delay(0).period(1).run()
     player.user.get.startKevesiCooldown()
+
+  private def removeTask(player: Player): Unit =
+    tasks.remove(player.getUniqueId).foreach(_.cancel())
+    player.user.get.resetCooldowns()
+    player.user.get.stopKevesiCooldown()
 
   @EventHandler
   private def onSwapHands(event: PlayerSwapHandItemsEvent): Unit =
@@ -107,8 +113,3 @@ object HotbarListener extends Listener:
 
   @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
   private def onSheathe(event: PlayerPreSheatheEvent): Unit = removeTask(event.getPlayer)
-
-  private def removeTask(player: Player): Unit =
-    tasks.remove(player.getUniqueId).foreach(_.cancel())
-    player.user.get.resetCooldowns()
-    player.user.get.stopKevesiCooldown()

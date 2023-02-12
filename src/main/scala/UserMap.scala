@@ -14,17 +14,14 @@ import java.util.UUID
 import scala.collection.mutable
 
 /** The data holders for players.
-  */
-object UserMap extends Listener:
+ */
+object UserMap extends Initializable with Listener:
 
   private val map = mutable.Map.empty[UUID, User]
 
   /** Initializes the user map.
-    *
-    * @param pl
-    *   the plugin
-    */
-  def initialize(pl: JavaPlugin): Unit =
+   */
+  override def setUp(pl: JavaPlugin): Unit =
     val folder = File(pl.getDataFolder, "users")
     val files = folder.listFiles()
     if files != null then
@@ -41,15 +38,11 @@ object UserMap extends Listener:
       }
 
     Bukkit.getOfflinePlayers.map(_.getUniqueId).filterNot(map.contains).foreach { u => map += u -> User(u) }
-
-  end initialize
+    pl.getServer.getPluginManager.registerEvents(this, pl)
 
   /** Saves all users.
-    *
-    * @param pl
-    *   the plugin
-    */
-  def save(pl: JavaPlugin): Unit =
+   */
+  override def tearDown(pl: JavaPlugin): Unit =
     val folder = File(pl.getDataFolder, "users")
     if !folder.exists() then folder.mkdirs()
     map.foreach((uuid, user) =>
@@ -63,10 +56,8 @@ object UserMap extends Listener:
       } catch
         case e: Exception =>
           e.printStackTrace()
-          ConsoleLogger.severef(pl, s"Couldn't properly save $uuid.yml: ${e.getMessage}"),
+          ConsoleLogger.severef(pl, s"Couldn't properly save $uuid.yml: ${e.getMessage}")
     )
-
-  end save
 
   @EventHandler
   private def onJoin(event: PlayerJoinEvent): Unit =
@@ -75,10 +66,10 @@ object UserMap extends Listener:
   extension (player: OfflinePlayer) {
 
     /** Retrieves the user data of the player.
-      *
-      * @return
-      *   the user data
-      */
+     *
+     * @return
+     * the user data
+     */
     def user: Option[User] = map.get(player.getUniqueId)
 
   }

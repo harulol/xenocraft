@@ -1,9 +1,10 @@
 package dev.hawu.plugins.xenocraft
 package listener
 
+import data.User
 import events.EntityHealthChangeEvent
 import events.combat.{EnemyDamagePlayerEvent, PlayerDealDamageEvent}
-import managers.ChatHologramManager
+import managers.{ChatHologramManager, EnemyManager}
 import utils.Hologram
 
 import dev.hawu.plugins.api.Tasks
@@ -15,7 +16,7 @@ import org.bukkit.event.{EventHandler, EventPriority, Listener}
 import scala.collection.mutable.ArrayBuffer
 
 /** Listener dedicated to turn chat messages into floating holograms above their head or floating damage holograms.
-  */
+ */
 object ChatHologramListener extends Listener:
 
   @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
@@ -32,8 +33,9 @@ object ChatHologramListener extends Listener:
   @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
   private def onHealthChange(event: EntityHealthChangeEvent): Unit =
     val loc = Bukkit.getEntity(event.attributable.uuid).asInstanceOf[LivingEntity].getEyeLocation
-    val change = event.newHp - event.oldHp
-    if event.newHp > event.oldHp then Hologram.spawnAround(loc, 60, s"&a$change") else Hologram.spawnAround(loc, 60, s"&c$change")
+    val change = (event.newHp - event.oldHp).intValue
+    if !event.attributable.isInstanceOf[User] || change < 0 then return ()
+    Hologram.spawnAround(loc, 60, s"&a$change")
 
   @EventHandler
   private def onPlayerQuit(event: PlayerQuitEvent): Unit = ChatHologramManager.clearHologram(event.getPlayer)
@@ -47,6 +49,7 @@ object ChatHologramListener extends Listener:
   private def onPlayerDamageEntity(event: PlayerDealDamageEvent): Unit =
     val eyeLocation = event.entity.entity.getEyeLocation
     val finalDamage = event.finalDamage.round
+    EnemyManager.syncBossbar(event.entity.entity)
 
     if event.isEvaded then Hologram.spawnAround(eyeLocation, 40, "&fEvaded!")
     else if !event.isHit then Hologram.spawnAround(eyeLocation, 40, "&fMissed!")

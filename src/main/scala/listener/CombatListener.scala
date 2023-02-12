@@ -2,11 +2,13 @@ package dev.hawu.plugins.xenocraft
 package listener
 
 import UserMap.user
+import events.arts.{PlayerUseArtEvent, PlayerUseFusionArtEvent}
 import events.combat.{EnemyAutoAttackEvent, PlayerAutoAttackEvent}
 import events.{EntityHealthChangeEvent, PlayerIncapacitateEvent}
 import utils.Hologram
 
-import dev.hawu.plugins.api.Tasks
+import dev.hawu.plugins.api.adapters.UserAdapter
+import dev.hawu.plugins.api.{Strings, Tasks}
 import org.bukkit.entity.LivingEntity
 import org.bukkit.event.entity.EntityRegainHealthEvent
 import org.bukkit.event.entity.EntityRegainHealthEvent.RegainReason
@@ -17,7 +19,7 @@ import java.util.UUID
 import scala.collection.mutable
 
 /** Singleton object for listening to events combat-related.
-  */
+ */
 object CombatListener extends Listener:
 
   private val playerCooldowns = mutable.Map.empty[UUID, Long]
@@ -39,14 +41,26 @@ object CombatListener extends Listener:
       entityCooldowns.put(event.getEntity.getUniqueId, System.currentTimeMillis() + (1000 * boost).round)
     else event.setCancelled(true)
 
+  @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+  private def onArtUse(event: PlayerUseArtEvent): Unit =
+    val locale = UserAdapter.getAdapter.getUser(event.getPlayer).getLocale
+    event.getPlayer.sendTitle(" ", Strings.color(s"&b${event.art.name(locale)}"), 0, 40, 0)
+
+  @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+  private def onFusionArtUse(event: PlayerUseFusionArtEvent): Unit =
+    val locale = UserAdapter.getAdapter.getUser(event.getPlayer).getLocale
+    event.getPlayer.sendTitle(" ", Strings.color(s"&b&l${event.classArt.name(locale)} &7| &b&l${event.fusionArt.name(locale)}"), 0, 40, 0)
+
   @EventHandler
-  private def onIncapacitate(event: PlayerIncapacitateEvent): Unit = Tasks.run { _ =>
-    val loc = event.getPlayer.getLocation().add(0.0, 1.0, 0.0)
-    loc.getWorld.spawnParticle(Particle.TOTEM, loc, 100, 0.7, 0.7, 0.7, 0.1)
-    event.getPlayer.playSound(loc, Sound.ITEM_TOTEM_USE, 1.0f, 1.0f)
-  }.plugin(Xenocraft.getInstance).run()
+  private def onIncapacitate(event: PlayerIncapacitateEvent): Unit =
+    event.getPlayer.teleport(event.getPlayer.getWorld.getSpawnLocation)
+    Tasks.run { _ =>
+      val loc = event.getPlayer.getLocation().add(0.0, 1.0, 0.0)
+      loc.getWorld.spawnParticle(Particle.TOTEM, loc, 100, 0.7, 0.7, 0.7, 0.1)
+      event.getPlayer.playSound(loc, Sound.ITEM_TOTEM_USE, 1.0f, 1.0f)
+    }.plugin(Xenocraft.getInstance).run()
 
   @EventHandler
   private def onRegen(event: EntityRegainHealthEvent): Unit =
-    // Only healing allowed is during non-battle or using healing arts.
+  // Only healing allowed is during non-battle or using healing arts.
     if event.getRegainReason != RegainReason.CUSTOM then event.setCancelled(true) // Cancel all natural healing ways

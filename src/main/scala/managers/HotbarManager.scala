@@ -1,7 +1,7 @@
 package dev.hawu.plugins.xenocraft
 package managers
 
-import UserMap.{initialize, user}
+import UserMap.user
 import data.{ArtRechargeType, ArtType, User}
 import gui.{ArtsGUI, ClassesGUI}
 import listener.HotbarListener
@@ -19,7 +19,7 @@ import org.bukkit.plugin.java.JavaPlugin
 import java.text.DecimalFormat
 
 /** Handles the hotbar for the player.
-  */
+ */
 object HotbarManager extends Initializable:
 
   private val formatter = DecimalFormat("#,###.#")
@@ -27,7 +27,7 @@ object HotbarManager extends Initializable:
   override def setUp(pl: JavaPlugin) = Events.registerEvents(pl, HotbarListener)
 
   /** Applies the arts palette hotbar to the [[player]].
-    */
+   */
   def applyHotbar(player: Player): Unit =
     val user = player.user.get
     applyWeapon(player)
@@ -37,7 +37,7 @@ object HotbarManager extends Initializable:
     applyArt(player, user.talentArt.orNull, 8)
 
   /** Puts the weapon on the first slot of the hotbar for the [[player]].
-    */
+   */
   def applyWeapon(player: Player): Unit =
     val user = player.user.get
     if !user.bladeUnsheathed || !AggroManager.isBeingTargeted(player) then return ()
@@ -53,14 +53,14 @@ object HotbarManager extends Initializable:
     player.getInventory.setItem(0, weaponItem)
 
   /** Puts the hotbar divider on the second slot of the hotbar for [[player]].
-    */
+   */
   def applyDivider(player: Player): Unit =
     val user = player.user.get
     if !user.bladeUnsheathed || !AggroManager.isBeingTargeted(player) then return ()
     player.getInventory.setItem(1, ItemStackBuilder.of(Material.BLACK_STAINED_GLASS_PANE).name(" ").build())
 
   /** Applies the art icon if its recharge is up, or a cooldown item if it is still on cooldown.
-    */
+   */
   def applyArt(player: Player, art: ArtType, slot: Int): Unit =
     val user = player.user.get
     if !user.bladeUnsheathed || !AggroManager.isBeingTargeted(player) then return ()

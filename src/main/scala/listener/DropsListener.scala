@@ -29,7 +29,9 @@ object DropsListener extends Listener:
     // Return all drops picked up.
     items.foreach(item =>
       val map = event.getPlayer.getInventory.addItem(item)
-      map.values().forEach(leftover.addOne),
+      map.values().forEach(leftover.addOne)
+      val world = event.getPlayer.getWorld
+      leftover.foreach(world.dropItem(event.getPlayer.getLocation, _))
     )
 
   @EventHandler
@@ -44,10 +46,10 @@ object DropsListener extends Listener:
 
   @EventHandler
   private def onPickup(event: EntityPickupItemEvent): Unit = event.getEntity match
-    case player: Player if player.user.exists(!_.bladeUnsheathed) => handlePickup(event, player)
+    case player: Player if player.user.exists(_.bladeUnsheathed) => handlePickup(event, player)
     case _ => ()
 
-  private def handlePickup(event: EntityPickupItemEvent | PlayerPickupArrowEvent, player: Player) =
+  private def handlePickup(event: EntityPickupItemEvent | PlayerPickupArrowEvent, player: Player): Unit =
     val items = drops.getOrElseUpdate(player.getUniqueId, ArrayBuffer.empty)
     event.setCancelled(true)
     val item = event match

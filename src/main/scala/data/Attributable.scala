@@ -16,9 +16,9 @@ import scala.collection.mutable
 import scala.jdk.CollectionConverters.*
 
 /** Represents a class that has attributes for fighting such as HP, battlefields, and others.
-  *
-  * [[User]] is a special case of [[Attributable]] where [[User]] only accepts real players.
-  */
+ *
+ * [[User]] is a special case of [[Attributable]] where [[User]] only accepts real players.
+ */
 trait Attributable(val uuid: UUID):
 
   private val kevesiArts = mutable.Map.empty[ArtType, Double]
@@ -89,18 +89,20 @@ trait Attributable(val uuid: UUID):
   private var task: Option[BukkitTask] = None
 
   /** Starts the cooldown task.
-    */
+   */
   def startKevesiCooldown(): Unit =
     task.foreach(_.cancel())
-    task = Some(Tasks.run(_ => { kevesiArts.keys.foreach(rechargeArt(_)) }).async(true).delay(0).period(1).run())
+    task = Some(Tasks.run(_ => {
+      kevesiArts.keys.foreach(rechargeArt(_))
+    }).async(true).delay(0).period(1).run())
 
   /** Recharges the art by the base value.
-    *
-    * @param art
-    *   the art
-    * @param base
-    *   the base value
-    */
+   *
+   * @param art
+   * the art
+   * @param base
+   * the base value
+   */
   def rechargeArt(art: ArtType, base: Double = 1.0): Unit =
     if art == null then return
     else if art.isKevesi then kevesiArts.put(art, kevesiArts.getOrElse(art, 0.0) + base * (1 + rechargeUp))
@@ -108,16 +110,16 @@ trait Attributable(val uuid: UUID):
     else if art.isTalent then talentArt += base * (1 + rechargeUp)
 
   /** Stops the cooldown task.
-    */
+   */
   def stopKevesiCooldown(): Unit =
     task.foreach(_.cancel())
     task = None
 
   /** Gets the current recharge guage for an art.
-    *
-    * @param art
-    *   the art to get the recharge guage for.
-    */
+   *
+   * @param art
+   * the art to get the recharge guage for.
+   */
   def getCooldown(art: ArtType): Double =
     if art.isTalent then talentArt
     else if art.isKevesi then kevesiArts.getOrElseUpdate(art, 0.0)
@@ -125,12 +127,12 @@ trait Attributable(val uuid: UUID):
     else 0.0
 
   /** Checks if a certain art is on cooldown.
-    *
-    * @param art
-    *   the art
-    * @return
-    *   the cooldown status
-    */
+   *
+   * @param art
+   * the art
+   * @return
+   * the cooldown status
+   */
   def isOnCooldown(art: ArtType): Boolean =
     if art.isTalent then talentArt < 1.0
     else if art.isKevesi then kevesiArts.getOrElseUpdate(art, 0.0) < art.cooldown * 20 // 20 ticks per second.
@@ -138,65 +140,137 @@ trait Attributable(val uuid: UUID):
     else false
 
   /** Applies a cooldown to the provided art type.
-    *
-    * @param art
-    *   the art type
-    */
+   *
+   * @param art
+   * the art type
+   */
   def use(art: ArtType): Unit =
     if art.isTalent then talentArt = 0.0
     else if art.isKevesi then kevesiArts.put(art, 0.0)
     else if art.isAgnian then agnianArts.put(art, 0.0)
 
   /** Resets all cooldowns of this attributable.
-    */
+   */
   def resetCooldowns(): Unit =
     kevesiArts.clear()
     agnianArts.clear()
     talentArt = 0.0
 
   /** Retrieves the current value of the attributable.
-    *
-    * As Bukkit doesn't support huge values of health, please synchronize this value to be as close to the real health value as possible,
-    * percentage wise.
-    *
-    * Meaning, if [[hp]] / [[maxHp]] = 0.5, then the amount of real HP of the attributable must be half of the max health value in
-    * Minecraft.
-    *
-    * The entity fell if this value reaches 0.
-    *
-    * @return
-    *   the HP value
-    */
+   *
+   * As Bukkit doesn't support huge values of health, please synchronize this value to be as close to the real health value as possible,
+   * percentage wise.
+   *
+   * Meaning, if [[hp]] / [[maxHp]] = 0.5, then the amount of real HP of the attributable must be half of the max health value in
+   * Minecraft.
+   *
+   * The entity fell if this value reaches 0.
+   *
+   * @return
+   * the HP value
+   */
   def hp: Double = _hp
 
   /** Sets the HP for this attributable.
-    *
-    * Implementations must coerce the value to be within valid HP range [0, [[maxHp]]].
-    *
-    * @param value
-    *   the value to set
-    */
-  def setHp(value: Double): Unit = Bukkit.getEntity(uuid) match
-    case entity: LivingEntity if Option(entity).exists(!_.isDead) =>
-      val event = EntityHealthChangeEvent(this, _hp, value min maxHp max 0)
-      Bukkit.getPluginManager.callEvent(event)
-      if event.isCancelled then return ()
+   *
+   * Implementations must coerce the value to be within valid HP range [0, [[maxHp]]].
+   *
+   * @param value
+   * the value to set
+   */
+  def setHp(value: Double): Unit =
+    Bukkit.getEntity(uuid) match
+      case entity: LivingEntity if Option(entity).exists(!_.isDead) =>
+        val event = EntityHealthChangeEvent(this, _hp, value min maxHp max 0)
+        Bukkit.getPluginManager.callEvent(event)
+        if event.isCancelled then return ()
 
-      _hp = event.newHp min maxHp max 0
+        _hp = event.newHp min maxHp max 0
 
-      val maxRealHealth = getMaxHealth(entity)
-      val realHealth = ((_hp / maxHp) * maxRealHealth) max 0 min maxRealHealth
+        val maxRealHealth = getMaxHealth(entity)
+        val realHealth = ((_hp / maxHp) * maxRealHealth) max 0 min maxRealHealth
 
-      if closeEnough(realHealth, 0) then handleDeath(entity)
-      else if realHealth < entity.getHealth then
-        entity.playEffect(EntityEffect.HURT)
-        entity.setHealth(realHealth)
-      else entity.setHealth(realHealth)
-    case _ => ()
+        if closeEnough(realHealth, 0) then handleDeath(entity)
+        else if realHealth < entity.getHealth then
+          entity.playEffect(EntityEffect.HURT)
+          entity.setHealth(realHealth)
+        else entity.setHealth(realHealth)
+      case _ => ()
+
+  /** The maximum value of the HP value.
+   *
+   * The HP must never surpass this value.
+   *
+   * @return
+   * the maximum possible HP value
+   */
+  def maxHp: Double = 0
+
+  /** The attack value of this attributable. This decides the base value of all damage calculations.
+   *
+   * @return
+   * the attack value
+   */
+  def attack: Double = 0
+
+  /** The healing power value of this attributable. This decides how much they are healed, also varied by arts.
+   *
+   * @return
+   * the healing value
+   */
+  def healing: Double = 0
+
+  /** The dexterity value of this attributable. This decides how likely the attributable's hits are going to land.
+   *
+   * @return
+   * the dexterity value
+   */
+  def dexterity: Double = 0
+
+  /** The agility value of this attributable. This decides how likely this attributable can dodge attacks.
+   *
+   * @return
+   * the agility value
+   */
+  def agility: Double = 0
+
+  /** The critical rate value of this attributable, this does not mean the crit rate is the same during combat as combat requires
+   * [[combatPctCrit]] or similar in calculations. This decides how likely this attributable can deal a critical hit.
+   *
+   * Critical hits mean that they deal from 125% more critical damage. This can be increased via accessories or gems.
+   *
+   * @return
+   * the critical rate value
+   */
+  def critRate: Double = 0
+
+  /** The block rate value of this attributable. This does not mean the block rate is the same during combat as combat requires
+   * [[combatPctBlock]] or similar in calculations. The decides how likely this attributable can block a certain hit.
+   *
+   * Blocked hits deal vastly reduced damage. This can be increased via accessories or gems.
+   *
+   * @return
+   * the block rate value
+   */
+  def blockRate: Double = 0
+
+  /** The physical defense value of this attributable. This decides how much damage is negated from physical attacks.
+   *
+   * @return
+   * the physical defense value
+   */
+  def physicalDef: Double = 0
+
+  /** The ether defense value of this attributable. This decides how much damage is negated from ether attacks.
+   *
+   * @return
+   * the ether defense value
+   */
+  def etherDef: Double = 0
 
   private def handleDeath(entity: LivingEntity): Unit = entity match
     case player: Player =>
-      player.setHealth(getMaxHealth(player))
+      setHp(maxHp)
       val event = PlayerIncapacitateEvent(player)
       Bukkit.getPluginManager.callEvent(event)
     case mob: Mob =>
@@ -208,81 +282,10 @@ trait Attributable(val uuid: UUID):
 
   private def closeEnough(value1: Double, value2: Double): Boolean = math.abs(value1 - value2) <= EPSILON
 
-  /** The maximum value of the HP value.
-    *
-    * The HP must never surpass this value.
-    *
-    * @return
-    *   the maximum possible HP value
-    */
-  def maxHp: Double = 0
-
-  /** The attack value of this attributable. This decides the base value of all damage calculations.
-    *
-    * @return
-    *   the attack value
-    */
-  def attack: Double = 0
-
-  /** The healing power value of this attributable. This decides how much they are healed, also varied by arts.
-    *
-    * @return
-    *   the healing value
-    */
-  def healing: Double = 0
-
-  /** The dexterity value of this attributable. This decides how likely the attributable's hits are going to land.
-    *
-    * @return
-    *   the dexterity value
-    */
-  def dexterity: Double = 0
-
-  /** The agility value of this attributable. This decides how likely this attributable can dodge attacks.
-    *
-    * @return
-    *   the agility value
-    */
-  def agility: Double = 0
-
-  /** The critical rate value of this attributable, this does not mean the crit rate is the same during combat as combat requires
-    * [[combatPctCrit]] or similar in calculations. This decides how likely this attributable can deal a critical hit.
-    *
-    * Critical hits mean that they deal from 125% more critical damage. This can be increased via accessories or gems.
-    *
-    * @return
-    *   the critical rate value
-    */
-  def critRate: Double = 0
-
-  /** The block rate value of this attributable. This does not mean the block rate is the same during combat as combat requires
-    * [[combatPctBlock]] or similar in calculations. The decides how likely this attributable can block a certain hit.
-    *
-    * Blocked hits deal vastly reduced damage. This can be increased via accessories or gems.
-    *
-    * @return
-    *   the block rate value
-    */
-  def blockRate: Double = 0
-
-  /** The physical defense value of this attributable. This decides how much damage is negated from physical attacks.
-    *
-    * @return
-    *   the physical defense value
-    */
-  def physicalDef: Double = 0
-
-  /** The ether defense value of this attributable. This decides how much damage is negated from ether attacks.
-    *
-    * @return
-    *   the ether defense value
-    */
-  def etherDef: Double = 0
-
 end Attributable
 
 /** The attributable static access.
-  */
+ */
 object Attributable:
 
-  inline val EPSILON = 1e-5
+  inline val EPSILON = 0.01

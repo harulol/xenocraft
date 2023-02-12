@@ -3,6 +3,7 @@ package listener
 
 import managers.EnemyManager
 
+import dev.hawu.plugins.api.Tasks
 import org.bukkit.entity.Mob
 import org.bukkit.event.entity.*
 import org.bukkit.event.{EventHandler, EventPriority, Listener}
@@ -34,5 +35,6 @@ object EnemyListener extends Listener:
   @EventHandler
   private def onCombust(event: EntityCombustEvent): Unit = event.setCancelled(true)
 
-  @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
-  private def onSpawn(event: EntitySpawnEvent): Unit = Try(event.getEntity.asInstanceOf[Mob]).foreach(EnemyManager.markAsEnemy(_))
+  @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+  private def onSpawn(event: EntitySpawnEvent): Unit =
+    Tasks.run(_ => Try(event.getEntity.asInstanceOf[Mob]).foreach(EnemyManager.markAsEnemy(_))).run()

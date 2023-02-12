@@ -3,6 +3,7 @@ package data
 
 import data.EnemyEntity.{kebabCase, standardize}
 
+import dev.hawu.plugins.api.Strings
 import org.bukkit.EntityEffect
 import org.bukkit.attribute.Attribute
 import org.bukkit.configuration.file.{FileConfiguration, FileConfigurationOptions, YamlConfiguration}
@@ -15,8 +16,8 @@ import scala.ref.WeakReference
 import scala.util.{Success, Try}
 
 /** Represents an enemy.
-  */
-class EnemyEntity(val entity: Mob) extends Attributable(entity.getUniqueId):
+ */
+class EnemyEntity private(val entity: Mob) extends Attributable(entity.getUniqueId):
 
   var name: String = standardize(entity)
   var guardFront = 0.0
@@ -74,41 +75,41 @@ class EnemyEntity(val entity: Mob) extends Attributable(entity.getUniqueId):
 end EnemyEntity
 
 /** Companion object for [[EnemyEntity]].
-  */
+ */
 object EnemyEntity:
 
   private val configs = mutable.Map.empty[String, FileConfiguration]
 
   /** Standardizes the name of the entity type.
-    *
-    * @param entity
-    *   the entity
-    * @return
-    *   the standardized name
-    */
+   *
+   * @param entity
+   * the entity
+   * @return
+   * the standardized name
+   */
   def standardize(entity: Entity): String = entity.getType.name().split("_").map(_.toLowerCase().capitalize).mkString(" ")
 
   /** Creates an enemy entity with a random state.
-    *
-    * @param entity
-    *   the entity
-    * @return
-    *   the enemy entity
-    */
+   *
+   * @param entity
+   * the entity
+   * @return
+   * the enemy entity
+   */
   def apply(entity: Mob): EnemyEntity =
     val result = ThreadLocalRandom.current().nextInt(100)
     val state = if result < 75 then 0 else if result < 95 then 1 else 2
     EnemyEntity(state, entity)
 
   /** Attempts to create an enemy entity.
-    *
-    * @param state
-    *   0 is a normal enemy, 1 is an elite, 2 is a unique one.
-    * @param entity
-    *   the entity
-    * @return
-    *   the enemy entity
-    */
+   *
+   * @param state
+   * 0 is a normal enemy, 1 is an elite, 2 is a unique one.
+   * @param entity
+   * the entity
+   * @return
+   * the enemy entity
+   */
   def apply(state: Int, entity: Mob): EnemyEntity =
     val enemy = new EnemyEntity(entity)
     state match
@@ -121,12 +122,12 @@ object EnemyEntity:
     enemy
 
   /** Makes the name of the entity type in kebab case
-    *
-    * @param entity
-    *   the entity
-    * @return
-    *   the standardized name
-    */
+   *
+   * @param entity
+   * the entity
+   * @return
+   * the standardized name
+   */
   def kebabCase(entity: Entity): String = entity.getType.name().toLowerCase().replace('_', '-')
 
   // PATH DOES NOT INCLUDE .YML
@@ -134,7 +135,7 @@ object EnemyEntity:
     if !canLoadConfig(path) then return
 
     val config = configs(path)
-    if config.getString("name") != null then entity.name = config.getString("name")
+    if config.getString("name") != null then entity.name = Strings.color(config.getString("name"))
     entity._maxHp = config.getDouble("max-hp")
     entity._attack = config.getDouble("attack")
     entity._healing = config.getDouble("healing")
@@ -178,7 +179,7 @@ object EnemyEntity:
     true
 
   /** Clears all cached configs.
-    */
+   */
   def reloadConfig(): Unit = configs.clear()
 
 end EnemyEntity

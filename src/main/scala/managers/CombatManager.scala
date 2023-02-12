@@ -13,7 +13,7 @@ import org.bukkit.plugin.java.JavaPlugin
  */
 object CombatManager extends Initializable:
 
-  override def setUp(pl: JavaPlugin) = Events.registerEvents(pl, CombatListener)
+  override def setUp(pl: JavaPlugin): Unit = Events.registerEvents(pl, CombatListener)
 
   /** Deals some damage to an attributable.
    */
