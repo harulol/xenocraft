@@ -4,3 +4,12 @@
 # 2 - Normal
 # 3 - Hard (More health, more attack, etc.)
 difficulty: 2
+
+# Bonus to arts when used in a fusion art.
+fusion-bonus:
+  damage: 1.5
+  healing: 1.25
+  duration: 2.0
+  aggro: 1.5
+  range: 1.5
+  block: 1.5

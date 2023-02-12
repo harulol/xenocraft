@@ -5,9 +5,10 @@ import data.*
 import events.combat.PlayerDealDamageEvent
 import managers.{BattlefieldManager, CombatManager, EnemyManager}
 
+import dev.hawu.plugins.api.Tasks
 import dev.hawu.plugins.api.misc.Raytracing
 import org.bukkit.Bukkit
-import org.bukkit.entity.{Mob, Player}
+import org.bukkit.entity.{LivingEntity, Mob, Player}
 
 import scala.jdk.CollectionConverters.*
 
@@ -20,102 +21,30 @@ import scala.jdk.CollectionConverters.*
   */
 abstract class Art(val artType: ArtType):
 
-  /** Retrieves an instance of the event.
-    *
-    * @param player
-    *   the player
-    * @param direction
-    *   the direction
-    * @param entity
-    *   the entity
-    * @param fusion
-    *   whether the hit is a fusion hit
-    * @param artCritMod
-    *   the art crit mod
-    * @param artHitChance
-    *   the art hit chance
-    * @param isPreemptive
-    *   whether the hit is preemptive
-    * @param isPiercing
-    *   whether the hit is piercing
-    * @param isAoE
-    *   whether the hit is AoE
-    * @return
-    *   the event
-    */
-  final def getEvent(
-    player: Player,
-    entity: EnemyEntity,
-    fusion: Boolean = false,
-    artCritMod: Double = 0,
-    artHitChance: Double = 0,
-    isPreemptive: Boolean = false,
-    isPiercing: Boolean = false,
-    isAoE: Boolean = false,
-  ): PlayerDealDamageEvent =
-    val event = PlayerDealDamageEvent(
-      player,
-      direction(player, entity),
-      entity,
-      artType.category == ArtCategory.PHYSICAL,
-      Some(artType),
-      fusion,
-      artCritMod,
-      artHitChance,
-      isPreemptive,
-      isPiercing,
-      isAoE,
-    )
-    event
-  end getEvent
-
-  /** Retrieves the direction.
-   *
-   * @param player
-   * the player
-   * @param enemy
-   * the enemy
-   * @return
-   * the direction
+  /** Retrieves the event builder instance.
    */
-  final def direction(player: Player, enemy: EnemyEntity): Directional = BattlefieldManager.calculateDirection(player, enemy.entity)
+  final def getEvent(player: Player): PlayerDealDamageEvent.Builder = PlayerDealDamageEvent(player).artType(artType)
+    .physical(artType.category == ArtCategory.PHYSICAL)
 
-  /** Checks if the event should damage the entity.
-    *
-    * @param event
-    *   the event
-    * @return
-    *   whether the event should damage the entity
-    */
-  final def shouldDamage(event: PlayerDealDamageEvent): Boolean =
+  final def schedule(ticks: Long = 0, f: => Unit): Unit = Tasks.run(_ => f).delay(ticks).plugin(Xenocraft.getInstance).run()
+
+  /** Attempts to deal damage to an entity.
+   */
+  final def dealDamage(event: PlayerDealDamageEvent): Unit =
     Bukkit.getPluginManager.callEvent(event)
-    !event.isEvaded && event.isHit && !event.isCancelled
+    if event.isHit && !event.isEvaded && !event.isCancelled then CombatManager.damage(event.entity, event.finalDamage)
 
-  /** Attempts to retrieve a list of entities in front of the player.
-    *
-    * @param player
-    *   the player to get the entities in front of
-    * @param distance
-    *   the distance to check
-    * @return
-    *   the list of entities in front of the player
-    */
-  final def getEnemiesFront(player: Player, distance: Double = 4.0): Seq[EnemyEntity] =
-    val result = Raytracing.startNew().origin(player.getEyeLocation).direction(player.getEyeLocation.getDirection).distance(distance)
+  /** Attempts to retrieve a list of entities in front of the source.
+   */
+  final def getEnemiesFront(source: LivingEntity, distance: Double = 4.0): Seq[EnemyEntity] =
+    val result = Raytracing.startNew().origin(source.getEyeLocation).direction(source.getEyeLocation.getDirection).distance(distance)
       .step(0.2).raytrace()
     result.getEntities.asScala.filter(_ != null).filterNot(_.isDead()).filter(_.isInstanceOf[Mob]).map(_.asInstanceOf[Mob])
       .filter(EnemyManager.isMarked).flatMap(EnemyManager.getEnemy).toSeq
 
   /** Gets all enemies around the player.
-    *
-    * @param player
-    *   the player
-    * @param distance
-    *   the distance to check
-    * @return
-    *   the list of enemies around the player
-    */
-  final def getEnemiesAround(player: Player, distance: Double = 4.0): Seq[EnemyEntity] = player
+   */
+  final def getEnemiesAround(source: LivingEntity, distance: Double = 4.0): Seq[EnemyEntity] = source
     .getNearbyEntities(distance, distance, distance).asScala.filter(_.isInstanceOf[Mob]).map(_.asInstanceOf[Mob])
     .filter(EnemyManager.isMarked).flatMap(EnemyManager.getEnemy).toSeq
 
@@ -129,5 +58,3 @@ abstract class Art(val artType: ArtType):
     *   whether this was used as a fusion art
     */
   def use(player: Player, user: User, fusion: Boolean): Boolean
-
-end Art

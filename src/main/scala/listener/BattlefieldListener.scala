@@ -27,7 +27,7 @@ import scala.collection.mutable.ArrayBuffer
 import scala.jdk.CollectionConverters.*
 
 /** The singleton object dedicated to listening for events related to fields.
- */
+  */
 object BattlefieldListener extends Listener:
 
   // Handling for other types of damage.
@@ -66,11 +66,10 @@ object BattlefieldListener extends Listener:
       mob.setTarget(player)
       if BattlefieldManager.callAutoAttackEvent(player, mob, true) then return ()
 
-      val damageEvent = PlayerDealDamageEvent(player, BattlefieldManager.calculateDirection(player, mob), entity, true)
+      val damageEvent = new PlayerDealDamageEvent(player, BattlefieldManager.calculateDirection(player, mob), entity, true)
       Bukkit.getPluginManager.callEvent(damageEvent)
 
-      if !damageEvent.isCancelled && !damageEvent.isEvaded && damageEvent.isHit then
-        CombatManager.damage(entity, damageEvent.finalDamage)
+      if !damageEvent.isCancelled && !damageEvent.isEvaded && damageEvent.isHit then CombatManager.damage(entity, damageEvent.finalDamage)
 
     case mob: Mob if event.getEntity.isInstanceOf[Player] =>
       event.setCancelled(true)

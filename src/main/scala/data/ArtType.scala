@@ -8,19 +8,19 @@ import dev.hawu.plugins.api.i18n.Locale
 import org.bukkit.Material
 
 /** Enumerations for all art types. One art type should only correspond to one art object.
- */
+  */
 enum ArtType(
               val cls: Option[ClassType] = None,
               val category: ArtCategory,
               val target: ArtTarget,
-  val powerMultiplier: Double = 0,
-  val cooldown: Double,
-  val cooldownType: ArtRechargeType,
-  val reaction: Option[ArtReaction] = None,
-  val fusionBonus: ArtFusionBonus = ArtFusionBonus.NONE,
-  val hits: Int = 0,
-  val isMaster: Boolean = false,
-):
+              val powerMultiplier: Double = 0,
+              val cooldown: Double,
+              val cooldownType: ArtRechargeType,
+              val reaction: Option[ArtReaction] = None,
+              val fusionBonus: ArtFusionBonus = ArtFusionBonus.NONE,
+              val hits: Int = 0,
+              val isMaster: Boolean = false,
+            ):
 
   /** Attempts to retrieve the icon for this specific art type.
     *

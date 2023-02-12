@@ -9,11 +9,12 @@ import dev.hawu.plugins.api.Tasks
 import org.bukkit.attribute.Attribute
 import org.bukkit.entity.*
 import org.bukkit.scheduler.BukkitTask
-import org.bukkit.{Bukkit, EntityEffect}
+import org.bukkit.{Bukkit, EntityEffect, Sound}
 
 import java.util.UUID
 import scala.collection.mutable
 import scala.jdk.CollectionConverters.*
+import scala.util.Try
 
 /** Represents a class that has attributes for fighting such as HP, battlefields, and others.
  *
@@ -87,6 +88,15 @@ trait Attributable(val uuid: UUID):
   protected var _hp: Double = 0.0
   private var talentArt: Double = 0.0
   private var task: Option[BukkitTask] = None
+
+  def reset(): Unit =
+    aggro = 0.0
+    autoAggroGeneration = 1.0
+    artAggroGeneration = 1.0
+    isEvading = false
+    isInAnimation = false
+    reaction = None
+    reactionFrames = 0
 
   /** Starts the cooldown task.
    */
@@ -194,6 +204,9 @@ trait Attributable(val uuid: UUID):
         else if realHealth < entity.getHealth then
           entity.playEffect(EntityEffect.HURT)
           entity.setHealth(realHealth)
+
+          val sound = Try(Sound.valueOf(s"ENTITY_${entity.getType.name()}_HURT")).getOrElse(Sound.ENTITY_GENERIC_HURT)
+          entity.getWorld.playSound(entity.getLocation, sound, 1f, 1f)
         else entity.setHealth(realHealth)
       case _ => ()
 
@@ -276,6 +289,9 @@ trait Attributable(val uuid: UUID):
     case mob: Mob =>
       EnemyManager.unmark(mob)
       mob.setHealth(0)
+
+      val sound = Try(Sound.valueOf(s"ENTITY_${mob.getType.name()}_DEATH")).getOrElse(Sound.ENTITY_GENERIC_DEATH)
+      mob.getWorld.playSound(mob.getLocation, sound, 1f, 1f)
     case _ => ()
 
   private def getMaxHealth(mob: LivingEntity): Double = mob.getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue

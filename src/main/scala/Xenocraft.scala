@@ -22,13 +22,23 @@ import java.io.InputStreamReader
 import scala.jdk.CollectionConverters.*
 
 /** Represents the plugin entrypoint.
- */
+  */
 class Xenocraft extends JavaPlugin:
 
   private val modules = List(CharactersGUI, ClassesGUI, GemsGUI, MainGUI, ArtsGUI, SkillsGUI, I18n)
   private val serializables = List(classOf[User], classOf[ClassMemory])
 
-  private val initializables = List(AggroManager, EnemyManager, GemsManager, CombatManager, BattlefieldManager, HotbarManager, ChatHologramManager, UserMap)
+  private val initializables = List(
+    AggroManager,
+    EnemyManager,
+    GemsManager,
+    CombatManager,
+    BattlefieldManager,
+    HotbarManager,
+    ChatHologramManager,
+    UserMap,
+    ArtManager,
+  )
 
   override def onEnable(): Unit =
     instance = this
@@ -36,7 +46,6 @@ class Xenocraft extends JavaPlugin:
     initializables.foreach(_.setUp(this))
     serializables.foreach(ConfigurationSerialization.registerClass)
 
-    ArtManager.initialize()
     SkillManager.initialize()
     Configuration.initialize(this)
 
@@ -55,21 +64,21 @@ class Xenocraft extends JavaPlugin:
 end Xenocraft
 
 /** Object singleton for [[Xenocraft]].
- */
+  */
 object Xenocraft:
 
   private var instance: Xenocraft = _
 
   /** Retrieves the instance of the plugin.
-   *
-   * @return
-   * the instance
-   */
+    *
+    * @return
+    *   the instance
+    */
   def getInstance: Xenocraft = instance
 
   /** Retrieves the list of modules available in the plugin.
-   *
-   * @return
-   * the modules
-   */
+    *
+    * @return
+    *   the modules
+    */
   def getModels: List[ModuleHolder] = instance.modules

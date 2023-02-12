@@ -2,24 +2,32 @@ package dev.hawu.plugins.xenocraft
 package managers
 
 import UserMap.user
-import arts.Art
+import arts.*
 import data.{ArtRechargeType, ArtType, ClassType}
 import events.arts.{PlayerUseArtEvent, PlayerUseFusionArtEvent}
 
 import org.bukkit.entity.Player
-import org.bukkit.{Bukkit, Material}
+import org.bukkit.plugin.java.JavaPlugin
+import org.bukkit.{Bukkit, Material, Sound}
 
 import scala.collection.mutable
 
 /** Manager for binding art types to arts.
  */
-object ArtManager:
+object ArtManager extends Initializable:
 
   private val map = mutable.Map.empty[ArtType, Art]
 
-  /** Initializes the art manager.
+  override def setUp(pl: JavaPlugin): Unit = Seq(zephyr.ButterflyBlade, zephyr.AirFang, zephyr.WideSlash).foreach(bind)
+
+  /** Binds an art to the art manager.
+   *
+   * @param art
+   * the art to bind
    */
-  def initialize(): Unit = ()
+  def bind(art: Art): Unit = map += art.artType -> art
+
+  override def tearDown(pl: JavaPlugin): Unit = map.clear()
 
   /** Retrieves an iterable of all arts.
    *
@@ -37,13 +45,6 @@ object ArtManager:
     if !includesAgnus then values = values.filterNot(_.isAgnian)
     if !includesTalent then values = values.filterNot(_.isTalent)
     values
-
-  /** Binds an art to the art manager.
-   *
-   * @param art
-   * the art to bind
-   */
-  def bind(art: Art): Unit = map += art.artType -> art
 
   /** Unbinds an art from the art manager.
    *
@@ -66,19 +67,11 @@ object ArtManager:
     Bukkit.getPluginManager.callEvent(event)
     if event.isCancelled then return ()
 
-    user.use(art)
-
     val artObj = get(art).orNull
-    if !user.isOnCooldown(art) && artObj != null then artObj.use(player, user, false)
+    if !user.isOnCooldown(art) && artObj != null then
+      if !artObj.use(player, user, false) then player.playSound(player.getLocation, Sound.ENTITY_VILLAGER_NO, 1, 1)
 
-  /** Retrieves the art bound to the art type.
-   *
-   * @param artType
-   * the art type
-   * @return
-   * the art, if any
-   */
-  def get(artType: ArtType): Option[Art] = map.get(artType)
+    user.use(art)
 
   /** Acts if the [[player]] has used a fusion art. Both [[art]] and [[master]] should not be null.
    */
@@ -90,10 +83,20 @@ object ArtManager:
     Bukkit.getPluginManager.callEvent(event)
     if event.isCancelled then return ()
 
+    if Seq(art, master).filterNot(user.isOnCooldown).map(get(_).orNull).filter(_ != null).map(_.use(player, user, true)).exists(!_) then
+      player.playSound(player.getLocation, Sound.ENTITY_VILLAGER_NO, 1, 1)
+
     user.use(art)
     user.use(master)
 
-    Seq(art, master).filterNot(user.isOnCooldown).map(get(_).orNull).filter(_ != null).foreach(_.use(player, user, true))
+  /** Retrieves the art bound to the art type.
+   *
+   * @param artType
+   * the art type
+   * @return
+   * the art, if any
+   */
+  def get(artType: ArtType): Option[Art] = map.get(artType)
 
   /** Retrieves the icon of this art, calculated based on its category and its effects.
    *

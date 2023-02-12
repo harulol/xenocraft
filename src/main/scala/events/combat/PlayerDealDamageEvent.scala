@@ -2,10 +2,11 @@ package dev.hawu.plugins.xenocraft
 package events.combat
 
 import UserMap.user
-import data.{ArtReaction, ArtType, Directional, EnemyEntity}
+import data.*
 import events.UserEvent
 import events.combat.PlayerDealDamageEvent
-import utils.Formulas
+import managers.{BattlefieldManager, EnemyManager}
+import utils.{Configuration, Formulas}
 
 import org.bukkit.entity.{Mob, Player}
 import org.bukkit.event.player.PlayerEvent
@@ -37,24 +38,28 @@ class PlayerDealDamageEvent(
   private val landedHit = Formulas.canHit(user, entity, artHitChance)
 
   private val _stabilityModifier = random.nextDouble(0.0, user.weapon.get.weaponAttack * user.weapon.get.weaponStability)
+  private val _fusionDamageMultiplier = if fusion then Configuration.fusionBonus(ArtFusionBonus.DAMAGE) else 1.0
   private val _critMultiplier = if isCritical then 1.25 + user.critDamage else 1.0
   private val _comboMultiplier = if entity.reaction.contains(ArtReaction.LAUNCH) then 1.5 else 1.0
   private val _typeDefenseMultiplier = Formulas.calculateTypeDefenseMultiplier(entity, physical, isPiercing)
-  private val _blockedMultiplier = if isBlocked then 1 - (if fusion then 0.75 else 0.5) - entity.flatBlockStrength else 1.0
-  private val _backPreemptiveMultiplier = if isPreemptive && direction == Directional.BACK then 1.5 else 1.0
+
+  private val _blockedMultiplier =
+    if isBlocked then 1 - 0.5 * Configuration.fusionBonus(ArtFusionBonus.BLOCK) - entity.flatBlockStrength else 1.0
+
   private val _aoeMultiplier = if isAoE then 0.75 else 1.0
   private val _multiHitCorrection = if artType.isDefined then 1.0 / artType.get.hits else 1.0
   private val _randomMultiplier = if isPreemptive then random.nextDouble(1.0, 1.1) else random.nextDouble(0.9, 1.1)
 
-  var artPowerMultiplier = if artType.isDefined then artType.get.powerMultiplier else 1.0
-  var hits = artType.map(_.hits).getOrElse(1)
+  var artPowerMultiplier: Double = if artType.isDefined then artType.get.powerMultiplier else 1.0
+  var backPreemptiveMultiplier = 1.0
+  var hits: Int = artType.map(_.hits).getOrElse(1)
   var damageBonus1 = 0.0
   var damageBonus2 = 0.0
   var damageBonus3 = 0.0
   var damageReduction = 0.0
   var shackleRingMultiplier = 1.0
-  var isEvaded = entity.isEvading
-  var isHit = landedHit
+  var isEvaded: Boolean = entity.isEvading
+  var isHit: Boolean = landedHit
 
   private var cancelled = false
 
@@ -97,12 +102,9 @@ class PlayerDealDamageEvent(
     */
   def blockedMultiplier: Double = _blockedMultiplier
 
-  /** Gets the back preemptive multiplier of the damage event.
-    *
-    * @return
-    *   the back preemptive multiplier
+  /** The fusion damage multiplier if it is a fusion art.
     */
-  def backPreemptiveMultiplier: Double = _backPreemptiveMultiplier
+  def fusionDamageMultiplier: Double = _fusionDamageMultiplier
 
   /** Gets the AoE multiplier of the damage event.
     *
@@ -151,8 +153,8 @@ class PlayerDealDamageEvent(
       (1 + damageBonus1) *
       (1 + damageBonus2) *
       (1 + damageBonus3) *
-      (1 - damageReduction) * _typeDefenseMultiplier * _blockedMultiplier * realCritMultiplier * _comboMultiplier *
-      _backPreemptiveMultiplier * _aoeMultiplier * _multiHitCorrection * _randomMultiplier * shackleRingMultiplier
+      (1 - damageReduction) * _fusionDamageMultiplier * _typeDefenseMultiplier * _blockedMultiplier * realCritMultiplier *
+      _comboMultiplier * backPreemptiveMultiplier * _aoeMultiplier * _multiHitCorrection * _randomMultiplier * shackleRingMultiplier
 
   /** Checks if this damage event is a blocked hit.
     *
@@ -196,3 +198,88 @@ object PlayerDealDamageEvent:
     *   the list of handlers
     */
   def getHandlerList: HandlerList = handlers
+
+  /** Constructs a new builder for [[PlayerDealDamageEvent]].
+    */
+  def apply(player: Player): Builder = Builder(player)
+
+  /** Represents a builder for building [[PlayerDealDamageEvent]].
+    */
+  class Builder(val player: Player):
+
+    private var _direction: Option[Directional] = None
+    private var _entity: Option[EnemyEntity] = None
+    private var _physical: Boolean = true
+    private var _artType: Option[ArtType] = None
+    private var _fusion: Boolean = false
+    private var _artCritMod: Double = 0
+    private var _artHitChance: Double = 0
+    private var _isPreemptive: Boolean = false
+    private var _isPiercing: Boolean = false
+    private var _isAoE: Boolean = false
+
+    def targeting(entity: Mob): Builder =
+      _direction = Some(BattlefieldManager.calculateDirection(player, entity))
+      _entity = EnemyManager.getEnemy(entity)
+      this
+
+    def targeting(entity: EnemyEntity): Builder =
+      _direction = Some(BattlefieldManager.calculateDirection(player, entity.entity))
+      _entity = Some(entity)
+      this
+
+    def direction(direction: Directional): Builder =
+      _direction = Some(direction)
+      this
+
+    def entity(entity: EnemyEntity): Builder =
+      _entity = Some(entity)
+      this
+
+    def physical(physical: Boolean): Builder =
+      _physical = physical
+      this
+
+    def artType(artType: ArtType): Builder =
+      _artType = Some(artType)
+      this
+
+    def fusion(fusion: Boolean): Builder =
+      _fusion = fusion
+      this
+
+    def artCritMod(artCritMod: Double): Builder =
+      _artCritMod = artCritMod
+      this
+
+    def artHitChance(artHitChance: Double): Builder =
+      _artHitChance = artHitChance
+      this
+
+    def setPreemptive(isPreemptive: Boolean): Builder =
+      _isPreemptive = isPreemptive
+      this
+
+    def setPiercing(isPiercing: Boolean): Builder =
+      _isPiercing = isPiercing
+      this
+
+    def setAoE(isAoE: Boolean): Builder =
+      _isAoE = isAoE
+      this
+
+    /** Builds the player deal damage event.
+      */
+    def build: PlayerDealDamageEvent = new PlayerDealDamageEvent(
+      player,
+      _direction.getOrElse(throw IllegalArgumentException("Direction must not be empty.")),
+      _entity.getOrElse(throw IllegalArgumentException("Entity must not be empty")),
+      _physical,
+      _artType,
+      _fusion,
+      _artCritMod,
+      _artHitChance,
+      _isPreemptive,
+      _isPiercing,
+      _isAoE,
+    )
