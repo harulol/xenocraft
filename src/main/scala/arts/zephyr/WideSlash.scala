@@ -20,10 +20,12 @@ object WideSlash extends Art(ArtType.WIDE_SLASH):
     val enemy = getEnemiesFront(player).headOption
     if enemy.isEmpty then return false
 
-    val damageEvent = getEvent(player).targeting(enemy.get).artCritMod(-0.8).fusion(fusion).build
+    val events = generateEvents(2, getEvent(player).targeting(enemy.get).artCritMod(-0.8).fusion(fusion).build)
 
-    schedule(10, animateHit(damageEvent))
-    schedule(15, animateHit(damageEvent))
+    user.isInAnimation = true
+    schedule(10, animateHit(events(0)))
+    schedule(15, animateHit(events(1)))
+    schedule(20, user.isInAnimation = false)
     true
 
   private def animateHit(event: PlayerDealDamageEvent): Unit =

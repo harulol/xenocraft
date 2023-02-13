@@ -24,10 +24,11 @@ object ButterflyBlade extends Art(ArtType.BUTTERFLY_BLADE):
     val enemy = getEnemiesFront(player).headOption
     if enemy.isEmpty then return false
 
-    val damageEvent = getEvent(player).targeting(enemy.get).build
-
-    schedule(10, animateHit(enemy.get.entity, damageEvent))
-    schedule(20, animateHit(enemy.get.entity, damageEvent))
+    user.isInAnimation = true
+    val events = generateEvents(2, getEvent(player).targeting(enemy.get).build)
+    schedule(10, animateHit(enemy.get.entity, events(0)))
+    schedule(20, animateHit(enemy.get.entity, events(1)))
+    schedule(30, user.isInAnimation = false)
     true
 
   private def animateHit(target: Mob, event: PlayerDealDamageEvent): Unit =

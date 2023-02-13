@@ -202,5 +202,3 @@ object Formulas:
     val blockRate = (0.015 min positionalBlockRate) max other
 
     ThreadLocalRandom.current().nextDouble() <= blockRate
-
-end Formulas

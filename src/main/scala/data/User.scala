@@ -27,33 +27,33 @@ import scala.jdk.CollectionConverters.*
 import scala.util.{Failure, Random, Success, Try}
 
 /** Represents a player's data.
- *
- * @param uuid
- * The UUID of the player.
- * @param cls
- * The class of the player.
- * @param char
- * The character preset of the player.
- * @param masterArts
- * The master arts.
- * @param arts
- * The class arts.
- * @param gems
- * The equipped gems.
- * @param talentArt
- * The equipped talent art.
- */
+  *
+  * @param uuid
+  *   The UUID of the player.
+  * @param cls
+  *   The class of the player.
+  * @param char
+  *   The character preset of the player.
+  * @param masterArts
+  *   The master arts.
+  * @param arts
+  *   The class arts.
+  * @param gems
+  *   The equipped gems.
+  * @param talentArt
+  *   The equipped talent art.
+  */
 case class User(
-                 private val _uuid: UUID,
-                 var cls: Option[ClassType] = None,
-                 var weapon: Option[WeaponType] = None,
-                 var char: Option[Character] = None,
-                 masterArts: Array[ArtType] = Array.ofDim(3),
-                 arts: Array[ArtType] = Array.ofDim(3),
-                 gems: Array[(GemType, Int)] = Array.ofDim(3),
-                 masterSkills: Array[SkillType] = Array.ofDim(3),
-                 var talentArt: Option[ArtType] = None,
-               ) extends ConfigurationSerializable with Attributable(_uuid):
+  private val _uuid: UUID,
+  var cls: Option[ClassType] = None,
+  var weapon: Option[WeaponType] = None,
+  var char: Option[Character] = None,
+  masterArts: Array[ArtType] = Array.ofDim(3),
+  arts: Array[ArtType] = Array.ofDim(3),
+  gems: Array[(GemType, Int)] = Array.ofDim(3),
+  masterSkills: Array[SkillType] = Array.ofDim(3),
+  var talentArt: Option[ArtType] = None,
+) extends ConfigurationSerializable with Attributable(_uuid):
 
   private val inventory = mutable.Map.empty[Int, ItemStack]
   private val classMemory = mutable.Map.empty[ClassType, ClassMemory]
@@ -62,23 +62,23 @@ case class User(
   var lastSoulhackerSoul: Option[ClassType] = None
 
   /** Checks if a certain art is currently already being selected.
-   *
-   * @param art
-   * the art
-   * @return
-   * the result
-   */
+    *
+    * @param art
+    *   the art
+    * @return
+    *   the result
+    */
   def isArtSelected(art: ArtType): Boolean = masterArts.contains(art) || arts.contains(art)
 
   /** Attempts to equip an art.
-   *
-   * @param art
-   * the art
-   * @param slot
-   * the slot
-   * @param master
-   * whether it is a master art
-   */
+    *
+    * @param art
+    *   the art
+    * @param slot
+    *   the slot
+    * @param master
+    *   whether it is a master art
+    */
   def equipArt(art: ArtType, slot: Int, master: Boolean): Unit =
     val arr = if master then masterArts else arts
     val index = arr.indexOf(art)
@@ -89,12 +89,12 @@ case class User(
     else arr(slot) = art
 
   /** Attempts to equip a skill.
-   *
-   * @param skill
-   * the skill
-   * @param slot
-   * the slot
-   */
+    *
+    * @param skill
+    *   the skill
+    * @param slot
+    *   the slot
+    */
   def equipMasterSkill(skill: SkillType, slot: Int): Unit =
     val index = masterSkills.indexOf(skill)
     if index >= 0 then
@@ -103,26 +103,26 @@ case class User(
     else masterSkills(slot) = skill
 
   /** Attempts to apply a character, ridding the player of the talent art they would not have access to.
-   *
-   * @param char
-   * the character
-   */
+    *
+    * @param char
+    *   the character
+    */
   def applyCharacter(char: Character): Unit =
     this.char = Option(char)
     talentArt.foreach(art => if !canUseArtAs(art, "talent") then talentArt = None)
 
   /** Checks if the user can use an art given the context.
-   *
-   * @param art
-   * the art
-   * @param what
-   * the context
-   * @return
-   * whether they are eligible
-   */
+    *
+    * @param art
+    *   the art
+    * @param what
+    *   the context
+    * @return
+    *   whether they are eligible
+    */
   def canUseArtAs(art: ArtType, what: "master" | "class" | "talent"): Boolean =
-  // Since Soulhacker is a Kevesi class, master arts must be of agnian classes.
-  // Other classes can not use Soulhacker's arts.
+    // Since Soulhacker is a Kevesi class, master arts must be of agnian classes.
+    // Other classes can not use Soulhacker's arts.
     what match
       case "master" =>
         if cls.exists(_.isSoulhacker) then art.isAgnian && art.isSoulhacker else art.isMaster && !art.isTalent && !art.isSoulhacker
@@ -133,15 +133,15 @@ case class User(
         // Noah and Mio can still use respective talent arts while using Soulhacker.
         art match
           case ArtType.INFINITY_BLADE | ArtType.UNLIMITED_SWORD => char.contains(Character.NOAH)
-          case ArtType.DOMINION_FLOWER => char.contains(Character.MIO)
-          case ArtType.FINAL_LUCKY_SEVEN => false
+          case ArtType.DOMINION_FLOWER                          => char.contains(Character.MIO)
+          case ArtType.FINAL_LUCKY_SEVEN                        => false
           case _ => if cls.exists(_.isSoulhacker) then art.isSoulhacker && art.isTalent else art.isTalent
 
   /** Apply the class provided and put up the arts, skills and gems memory.
-   *
-   * @param clazz
-   * the class to apply
-   */
+    *
+    * @param clazz
+    *   the class to apply
+    */
   def applyClass(clazz: Option[ClassType]): Unit =
     if cls.exists(_.isSoulhacker) then classMemory.put(ClassType.SOULHACKER_POWER, ClassMemory(this))
 
@@ -166,7 +166,7 @@ case class User(
       applySkills()
 
   /** Unsheathe the blade.
-   */
+    */
   def unsheathe(): Unit =
     if bladeUnsheathed || cls.isEmpty || weapon.isEmpty then return ()
     bladeUnsheathed = true
@@ -187,23 +187,16 @@ case class User(
         p.getInventory.setHeldItemSlot(0)
     })
 
-  /** Attempts to retrieve the player instance from the user.
-   *
-   * @return
-   * the player instance
-   */
-  def player: Option[Player] = Option(Bukkit.getPlayer(uuid))
-
   /** Unapplies all skills.
-   */
+    */
   def unapplySkills(): Unit = if cls.isDefined then getAllSkills(cls.get).foreach(_.safeUnapply(this))
 
   /** Applies all skills.
-   */
+    */
   def applySkills(): Unit = if cls.isDefined then getAllSkills(cls.get).foreach(_.safeApply(this))
 
   /** Sheathes the blade back and disables combat.
-   */
+    */
   def sheathe(): Unit =
     if !bladeUnsheathed then return ()
     bladeUnsheathed = false
@@ -218,6 +211,13 @@ case class User(
         Tasks.run(() => Bukkit.getPluginManager.callEvent(postEvent)).plugin(Xenocraft.getInstance).run()
     }
     inventory.clear()
+
+  /** Attempts to retrieve the player instance from the user.
+    *
+    * @return
+    *   the player instance
+    */
+  def player: Option[Player] = Option(Bukkit.getPlayer(uuid))
 
   override def maxHp: Double = Formulas.calculateHp(this)
 
@@ -238,25 +238,25 @@ case class User(
   override def etherDef: Double = Formulas.calculateDisplayEtherDefense(this)
 
   /** Retrieves the offline player instance.
-   *
-   * @return
-   * the offline player
-   */
+    *
+    * @return
+    *   the offline player
+    */
   def offlinePlayer: OfflinePlayer = Bukkit.getOfflinePlayer(uuid)
 
   /** Checks if the current user is having a combination of character and class that allows them to upgrade their blade.
-   *
-   * @return
-   * whether they can upgrade
-   */
+    *
+    * @return
+    *   whether they can upgrade
+    */
   def canChooseWeapon: Boolean = char match
-    case Some(Character.NOAH) => cls.contains(ClassType.SWORDFIGHTER)
-    case Some(Character.MIO) => cls.contains(ClassType.ZEPHYR)
+    case Some(Character.NOAH)  => cls.contains(ClassType.SWORDFIGHTER)
+    case Some(Character.MIO)   => cls.contains(ClassType.ZEPHYR)
     case Some(Character.EUNIE) => cls.contains(ClassType.MEDIC_GUNNER)
     case Some(Character.TAION) => cls.contains(ClassType.TACTICIAN)
-    case Some(Character.LANZ) => cls.contains(ClassType.HEAVY_GUARD)
-    case Some(Character.SENA) => cls.contains(ClassType.OGRE)
-    case _ => false
+    case Some(Character.LANZ)  => cls.contains(ClassType.HEAVY_GUARD)
+    case Some(Character.SENA)  => cls.contains(ClassType.OGRE)
+    case _                     => false
 
   override def serialize(): util.Map[String, AnyRef] = Map(
     "uuid" -> uuid.toString,
@@ -278,7 +278,7 @@ case class User(
 end User
 
 /** Companion object for [[User]].
- */
+  */
 object User:
 
   def deserialize(map: util.Map[String, Any]): User =
@@ -317,7 +317,7 @@ object User:
     if result.isEmpty then return None
     Try(f(result.get)) match
       case Success(value) => Some(value)
-      case Failure(_) => None
+      case Failure(_)     => None
 
   private def tryGettingArray[T](key: String, f: String => T, size: Int = 3)(using map: util.Map[String, Any]): List[T] = map.get(key)
     .asInstanceOf[util.List[String]].asScala.take(size).map(s => if s != null then f(s) else null.asInstanceOf[T]).toList

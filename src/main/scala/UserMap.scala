@@ -29,6 +29,7 @@ object UserMap extends Initializable with Listener:
         try {
           val config = YamlConfiguration.loadConfiguration(file)
           val user = config.get("data").asInstanceOf[User]
+          user.applyClass(user.cls)
           map.put(user.uuid, user)
         } catch
           case e: Exception =>
@@ -50,6 +51,7 @@ object UserMap extends Initializable with Listener:
         if !file.exists() then file.createNewFile()
 
         val config = YamlConfiguration.loadConfiguration(file)
+        user.applyClass(user.cls)
         config.set("data", user)
         config.save(file)
       } catch

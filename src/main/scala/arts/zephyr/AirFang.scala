@@ -12,7 +12,7 @@ import org.bukkit.Sound
 import org.bukkit.entity.{Mob, Player}
 
 /** Air Fang (Zephyr): Boosts damage dealt when attacking enemies targeting you by 100%
- */
+  */
 object AirFang extends Art(ArtType.AIR_FANG):
 
   // noinspection DuplicatedCode
@@ -21,12 +21,21 @@ object AirFang extends Art(ArtType.AIR_FANG):
     val enemy = getEnemiesFront(player).headOption
     if enemy.isEmpty then return false
 
-    val preemptive = AggroManager.getFor(player).map(_.getUniqueId).contains(enemy.get.uuid)
-    val damageEvent = getEvent(player).targeting(enemy.get).setPreemptive(preemptive).build
-    if preemptive then damageEvent.damageBonus1 += 1
-    if user.char.contains(Character.MIO) then damageEvent.hits = 3
+    user.isInAnimation = true
+    val hitsCount = if user.char.contains(Character.MIO) then 3 else 2
 
-    for i <- 1 to damageEvent.hits do schedule(i * 15, animateHit(player, enemy.get.entity, damageEvent))
+    // Generate events
+    val events = generateEvents(
+      3, {
+        val preemptive = AggroManager.getFor(player).map(_.getUniqueId).contains(enemy.get.uuid)
+        val damageEvent = getEvent(player).targeting(enemy.get).setPreemptive(preemptive).build
+        if preemptive then damageEvent.damageBonus1 += 1
+        damageEvent.hits = hitsCount
+        damageEvent
+      },
+    )
+    for i <- 0 until hitsCount do schedule(i * 15, animateHit(player, enemy.get.entity, events(i)))
+    schedule(45, user.isInAnimation = false)
     true
 
   private def animateHit(player: Player, entity: Mob, event: PlayerDealDamageEvent): Unit =

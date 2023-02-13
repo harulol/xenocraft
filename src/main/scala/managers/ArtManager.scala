@@ -18,7 +18,7 @@ object ArtManager extends Initializable:
 
   private val map = mutable.Map.empty[ArtType, Art]
 
-  override def setUp(pl: JavaPlugin): Unit = Seq(zephyr.ButterflyBlade, zephyr.AirFang, zephyr.WideSlash).foreach(bind)
+  override def setUp(pl: JavaPlugin): Unit = Seq(zephyr.ButterflyBlade, zephyr.AirFang, zephyr.WideSlash, zephyr.SpeedDemon).foreach(bind)
 
   /** Binds an art to the art manager.
    *

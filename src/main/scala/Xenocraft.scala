@@ -37,6 +37,7 @@ class Xenocraft extends JavaPlugin:
     CombatManager,
     BattlefieldManager,
     HotbarManager,
+    StancesManager,
     ChatHologramManager,
     UserMap,
   )

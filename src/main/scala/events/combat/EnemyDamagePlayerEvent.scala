@@ -29,14 +29,15 @@ class EnemyDamagePlayerEvent(entity: Mob, val enemy: EnemyEntity, val player: Pl
   private val criticalHit = Formulas.canCrit(enemy)
   private val blockedHit = Formulas.canBlock(user)
   private val landedHit = Formulas.canHit(enemy, user)
+  private val random = ThreadLocalRandom.current()
 
   private val _critMultiplier = if isCritical then 1.25 + enemy.critDamage else 1.0
   private val _comboMultiplier = if user.reaction.contains(ArtReaction.LAUNCH) then 1.5 else 1.0
   private val _blockedMultiplier = if isBlocked then 1 - user.flatBlockStrength else 1.0
-  private val _randomMultiplier = ThreadLocalRandom.current().nextDouble(0.9, 1.1)
+  private val _randomMultiplier = random.nextDouble(0.9, 1.1)
 
   var damageReduction = 0.0
-  var isEvaded = user.isEvading
+  var isEvaded = user.isEvading || random.nextDouble() < user.evasionChance
   var isHit = landedHit
 
   private var cancelled = false

@@ -58,7 +58,7 @@ class PlayerDealDamageEvent(
   var damageBonus3 = 0.0
   var damageReduction = 0.0
   var shackleRingMultiplier = 1.0
-  var isEvaded: Boolean = entity.isEvading
+  var isEvaded: Boolean = entity.isEvading || random.nextDouble() < entity.evasionChance
   var isHit: Boolean = landedHit
 
   private var cancelled = false
