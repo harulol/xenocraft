@@ -39,12 +39,15 @@ class PlayerDealDamageEvent(
 
   private val _stabilityModifier = random.nextDouble(0.0, user.weapon.get.weaponAttack * user.weapon.get.weaponStability)
   private val _fusionDamageMultiplier = if fusion then Configuration.fusionBonus(ArtFusionBonus.DAMAGE) else 1.0
-  private val _critMultiplier = if isCritical then 1.25 + user.critDamage else 1.0
+
+  // Only physical attacks can crit.
+  private val _critMultiplier = if isCritical && physical then 1.25 + user.critDamage else 1.0
   private val _comboMultiplier = if entity.reaction.contains(ArtReaction.LAUNCH) then 1.5 else 1.0
   private val _typeDefenseMultiplier = Formulas.calculateTypeDefenseMultiplier(entity, physical, isPiercing)
 
+  // Ether attacks can not be blocked.
   private val _blockedMultiplier =
-    if isBlocked then 1 - 0.5 * Configuration.fusionBonus(ArtFusionBonus.BLOCK) - entity.flatBlockStrength else 1.0
+    if isBlocked && !physical then 1 - 0.5 * Configuration.fusionBonus(ArtFusionBonus.BLOCK) - entity.flatBlockStrength else 1.0
 
   private val _aoeMultiplier = if isAoE then 0.75 else 1.0
   private val _multiHitCorrection = if artType.isDefined then 1.0 / artType.get.hits else 1.0

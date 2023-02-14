@@ -58,11 +58,6 @@ object HotbarListener extends Listener:
     tasks += player.getUniqueId -> Tasks.run(_ => HotbarManager.applyHotbar(player)).delay(0).period(1).run()
     player.user.get.startKevesiCooldown()
 
-  private def removeTask(player: Player): Unit =
-    tasks.remove(player.getUniqueId).foreach(_.cancel())
-    player.user.get.resetCooldowns()
-    player.user.get.stopKevesiCooldown()
-
   @EventHandler
   private def onSwapHands(event: PlayerSwapHandItemsEvent): Unit =
     if event.getPlayer.user.exists(_.bladeUnsheathed) then event.setCancelled(true)
@@ -111,3 +106,8 @@ object HotbarListener extends Listener:
 
   @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
   private def onSheathe(event: PlayerPreSheatheEvent): Unit = removeTask(event.getPlayer)
+
+  private def removeTask(player: Player): Unit =
+    tasks.remove(player.getUniqueId).foreach(_.cancel())
+    player.user.get.resetCooldowns()
+    player.user.get.stopKevesiCooldown()

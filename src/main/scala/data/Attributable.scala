@@ -66,16 +66,22 @@ trait Attributable(val uuid: UUID):
   var debuffDurationBonus = 0.0
   var allyHpRestore = 1.0
   var allyReviveSpeed = 1.0
-  var reaction: Option[ArtReaction] = None
-  var reactionFrames = 0
   var isEvading = false
   var isInAnimation = false
+
+  // REACTIONS
+  @volatile
+  var reaction: Option[ArtReaction] = None
+
+  @volatile
+  var reactionFrames = 0
 
   // BUFFS AND DEBUFFS
   var accuracyUp = 0.0
   var rechargeUp = 0.0
   var evasionUp = 0.0
   var evasionChance = 0.0
+  var resistDown = 0.0
 
   // DEFENSE TYPE CALCULATIONS
   var pctPhysDef = 0.0
@@ -85,8 +91,8 @@ trait Attributable(val uuid: UUID):
   var flatEtherDef = 0.0
   var flatEtherDefReduction = 0.0
   var flatBlockStrength = 0.0
+  var talentArtGuage: Double = 0.0
   protected var _hp: Double = 0.0
-  private var talentArt: Double = 0.0
   private var task: Option[BukkitTask] = None
 
   def reset(): Unit =
@@ -117,7 +123,7 @@ trait Attributable(val uuid: UUID):
     if art == null then return
     else if art.isKevesi then kevesiArts.put(art, kevesiArts.getOrElse(art, 0.0) + base * (1 + rechargeUp))
     else if art.isAgnian then agnianArts.put(art, agnianArts.getOrElse(art, 0.0) + base * (1 + rechargeUp))
-    else if art.isTalent then talentArt += base * (1 + rechargeUp)
+    else if art.isTalent then talentArtGuage += base * (1 + rechargeUp)
 
   /** Stops the cooldown task.
    */
@@ -131,7 +137,7 @@ trait Attributable(val uuid: UUID):
    * the art to get the recharge guage for.
    */
   def getCooldown(art: ArtType): Double =
-    if art.isTalent then talentArt
+    if art.isTalent then talentArtGuage
     else if art.isKevesi then kevesiArts.getOrElseUpdate(art, 0.0)
     else if art.isAgnian then agnianArts.getOrElseUpdate(art, 0.0)
     else 0.0
@@ -144,7 +150,7 @@ trait Attributable(val uuid: UUID):
    * the cooldown status
    */
   def isOnCooldown(art: ArtType): Boolean =
-    if art.isTalent then talentArt < 1.0
+    if art.isTalent then talentArtGuage < 1.0
     else if art.isKevesi then kevesiArts.getOrElseUpdate(art, 0.0) < art.cooldown * 20 // 20 ticks per second.
     else if art.isAgnian then agnianArts.getOrElseUpdate(art, 0.0) < art.cooldown // agnian arts are auto attacks.
     else false
@@ -155,7 +161,7 @@ trait Attributable(val uuid: UUID):
    * the art type
    */
   def use(art: ArtType): Unit =
-    if art.isTalent then talentArt = 0.0
+    if art.isTalent then talentArtGuage = 0.0
     else if art.isKevesi then kevesiArts.put(art, 0.0)
     else if art.isAgnian then agnianArts.put(art, 0.0)
 
@@ -164,7 +170,7 @@ trait Attributable(val uuid: UUID):
   def resetCooldowns(): Unit =
     kevesiArts.clear()
     agnianArts.clear()
-    talentArt = 0.0
+    talentArtGuage = 0.0
 
   /** Retrieves the current value of the attributable.
    *
@@ -188,27 +194,26 @@ trait Attributable(val uuid: UUID):
    * @param value
    * the value to set
    */
-  def setHp(value: Double): Unit =
-    Bukkit.getEntity(uuid) match
-      case entity: LivingEntity if Option(entity).exists(!_.isDead) =>
-        val event = EntityHealthChangeEvent(this, _hp, value min maxHp max 0)
-        Bukkit.getPluginManager.callEvent(event)
-        if event.isCancelled then return ()
+  def setHp(value: Double): Unit = Bukkit.getEntity(uuid) match
+    case entity: LivingEntity if Option(entity).exists(!_.isDead) =>
+      val event = EntityHealthChangeEvent(this, _hp, value min maxHp max 0)
+      Bukkit.getPluginManager.callEvent(event)
+      if event.isCancelled then return ()
 
-        _hp = event.newHp min maxHp max 0
+      _hp = event.newHp min maxHp max 0
 
-        val maxRealHealth = getMaxHealth(entity)
-        val realHealth = ((_hp / maxHp) * maxRealHealth) max 0 min maxRealHealth
+      val maxRealHealth = getMaxHealth(entity)
+      val realHealth = ((_hp / maxHp) * maxRealHealth) max 0 min maxRealHealth
 
-        if closeEnough(realHealth, 0) then handleDeath(entity)
-        else if realHealth < entity.getHealth then
-          entity.playEffect(EntityEffect.HURT)
-          entity.setHealth(realHealth)
+      if closeEnough(realHealth, 0) then handleDeath(entity)
+      else if realHealth < entity.getHealth then
+        entity.playEffect(EntityEffect.HURT)
+        entity.setHealth(realHealth)
 
-          val sound = Try(Sound.valueOf(s"ENTITY_${entity.getType.name()}_HURT")).getOrElse(Sound.ENTITY_GENERIC_HURT)
-          entity.getWorld.playSound(entity.getLocation, sound, 1f, 1f)
-        else entity.setHealth(realHealth)
-      case _ => ()
+        val sound = Try(Sound.valueOf(s"ENTITY_${entity.getType.name()}_HURT")).getOrElse(Sound.ENTITY_GENERIC_HURT)
+        entity.getWorld.playSound(entity.getLocation, sound, 1f, 1f)
+      else entity.setHealth(realHealth)
+    case _ => ()
 
   /** The maximum value of the HP value.
    *
