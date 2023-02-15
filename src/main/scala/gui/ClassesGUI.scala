@@ -103,7 +103,7 @@ object ClassesGUI extends ModuleHolder("classes-ui"):
 
     override def handleClick(event: InventoryClickEvent): Unit =
       event.setCancelled(true)
-      user.weapon = Some(weapon)
+      user.equipWeapon(Some(weapon))
       MainGUI.openMain(player)
 
     override def render(): ItemStack = ItemStackBuilder.from(

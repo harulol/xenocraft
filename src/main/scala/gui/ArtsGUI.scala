@@ -91,7 +91,7 @@ object ArtsGUI extends ModuleHolder("arts-ui"):
       new GuiComponent[Unit]() {
         override def handleClick(event: InventoryClickEvent): Unit =
           event.setCancelled(true)
-          user.talentArt = Some(art)
+          user.equipTalentArt(Some(art))
           openArts(player)
 
         override def render(): ItemStack = retrieveArtDisplay(art, locale, true)

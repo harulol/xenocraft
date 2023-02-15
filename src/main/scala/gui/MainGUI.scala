@@ -145,7 +145,10 @@ object MainGUI extends ModuleHolder("main-ui"):
             override def handleClick(event: InventoryClickEvent): Unit =
               event.setCancelled(true)
               player.playSound(player.getLocation, Sound.BLOCK_LEVER_CLICK, 1, 1)
-              functionMap(char)(player)
+              if i >= 3 && player.user.exists(_.cls.isEmpty) then
+                player.tl("class-not-selected")
+                player.closeInventory()
+              else functionMap(char)(player)
 
             override def render(): ItemStack =
               item.flags(ItemFlag.HIDE_ATTRIBUTES, ItemFlag.HIDE_POTION_EFFECTS)

@@ -56,7 +56,7 @@ object CombatListener extends Listener:
   @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
   private def onFusionArtUse(event: PlayerUseFusionArtEvent): Unit =
     val locale = UserAdapter.getAdapter.getUser(event.getPlayer).getLocale
-    event.getPlayer.playSound(event.getPlayer.getLocation, Sound.BLOCK_BELL_RESONATE, 1, 1)
+    event.getPlayer.playSound(event.getPlayer.getLocation, Sound.BLOCK_NOTE_BLOCK_PLING, 1, 1)
     animateFrom(event.getPlayer)
     event.getPlayer.sendTitle(" ", Strings.color(s"&b&l${event.classArt.name(locale)} &7| &b&l${event.fusionArt.name(locale)}"), 0, 40, 0)
 

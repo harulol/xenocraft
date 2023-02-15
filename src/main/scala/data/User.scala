@@ -3,7 +3,9 @@ package data
 
 import data.User.{deserialize, tryGetting}
 import events.PlayerIncapacitateEvent
+import events.arts.PlayerEquipArtEvent
 import events.blades.{PlayerPostSheatheEvent, PlayerPostUnsheatheEvent, PlayerPreSheatheEvent, PlayerPreUnsheatheEvent}
+import events.skills.PlayerEquipSkillEvent
 import gui.{ArtsGUI, ClassesGUI}
 import managers.{GemsManager, HotbarManager, SkillManager}
 import skills.Skill
@@ -22,38 +24,14 @@ import org.bukkit.{Bukkit, Effect, EntityEffect, Material, OfflinePlayer}
 
 import java.util
 import java.util.UUID
-import scala.collection.{GenMap, mutable}
+import scala.collection.{mutable, GenMap}
 import scala.jdk.CollectionConverters.*
 import scala.util.{Failure, Random, Success, Try}
 
 /** Represents a player's data.
-  *
-  * @param uuid
-  *   The UUID of the player.
-  * @param cls
-  *   The class of the player.
-  * @param char
-  *   The character preset of the player.
-  * @param masterArts
-  *   The master arts.
-  * @param arts
-  *   The class arts.
-  * @param gems
-  *   The equipped gems.
-  * @param talentArt
-  *   The equipped talent art.
   */
-case class User(
-  private val _uuid: UUID,
-  var cls: Option[ClassType] = None,
-  var weapon: Option[WeaponType] = None,
-  var char: Option[Character] = None,
-  masterArts: Array[ArtType] = Array.ofDim(3),
-  arts: Array[ArtType] = Array.ofDim(3),
-  gems: Array[(GemType, Int)] = Array.ofDim(3),
-  masterSkills: Array[SkillType] = Array.ofDim(3),
-  var talentArt: Option[ArtType] = None,
-) extends ConfigurationSerializable with Attributable(_uuid):
+case class User(private val _uuid: UUID, var cls: Option[ClassType] = None, var char: Option[Character] = None)
+  extends ConfigurationSerializable with Attributable(_uuid):
 
   private val inventory = mutable.Map.empty[Int, ItemStack]
   private val classMemory = mutable.Map.empty[ClassType, ClassMemory]
@@ -61,46 +39,47 @@ case class User(
   var bladeUnsheathed = false
   var lastSoulhackerSoul: Option[ClassType] = None
 
-  /** Checks if a certain art is currently already being selected.
-    *
-    * @param art
-    *   the art
-    * @return
-    *   the result
+  /** Returns true if the player has [[art]] already equipped somewhere in the arts palette.
     */
-  def isArtSelected(art: ArtType): Boolean = masterArts.contains(art) || arts.contains(art)
+  def isArtSelected(art: ArtType): Boolean = cls.map(getClassMemory).exists(cls => cls.arts.contains(art) || cls.masterArts.contains(art))
 
-  /** Attempts to equip an art.
+  /** Attempts to equip [[art]] into [[slot]], and [[master]] controls which palette to apply to. Does nothing if [[cls]] is not set.
     *
-    * @param art
-    *   the art
-    * @param slot
-    *   the slot
-    * @param master
-    *   whether it is a master art
+    * Also emits a [[PlayerEquipArtEvent]].
     */
   def equipArt(art: ArtType, slot: Int, master: Boolean): Unit =
-    val arr = if master then masterArts else arts
-    val index = arr.indexOf(art)
+    if cls.isEmpty then return ()
+    val event = PlayerEquipArtEvent(this, art, master)
+    Bukkit.getPluginManager.callEvent(event)
+    if event.isCancelled then return ()
 
+    val destination = if master then getClassMemory(cls.get).masterArts else getClassMemory(cls.get).arts
+    swapSlot(destination, art, slot)
+
+  private def swapSlot[T](array: Array[T], item: T, slot: Int): Unit =
+    val index = array.indexOf(item)
     if index >= 0 then
-      arr(index) = arr(slot)
-      arr(slot) = art
-    else arr(slot) = art
+      array(index) = array(slot)
+      array(slot) = item
+    else array(slot) = item
 
-  /** Attempts to equip a skill.
-    *
-    * @param skill
-    *   the skill
-    * @param slot
-    *   the slot
+  /** Equips the [[art]] as a talent art. Does nothing if [[cls]] is not set.
+    */
+  def equipTalentArt(art: Option[ArtType]): Unit = if cls.isDefined then getClassMemory(cls.get).talentArt = art
+
+  /** Equips the [[weapon]] as a weapon. Does nothing if [[cls]] is not set.
+    */
+  def equipWeapon(weapon: Option[WeaponType]): Unit = if cls.isDefined then getClassMemory(cls.get).weapon = weapon
+
+  /** Attempts to equip a master [[skill]] at [[slot]]. Does nothing if [[cls]] is not set.
     */
   def equipMasterSkill(skill: SkillType, slot: Int): Unit =
-    val index = masterSkills.indexOf(skill)
-    if index >= 0 then
-      masterSkills(index) = masterSkills(slot)
-      masterSkills(slot) = skill
-    else masterSkills(slot) = skill
+    if cls.isEmpty then return ()
+    val event = PlayerEquipSkillEvent(this, skill)
+    Bukkit.getPluginManager.callEvent(event)
+    if event.isCancelled then return ()
+
+    swapSlot(getClassMemory(cls.get).masterSkills, skill, slot)
 
   /** Attempts to apply a character, ridding the player of the talent art they would not have access to.
     *
@@ -109,16 +88,24 @@ case class User(
     */
   def applyCharacter(char: Character): Unit =
     this.char = Option(char)
-    talentArt.foreach(art => if !canUseArtAs(art, "talent") then talentArt = None)
+    classMemory.foreach((cls, memory) => {
+      if memory.talentArt.exists(!canUseArtAs(_, "talent")) then
+        val replacement = ArtType.values.filter(_.isTalent).find(_.cls.contains(cls))
+        memory.talentArt = replacement
+    })
 
-  /** Checks if the user can use an art given the context.
+  /** Checks if the user can use an art given the context of (master, class or talent).
     *
-    * @param art
-    *   the art
-    * @param what
-    *   the context
-    * @return
-    *   whether they are eligible
+    * If the context is a master art, the art must be given as a master art, not a talent art, and not a soulhacker art. If player is using
+    * Soulhacker class the art must be a Soulhacker class and an Agnian art as Soulhacker uses Kevesi cooldown.
+    *
+    * If the context is a class art, the art must belong to such class and can not be a talent art. For Soulhackers, Kevesi arts belong to
+    * the class.
+    *
+    * If the context is a talent art, the art must be a talent art. For Soulhackers, the talent art is always __Final Countdown__.
+    *
+    * If character chosen is '''Noah''', 2 additional talent arts are permitted regardless of chosen class. Or if character chosen is
+    * '''Mio''', 1 additional talent art is permitted regardless of chosen class.
     */
   def canUseArtAs(art: ArtType, what: "master" | "class" | "talent"): Boolean =
     // Since Soulhacker is a Kevesi class, master arts must be of agnian classes.
@@ -137,38 +124,25 @@ case class User(
           case ArtType.FINAL_LUCKY_SEVEN                        => false
           case _ => if cls.exists(_.isSoulhacker) then art.isSoulhacker && art.isTalent else art.isTalent
 
-  /** Apply the class provided and put up the arts, skills and gems memory.
-    *
-    * @param clazz
-    *   the class to apply
+  /** Apply the [[clazz]] provided and apply skills if needed.
     */
   def applyClass(clazz: Option[ClassType]): Unit =
-    if cls.exists(_.isSoulhacker) then classMemory.put(ClassType.SOULHACKER_POWER, ClassMemory(this))
-
     unapplySkills()
-
     cls = clazz
-    if clazz.isDefined then
-      val memory = classMemory.get(if clazz.exists(_.isSoulhacker) then ClassType.SOULHACKER_POWER else clazz.get)
-      if memory.isDefined then
-        memory.get.apply(this)
-        if weapon.isEmpty then weapon = Some(cls.get.weaponType)
-      else
-        weapon = Some(clazz.get.weaponType)
-        Array.ofDim[ArtType](3).copyToArray(masterArts)
-        Array.ofDim[ArtType](3).copyToArray(arts)
-        ArtType.values.filter(_.cls.contains(clazz.get)).take(3).copyToArray(arts)
-        Array.ofDim[(GemType, Int)](3).copyToArray(gems)
-        talentArt = ArtType.values.filter(_.isTalent).find(_.cls.contains(clazz.get))
-        applyClass(cls)
+    applySkills()
 
-      // Apply all skills.
-      applySkills()
+  /** Unapplies all skills.
+    */
+  def unapplySkills(): Unit = if cls.isDefined then getAllSkills(cls.get).foreach(_.safeUnapply(this))
+
+  /** Applies all skills.
+    */
+  def applySkills(): Unit = if cls.isDefined then getAllSkills(cls.get).foreach(_.safeApply(this))
 
   /** Unsheathe the blade.
     */
   def unsheathe(): Unit =
-    if bladeUnsheathed || cls.isEmpty || weapon.isEmpty then return ()
+    if bladeUnsheathed || cls.isEmpty || getClassMemory(cls.get).weapon.isEmpty then return ()
     bladeUnsheathed = true
 
     inventory.clear()
@@ -186,14 +160,6 @@ case class User(
         Tasks.run(() => Bukkit.getPluginManager.callEvent(postEvent)).plugin(Xenocraft.getInstance).run()
         p.getInventory.setHeldItemSlot(0)
     })
-
-  /** Unapplies all skills.
-    */
-  def unapplySkills(): Unit = if cls.isDefined then getAllSkills(cls.get).foreach(_.safeUnapply(this))
-
-  /** Applies all skills.
-    */
-  def applySkills(): Unit = if cls.isDefined then getAllSkills(cls.get).foreach(_.safeApply(this))
 
   /** Sheathes the blade back and disables combat.
     */
@@ -237,6 +203,47 @@ case class User(
 
   override def etherDef: Double = Formulas.calculateDisplayEtherDefense(this)
 
+  /** Retrieves the weapon currently selected by the player. Always returns null if [[cls]] is not set.
+    */
+  def weapon: Option[WeaponType] = cls.flatMap(getClassMemory(_).weapon)
+
+  /** Retrieves the array of master arts selected by the players. Always returns an empty detached array if [[cls]] is not set.
+    */
+  def masterArts: Array[ArtType] = cls.map(getClassMemory(_).masterArts).getOrElse(Array.ofDim(3))
+
+  /** Retrieves the array of arts selected by the players. Always returns an empty detached array if [[cls]] is not set.
+    */
+  def arts: Array[ArtType] = cls.map(getClassMemory(_).arts).getOrElse(Array.ofDim(3))
+
+  /** Retrieves the array of gems selected by the players. Always returns an empty detached array if [[cls]] is not set.
+    */
+  def gems: Array[(GemType, Int)] = cls.map(getClassMemory(_).gems).getOrElse(Array.ofDim(3))
+
+  /** Retrieves the array of skills selected by the players. Always returns an empty detached array if [[cls]] is not set.
+    */
+  def masterSkills: Array[SkillType] = cls.map(getClassMemory(_).masterSkills).getOrElse(Array.ofDim(3))
+
+  private def getClassMemory(cls: ClassType): ClassMemory = classMemory.getOrElseUpdate(
+    if cls.isSoulhacker then ClassType.SOULHACKER_POWER else cls, {
+      val talentArt =
+        if cls.isSoulhacker then Some(ArtType.FINAL_COUNTDOWN) else ArtType.values.filter(_.isTalent).find(_.cls.contains(cls))
+      val memory = ClassMemory(
+        weapon = Some(cls.weaponType),
+        masterArts = Array.ofDim(3),
+        arts = Array.ofDim(3),
+        masterSkills = Array.ofDim(3),
+        gems = Array.ofDim(3),
+        talentArt = talentArt,
+      )
+      classMemory += cls -> memory
+      memory
+    },
+  )
+
+  /** Retrieves the talent art of the player.
+    */
+  def talentArt: Option[ArtType] = cls.flatMap(getClassMemory(_).talentArt)
+
   /** Retrieves the offline player instance.
     *
     * @return
@@ -261,19 +268,13 @@ case class User(
   override def serialize(): util.Map[String, AnyRef] = Map(
     "uuid" -> uuid.toString,
     "class" -> cls.map(_.toString).orNull,
-    "weapon" -> weapon.map(_.toString).orNull,
     "character" -> char.map(_.toString).orNull,
-    "masterArts" -> masterArts.map(art => if art != null then art.toString else null).toList.asJava,
-    "masterSkills" -> masterSkills.map(skill => if skill != null then skill.toString else null).toList.asJava,
-    "arts" -> arts.map(art => if art != null then art.toString else null).toList.asJava,
-    "gems" -> gems.map(tuple => if tuple != null then s"${tuple._1.toString}:${tuple._2}" else null).toList.asJava,
-    "talentArt" -> talentArt.map(_.toString).orNull,
     "memory" -> classMemory.map(entry => entry._1.toString -> entry._2).asJava,
-    "latestSoul" -> lastSoulhackerSoul.map(_.toString()).orNull,
+    "latest-soul" -> lastSoulhackerSoul.map(_.toString()).orNull,
   ).asJava
 
-  private def getAllSkills(cls: ClassType): Array[Skill] = SkillType.values.filter(_.cls.contains(cls)).appendedAll(masterSkills)
-    .flatMap(SkillManager.get)
+  private def getAllSkills(cls: ClassType): Array[Skill] = SkillType.values.filter(_.cls.contains(cls))
+    .appendedAll(getClassMemory(cls).masterSkills).flatMap(SkillManager.get)
 
 end User
 
@@ -286,28 +287,13 @@ object User:
 
     val uuid = UUID.fromString(map.get("uuid").toString)
     val cls = tryGetting("class", ClassType.valueOf)
-    val weapon = tryGetting("weapon", WeaponType.valueOf)
     val char = tryGetting("character", Character.valueOf)
-    val talentArt = tryGetting("talentArt", ArtType.valueOf)
-    val lastSoulhackerSoul = tryGetting("latestSoul", ClassType.valueOf)
-
-    val masterArts = tryGettingArray("masterArts", ArtType.valueOf).toArray[ArtType]
-    val masterSkills = tryGettingArray("masterSkills", SkillType.valueOf).toArray[SkillType]
-    val arts = tryGettingArray("arts", ArtType.valueOf).toArray[ArtType]
-    val gems = tryGettingArray("gems", String.valueOf).toArray[String].map(s => {
-      if s != null && s != "null" then
-        val arr = s.split(":")
-        GemType.valueOf(arr(0)) -> arr(1).toInt
-      else null
-    })
-
+    val lastSoulhackerSoul = tryGetting("latest-soul", ClassType.valueOf)
     val memory = map.get("memory").asInstanceOf[util.Map[String, ClassMemory]].asScala.map(entry => ClassType.valueOf(entry._1) -> entry._2)
 
-    val user = User(uuid, cls, weapon, char, masterArts, arts, gems, masterSkills, talentArt)
-    gems.filter(_ != null).foreach((gem, lvl) => GemsManager.applyGem(user, gem, lvl))
+    val user = User(uuid, cls, char)
     user.classMemory ++= memory
     user.lastSoulhackerSoul = lastSoulhackerSoul
-    user.applyClass(user.cls)
     user
 
   end deserialize
@@ -318,8 +304,5 @@ object User:
     Try(f(result.get)) match
       case Success(value) => Some(value)
       case Failure(_)     => None
-
-  private def tryGettingArray[T](key: String, f: String => T, size: Int = 3)(using map: util.Map[String, Any]): List[T] = map.get(key)
-    .asInstanceOf[util.List[String]].asScala.take(size).map(s => if s != null then f(s) else null.asInstanceOf[T]).toList
 
 end User

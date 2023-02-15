@@ -82,7 +82,7 @@ enum GemType(
 
   case STEELCLEAVER extends GemType(GemCategory.ATTACKER, (20, 70))
   case ACCURATE_GRACE extends GemType(GemCategory.ATTACKER, (20, 45))
-  case ANALYZE_WEAKNESS extends GemType(GemCategory.ATTACKER, (0.2, 0.7))
+  case ANALYZE_WEAKNESS extends GemType(GemCategory.ATTACKER, (20, 70))
   case SWELLING_SCOURGE extends GemType(GemCategory.ATTACKER, (0.25, 0.5), percentage = true)
   case REFINED_INCANTATION extends GemType(GemCategory.ATTACKER, (0.25, 0.5), percentage = true)
 

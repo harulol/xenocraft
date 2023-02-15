@@ -84,7 +84,7 @@ object SkillsGUI extends ModuleHolder("skills-ui"):
     (22 to 25).foreach(i => model.mount(i, StaticComponent(getSkillDisplay(classSkills(i - 22)))))
 
     // Master skills are however, customizable.
-    user.masterSkills.zipWithIndex.foreach((skill, index) => model.mount(index + 32, new MasterSkillComponent(user, player, index)))
+    user.masterSkills.zipWithIndex.foreach((_, index) => model.mount(index + 32, new MasterSkillComponent(user, player, index)))
 
     model.open(player)
 
