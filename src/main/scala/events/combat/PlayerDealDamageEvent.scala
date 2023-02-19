@@ -35,7 +35,7 @@ class PlayerDealDamageEvent(
   private val random = ThreadLocalRandom.current()
   private val criticalHit = Formulas.canCrit(user, artCritMod, isPreemptive)
   private val blockedHit = Formulas.canBlock(entity, direction)
-  private val landedHit = Formulas.canHit(user, entity, artHitChance)
+  private val landedHit = entity.reaction.contains(ArtReaction.DAZE) || Formulas.canHit(user, entity, artHitChance) // Dazed enemies can't dodge.
 
   private val _stabilityModifier = random.nextDouble(0.0, user.weapon.get.weaponAttack * user.weapon.get.weaponStability)
   private val _fusionDamageMultiplier = if fusion then Configuration.fusionBonus(ArtFusionBonus.DAMAGE) else 1.0

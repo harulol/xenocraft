@@ -128,12 +128,18 @@ case class User(private val _uuid: UUID, var cls: Option[ClassType] = None, var 
     */
   def applyClass(clazz: Option[ClassType]): Unit =
     unapplySkills()
+    unapplyGems()
     cls = clazz
     applySkills()
+    applyGems()
 
   /** Unapplies all skills.
     */
   def unapplySkills(): Unit = if cls.isDefined then getAllSkills(cls.get).foreach(_.safeUnapply(this))
+
+  def unapplyGems(): Unit = if cls.isDefined then getClassMemory(cls.get).gems.foreach((g, lvl) => GemsManager.unapplyGem(this, g, lvl))
+
+  def applyGems(): Unit = if cls.isDefined then getClassMemory(cls.get).gems.foreach((g, lvl) => GemsManager.applyGem(this, g, lvl))
 
   /** Applies all skills.
     */

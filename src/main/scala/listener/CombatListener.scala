@@ -3,8 +3,8 @@ package listener
 
 import UserMap.{setUp, user}
 import events.arts.{PlayerUseArtEvent, PlayerUseFusionArtEvent}
-import events.blades.PlayerPostSheatheEvent
-import events.combat.{EnemyAutoAttackEvent, PlayerAutoAttackEvent}
+import events.blades.{PlayerPostSheatheEvent, PlayerPostUnsheatheEvent}
+import events.combat.{EnemyAutoAttackEvent, PlayerAutoAttackEvent, PlayerDealDamageEvent}
 import events.{EntityHealthChangeEvent, PlayerIncapacitateEvent}
 import utils.Hologram
 
@@ -48,6 +48,19 @@ object CombatListener extends Listener:
     else event.setCancelled(true)
 
   @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+  private def onPlayerDamage(event: PlayerDealDamageEvent): Unit =
+    if event.isHit && !event.isEvaded && event.artType.isDefined then
+      val art = event.artType.get
+      val user = event.user
+      
+      if user.artsDamage.contains(art) then user.artsDamage += art -> 0.0
+      user.artsDamage += art -> (user.artsDamage(art) + event.finalDamage)
+      
+  @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+  private def onUnsheathe(event: PlayerPostUnsheatheEvent): Unit =
+    event.user.artsDamage.clear()
+      
+  @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
   private def onArtUse(event: PlayerUseArtEvent): Unit =
     val locale = UserAdapter.getAdapter.getUser(event.getPlayer).getLocale
     event.getPlayer.playSound(event.getPlayer.getLocation, Sound.ITEM_FLINTANDSTEEL_USE, 1, 1)
@@ -84,6 +97,7 @@ object CombatListener extends Listener:
   @EventHandler
   private def onIncapacitate(event: PlayerIncapacitateEvent): Unit =
     event.getPlayer.teleport(event.getPlayer.getWorld.getSpawnLocation)
+    event.user.artsDamage.clear()
     Tasks.run { _ =>
       val loc = event.getPlayer.getLocation().add(0.0, 1.0, 0.0)
       loc.getWorld.spawnParticle(Particle.TOTEM, loc, 100, 0.7, 0.7, 0.7, 0.1)

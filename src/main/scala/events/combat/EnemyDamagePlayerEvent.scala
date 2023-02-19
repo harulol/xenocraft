@@ -28,7 +28,7 @@ class EnemyDamagePlayerEvent(entity: Mob, val enemy: EnemyEntity, val player: Pl
   private val user = player.user.get
   private val criticalHit = Formulas.canCrit(enemy)
   private val blockedHit = Formulas.canBlock(user)
-  private val landedHit = Formulas.canHit(enemy, user)
+  private val landedHit = Formulas.canHit(enemy, user) || user.reaction.contains(ArtReaction.DAZE) // Dazed entities can't dodge.
   private val random = ThreadLocalRandom.current()
 
   private val _critMultiplier = if isCritical then 1.25 + enemy.critDamage else 1.0

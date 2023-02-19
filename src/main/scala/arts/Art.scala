@@ -9,6 +9,7 @@ import dev.hawu.plugins.api.Tasks
 import dev.hawu.plugins.api.misc.Raytracing
 import org.bukkit.Bukkit
 import org.bukkit.entity.{LivingEntity, Mob, Player}
+import org.bukkit.scheduler.BukkitTask
 
 import scala.jdk.CollectionConverters.*
 
@@ -26,6 +27,8 @@ abstract class Art(val artType: ArtType):
   final def getEvent(player: Player): PlayerDealDamageEvent.Builder = PlayerDealDamageEvent(player).artType(artType)
     .physical(artType.category == ArtCategory.PHYSICAL)
 
+  /** Schedule a task to deal damage after [[ticks]] with [[f]].
+    */
   final def schedule(ticks: Long = 0, f: => Unit): Unit = Tasks.run(_ => f).delay(ticks).plugin(Xenocraft.getInstance).run()
 
   /** Attempts to deal damage to an entity.
@@ -48,6 +51,8 @@ abstract class Art(val artType: ArtType):
     .getNearbyEntities(distance, distance, distance).asScala.filter(_.isInstanceOf[Mob]).map(_.asInstanceOf[Mob])
     .filter(EnemyManager.isMarked).flatMap(EnemyManager.getEnemy).toSeq
 
+  /** Generates a list of damage dealing events as so multi hits are independent instead of being reliant on the first hit.
+    */
   final def generateEvents(count: Int, f: => PlayerDealDamageEvent): Array[PlayerDealDamageEvent] = Array.fill(count)(f)
 
   /** Starts the animation for the art.
@@ -55,8 +60,10 @@ abstract class Art(val artType: ArtType):
     * @param player
     *   the player to start the animation for
     * @param user
-    *   the user
+    *   the user version of [[player]]
     * @param fusion
     *   whether this was used as a fusion art
+    * @param master
+    *   whether this was a master art in a fusion art
     */
-  def use(player: Player, user: User, fusion: Boolean): Boolean
+  def use(player: Player, user: User, fusion: Boolean, master: Boolean): Boolean

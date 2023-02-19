@@ -24,6 +24,8 @@ trait Attributable(val uuid: UUID):
 
   private val kevesiArts = mutable.Map.empty[ArtType, Double]
   private val agnianArts = mutable.Map.empty[ArtType, Double]
+  
+  val artsDamage = mutable.Map.empty[ArtType, Double]
 
   // GENERIC STATS VALUES
   var pctAttack = 0.0
@@ -303,7 +305,11 @@ trait Attributable(val uuid: UUID):
 
   private def closeEnough(value1: Double, value2: Double): Boolean = math.abs(value1 - value2) <= EPSILON
 
-end Attributable
+  override def hashCode(): Int = uuid.hashCode()
+
+  override def equals(obj: Any): Boolean = obj match
+    case attributable: Attributable => attributable.uuid == uuid
+    case _ => false
 
 /** The attributable static access.
  */
