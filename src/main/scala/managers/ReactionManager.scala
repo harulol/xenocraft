@@ -2,26 +2,40 @@ package dev.hawu.plugins.xenocraft
 package managers
 
 import UserMap.user
-import data.{ArtReaction, Attributable}
-import events.combat.EntityReactionEvent
+import data.{ArtReaction, ArtType, Attributable}
+import events.combat.{EntityComboReactionEvent, EntityReactionEvent, EntitySmashReactionEvent}
 import utils.Hologram
 
-import dev.hawu.plugins.api.Tasks
-import org.bukkit.Bukkit
+import dev.hawu.plugins.api.events.Events
+import dev.hawu.plugins.api.particles.{ParticleEffect, ParticleEnum, PredefParticles}
+import dev.hawu.plugins.api.{MathUtils, Tasks}
+import org.bukkit.*
 import org.bukkit.entity.{LivingEntity, Mob}
+import org.bukkit.event.entity.EntityDamageEvent
+import org.bukkit.event.entity.EntityDamageEvent.DamageCause
+import org.bukkit.inventory.ItemStack
 import org.bukkit.plugin.java.JavaPlugin
+import org.bukkit.potion.{PotionEffect, PotionEffectType}
+import org.bukkit.scheduler.BukkitTask
+import org.bukkit.util.Vector
 
+import java.util.UUID
 import scala.collection.mutable
 import scala.jdk.CollectionConverters.*
 import scala.util.Try
 
 /** Singleton object for managing combo effects.
   */
-//noinspection DuplicatedCode
 object ReactionManager extends Initializable:
 
   private val KNOCKBACK_TEXT = "&e◖ Knockback"
   private val BLOWDOWN_TEXT = "&e⯊ Blowdown"
+  private val BREAK_TEXT = "&c&l⫽ Break"
+  private val TOPPLE_TEXT = "&c&l⤾ Topple"
+  private val LAUNCH_TEXT = "&c&l⤒ Launch"
+  private val SMASH_TEXT = "&c&l⤓ Smash"
+  private val DAZE_TEXT = "&c&l✪ Daze"
+  private val BURST_TEXT = "&c&l⚙ Burst"
   private val tracked = mutable.Set.empty[Attributable]
 
   private var plugin: Option[JavaPlugin] = None
@@ -32,41 +46,124 @@ object ReactionManager extends Initializable:
 
   /** Countdown all reaction frames counter for all attributables currently being tracked.
     */
-  def countDownAll(): Unit = tracked.filter(_.reaction.isDefined)
-    .foreach(u => if u.reactionFrames <= 0 then u.reaction = None else u.reactionFrames -= 1)
+  def countDownAll(): Unit = for attributable <- tracked.filter(_.reaction.isDefined) do
+    if attributable.reactionFrames <= 0 then
+      attributable.reaction = None
+      tracked -= attributable
+    else attributable.reactionFrames -= 1
 
-  /** Apply the effect Knockback to a [[targetAttributable]] by [[attackerAttributable]].
+  override def tearDown(pl: JavaPlugin): Unit =
+    tracked.clear()
+    plugin = None
+
+  /** Attempts to inflict a [[reaction]] on [[target]]. This will do nothing if [[canInflict]] yields `false`.
+    *
+    * Does not support ''Smash''.
     */
-  def inflictKnockback(attackerAttributable: Attributable, targetAttributable: Attributable): Unit =
-    val attacker = Bukkit.getEntity(attackerAttributable.uuid).asInstanceOf[LivingEntity]
-    val target = Bukkit.getEntity(targetAttributable.uuid).asInstanceOf[LivingEntity]
+  def inflict(attacker: Attributable, target: Attributable, reaction: ArtReaction): Unit =
+    if reaction == ArtReaction.SMASH || !canInflict(target, reaction) then return ()
 
-    if callEvent(attacker -> attackerAttributable, target -> targetAttributable, ArtReaction.KNOCKBACK) then return ()
-
-    val direction = attacker.getLocation.getDirection
-    val rotation = attacker.getLocation.setDirection(direction.clone().multiply(-1))
-    target.setRotation(rotation.getYaw, rotation.getPitch)
-    Tasks.run(_ => {
-      Hologram.spawnAround(target.getEyeLocation, 40, KNOCKBACK_TEXT)
-      target.setVelocity(direction.setY(0).normalize())
-    }).plugin(plugin.get).run()
-
-  /** Apply the effect Blowdown to a [[target]] by [[attacker]].
-    */
-  def inflictBlowdown(attacker: Attributable, target: Attributable): Unit =
     val entity = Bukkit.getEntity(target.uuid).asInstanceOf[LivingEntity]
     val damager = Bukkit.getEntity(attacker.uuid).asInstanceOf[LivingEntity]
+    if callEvent(damager -> attacker, entity -> target, reaction) then return ()
 
-    if callEvent(damager -> attacker, entity -> target, ArtReaction.BLOWDOWN) then return ()
-    val direction = damager.getLocation.getDirection
-    val rotation = damager.getLocation.setDirection(direction.clone().multiply(-1))
+    reaction match
+      case ArtReaction.KNOCKBACK =>
+        rotateEntityToFace(entity, damager)
+        Hologram.spawnAround(entity.getEyeLocation, 40, KNOCKBACK_TEXT)
+        entity.setVelocity(damager.getLocation.getDirection.setY(0).normalize())
+      case ArtReaction.BLOWDOWN =>
+        rotateEntityToFace(entity, damager)
+        Hologram.spawnAround(entity.getEyeLocation, 40, BLOWDOWN_TEXT)
+        entity.setVelocity(damager.getLocation.getDirection.setY(0.25).normalize())
+      case _ =>
+        val finalFrames = callReactionEvent(attacker, target, reaction).finalDuration.toInt
+        reaction match
+          case ArtReaction.BREAK =>
+            Hologram.spawnAround(entity.getEyeLocation, 40, BREAK_TEXT)
+            target.reactionFrames = finalFrames
+            target.reaction = Some(reaction)
+          case ArtReaction.TOPPLE =>
+            Hologram.spawnAround(entity.getEyeLocation, 40, TOPPLE_TEXT)
+            target.reactionFrames = finalFrames
+            target.reaction = Some(reaction)
+          case ArtReaction.LAUNCH =>
+            Hologram.spawnAround(entity.getEyeLocation, 40, LAUNCH_TEXT)
+            target.reactionFrames += finalFrames
+            target.reaction = Some(reaction)
+          case ArtReaction.DAZE =>
+            Hologram.spawnAround(entity.getEyeLocation, 40, DAZE_TEXT)
+            target.reactionFrames += finalFrames
+            target.reaction = Some(reaction)
+          case ArtReaction.BURST =>
+            Hologram.spawnAround(entity.getEyeLocation, 40, BURST_TEXT)
+            target.reactionFrames = 0
+
+        playReactionSlash(entity)
+        tracked += target
+
+  /** Checks and returns the result whether [[target]] can be inflicted with [[reaction]] at this moment in time.
+    *
+    * '''KNOCKBACK''' and '''BLOWDOWN''' are always available.
+    *
+    * '''BREAK''' is only available if [[target]] is not currently in a reaction.
+    *
+    * '''TOPPLE''' is only available if [[target]] is currently in a reaction of '''BREAK'''.
+    *
+    * '''LAUNCH''' and '''DAZE''' are only available if [[target]] is currently in a reaction of '''TOPPLE'''.
+    *
+    * '''SMASH''' is only available if [[target]] is currently in a reaction of '''LAUNCH'''. '''BURST''' is only available if [[target]] is
+    * currently in a reaction of '''DAZE'''.
+    */
+  def canInflict(target: Attributable, reaction: ArtReaction): Boolean = reaction match
+    case ArtReaction.KNOCKBACK | ArtReaction.BLOWDOWN => true
+    case ArtReaction.BREAK                            => target.reaction.isEmpty
+    case ArtReaction.TOPPLE                           => target.reaction.contains(ArtReaction.BREAK)
+    case ArtReaction.LAUNCH | ArtReaction.DAZE        => target.reaction.contains(ArtReaction.TOPPLE)
+    case ArtReaction.SMASH                            => target.reaction.contains(ArtReaction.LAUNCH)
+    case ArtReaction.BURST                            => target.reaction.contains(ArtReaction.DAZE)
+    case _                                            => false
+
+  private def rotateEntityToFace(entity: LivingEntity, target: LivingEntity): Unit =
+    val direction = target.getLocation.getDirection
+    val rotation = target.getLocation.setDirection(direction.clone().multiply(-1))
     entity.setRotation(rotation.getYaw, rotation.getPitch)
-    Tasks.run(_ => {
-      Hologram.spawnAround(entity.getEyeLocation, 40, BLOWDOWN_TEXT)
-      entity.setVelocity(direction.setY(0.25).normalize())
-    }).plugin(plugin.get).run()
+
+  private def playReactionSlash(target: LivingEntity): Unit =
+    val middle = target.getLocation.add(0, target.getHeight, 0)
+    val direction = target.getLocation.getDirection
+
+    val from = middle.clone().add(MathUtils.getLeftUnit(direction)).add(0, 1, 0)
+    val to = middle.clone().add(MathUtils.getRightUnit(direction)).add(0, -1, 0)
+    val effect = PredefParticles.getColoredParticle(from, 255, 0, 0)
+    PredefParticles.drawLine(from, to, 0.2, effect, Bukkit.getOnlinePlayers.asScala.toList.asJava)
 
   private def callEvent(attacker: (LivingEntity, Attributable), target: (LivingEntity, Attributable), reaction: ArtReaction): Boolean =
     val event = EntityReactionEvent(attacker._1, target._1, attacker._2, target._2, reaction)
     Bukkit.getPluginManager.callEvent(event)
     event.isCancelled || event.canResist
+
+  private def callReactionEvent(attacker: Attributable, target: Attributable, reaction: ArtReaction): EntityComboReactionEvent =
+    val event = EntityComboReactionEvent(target, attacker, reaction)
+    Bukkit.getPluginManager.callEvent(event)
+    target.reaction = Some(reaction)
+    event
+
+  /** Inflicts smash on the [[target]] after [[attacker]] used a set of [[arts]].
+    */
+  def inflictSmash(target: Attributable, attacker: Attributable, arts: Iterable[ArtType]): Unit =
+    if !canInflict(target, ArtReaction.SMASH) then return ()
+
+    val entity = Bukkit.getEntity(target.uuid).asInstanceOf[LivingEntity]
+    val smashEvent = EntitySmashReactionEvent(entity, attacker, arts)
+    Bukkit.getPluginManager.callEvent(smashEvent)
+
+    entity.setVelocity(Vector(0, 1, 0))
+    Events.newSubscription(classOf[EntityDamageEvent]).filter(_.getEntity.getUniqueId == entity.getUniqueId)
+      .filter(_.getCause == DamageCause.FALL).expiresAfterInvocations(1).handler(event => {
+        event.setCancelled(true)
+        if !entity.isDead then
+          BattlefieldManager.getAttributable(entity).foreach(attr => CombatManager.damage(attr, smashEvent.finalDamage))
+          entity.getNearbyEntities(5, 5, 5).asScala.filter(_.isInstanceOf[LivingEntity]).map(_.asInstanceOf[LivingEntity])
+            .flatMap(BattlefieldManager.getAttributable).foreach(attr => CombatManager.damage(attr, smashEvent.finalShockDamage))
+      }).build(Xenocraft.getInstance)
