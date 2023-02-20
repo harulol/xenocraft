@@ -14,6 +14,7 @@ import org.bukkit.metadata.FixedMetadataValue
 import org.bukkit.plugin.java.JavaPlugin
 import org.bukkit.{Bukkit, ChatColor}
 
+import java.text.DecimalFormat
 import java.util.UUID
 import scala.jdk.CollectionConverters.*
 import scala.collection.mutable
@@ -23,6 +24,9 @@ import scala.collection.mutable
 object EnemyManager extends Initializable:
 
   private val enemies = mutable.Map.empty[UUID, EnemyEntity]
+  private val decimalFormatter = DecimalFormat("#,###.#")
+  
+  decimalFormatter.setMinimumFractionDigits(1)
 
   /** Initializes the enemy manager with the [[pl]] and registers the corresponding [[EnemyListener]].
     */
@@ -73,7 +77,7 @@ object EnemyManager extends Initializable:
     getEnemy(mob).foreach(entity => {
       val bossBarName =
         if entity.reaction.isDefined && entity.reactionFrames > 0 then
-          s"&f${entity.name} &7| &c&l${entity.reaction.get.name(Locale.en_US)} &c${Strings.format(entity.reactionFrames / 20.0)}s"
+          s"&f${entity.name} &7| &c&l${entity.reaction.get.name(Locale.en_US)} &c${decimalFormatter.format(entity.reactionFrames / 20.0)}s"
         else s"&f${entity.name}"
 
       getBossbar(mob).foreach(bar =>

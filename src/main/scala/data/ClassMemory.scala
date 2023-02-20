@@ -42,10 +42,12 @@ object ClassMemory:
     given util.Map[String, Any] = map
 
     ClassMemory(
+      weapon = Option(map.get("weapon")).map(_.asInstanceOf[String]).map(WeaponType.valueOf),
       masterArts = getList("master-arts", ArtType.valueOf).toArray,
+      masterSkills = getList("master-skills", SkillType.valueOf).toArray,
       arts = getList("arts", ArtType.valueOf).toArray,
       gems = getList(
-        "arts",
+        "gems",
         gem =>
           val arr = gem.split(":")
           GemType.valueOf(arr(0)) -> arr(1).toInt,

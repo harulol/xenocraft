@@ -33,9 +33,12 @@ abstract class Art(val artType: ArtType):
 
   /** Attempts to deal damage to an entity.
     */
-  final def dealDamage(event: PlayerDealDamageEvent): Unit =
+  final def dealDamage(event: PlayerDealDamageEvent): Boolean =
     Bukkit.getPluginManager.callEvent(event)
-    if event.isHit && !event.isEvaded && !event.isCancelled then CombatManager.damage(event.entity, event.finalDamage)
+    if event.isHit && !event.isEvaded && !event.isCancelled then 
+      CombatManager.damage(event.entity, event.finalDamage)
+      true
+    else false  
 
   /** Attempts to retrieve a list of entities in front of the source.
     */

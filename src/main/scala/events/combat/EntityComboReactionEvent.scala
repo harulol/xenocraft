@@ -31,7 +31,7 @@ class EntityComboReactionEvent(val target: Attributable, val attacker: Attributa
 
   /** Retrieves the unbound number of ticks that the reaction will last.
     */
-  def totalDuration: Double = baseFrames * (1 + reactionDurationUp) * shackleRingMultiplier * (baseFrames + pctReactionExtension)
+  def totalDuration: Double = baseFrames * (1 + reactionDurationUp) * shackleRingMultiplier + baseFrames * pctReactionExtension
 
   override def getHandlers: HandlerList = handlers
 

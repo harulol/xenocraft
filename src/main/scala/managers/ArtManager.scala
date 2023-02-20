@@ -18,7 +18,9 @@ object ArtManager extends Initializable:
 
   private val map = mutable.Map.empty[ArtType, Art]
 
-  override def setUp(pl: JavaPlugin): Unit = Seq(zephyr.ButterflyBlade, zephyr.AirFang, zephyr.WideSlash, zephyr.SpeedDemon).foreach(bind)
+  override def setUp(pl: JavaPlugin): Unit = 
+    Seq(swordfighter.GroundBeat, swordfighter.SwordStrike).foreach(bind)
+    Seq(zephyr.ButterflyBlade, zephyr.AirFang, zephyr.WideSlash, zephyr.SpeedDemon).foreach(bind)
 
   /** Binds an art to the art manager.
    *
@@ -59,7 +61,7 @@ object ArtManager extends Initializable:
    *
    * [[art]] can not be null.
    */
-  def useSingleArt(player: Player, art: ArtType): Unit =
+  def useSingleArt(player: Player, art: ArtType, asMaster: Boolean): Unit =
     val user = player.user.get
     if user.isInAnimation then return ()
 
@@ -69,7 +71,7 @@ object ArtManager extends Initializable:
 
     val artObj = get(art).orNull
     if !user.isOnCooldown(art) && artObj != null then
-      if !artObj.use(player, user, false) then player.playSound(player.getLocation, Sound.ENTITY_VILLAGER_NO, 1, 1)
+      if !artObj.use(player, user, false, asMaster) then player.playSound(player.getLocation, Sound.ENTITY_VILLAGER_NO, 1, 1)
 
     user.use(art)
 
@@ -83,7 +85,7 @@ object ArtManager extends Initializable:
     Bukkit.getPluginManager.callEvent(event)
     if event.isCancelled then return ()
 
-    if Seq(art, master).filterNot(user.isOnCooldown).map(get(_).orNull).filter(_ != null).map(_.use(player, user, true)).exists(!_) then
+    if Seq(art, master).filterNot(user.isOnCooldown).map(get(_).orNull).filter(_ != null).map(_.use(player, user, true, false)).exists(!_) then
       player.playSound(player.getLocation, Sound.ENTITY_VILLAGER_NO, 1, 1)
 
     user.use(art)

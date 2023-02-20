@@ -23,6 +23,7 @@ import java.text.DecimalFormat
 object HotbarManager extends Initializable:
 
   private val formatter = DecimalFormat("#,###.#")
+  formatter.setMinimumFractionDigits(1)
 
   override def setUp(pl: JavaPlugin) = Events.registerEvents(pl, HotbarListener)
 

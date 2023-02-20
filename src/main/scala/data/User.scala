@@ -159,7 +159,8 @@ case class User(private val _uuid: UUID, var cls: Option[ClassType] = None, var 
     inventory.clear()
     player.foreach(p => {
       val preEvent = PlayerPreUnsheatheEvent(p)
-      Tasks.run(() => Bukkit.getPluginManager.callEvent(preEvent)).plugin(Xenocraft.getInstance).run()
+      Bukkit.getPluginManager.callEvent(preEvent)
+      
       if !preEvent.isCancelled then
         // Main unsheathing logic
         p.getInventory.getContents.zipWithIndex.foreach((item, index) => {
@@ -168,7 +169,7 @@ case class User(private val _uuid: UUID, var cls: Option[ClassType] = None, var 
         })
 
         val postEvent = PlayerPostUnsheatheEvent(p)
-        Tasks.run(() => Bukkit.getPluginManager.callEvent(postEvent)).plugin(Xenocraft.getInstance).run()
+        Bukkit.getPluginManager.callEvent(postEvent)
         p.getInventory.setHeldItemSlot(0)
     })
 
@@ -180,12 +181,13 @@ case class User(private val _uuid: UUID, var cls: Option[ClassType] = None, var 
 
     player.foreach { p =>
       val preEvent = PlayerPreSheatheEvent(p)
-      Tasks.run(() => Bukkit.getPluginManager.callEvent(preEvent)).plugin(Xenocraft.getInstance).run()
+      Bukkit.getPluginManager.callEvent(preEvent)
+      
       if !preEvent.isCancelled then
         inventory.foreach((index, item) => p.getInventory.setItem(index, item))
 
         val postEvent = PlayerPostSheatheEvent(p)
-        Tasks.run(() => Bukkit.getPluginManager.callEvent(postEvent)).plugin(Xenocraft.getInstance).run()
+        Bukkit.getPluginManager.callEvent(postEvent)
     }
     inventory.clear()
 

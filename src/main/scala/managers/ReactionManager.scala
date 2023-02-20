@@ -4,12 +4,15 @@ package managers
 import UserMap.user
 import data.{ArtReaction, ArtType, Attributable}
 import events.combat.{EntityComboReactionEvent, EntityReactionEvent, EntitySmashReactionEvent}
+import listener.ReactionListener
 import utils.Hologram
 
 import dev.hawu.plugins.api.events.Events
+import dev.hawu.plugins.api.misc.Raytracing
 import dev.hawu.plugins.api.particles.{ParticleEffect, ParticleEnum, PredefParticles}
 import dev.hawu.plugins.api.{MathUtils, Tasks}
 import org.bukkit.*
+import org.bukkit.Particle.DustOptions
 import org.bukkit.entity.{LivingEntity, Mob}
 import org.bukkit.event.entity.EntityDamageEvent
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause
@@ -42,6 +45,7 @@ object ReactionManager extends Initializable:
 
   override def setUp(pl: JavaPlugin): Unit =
     plugin = Some(pl)
+    Events.registerEvents(pl, ReactionListener)
     Tasks.run(_ => countDownAll()).delay(0).period(1).async(true).plugin(pl).run()
 
   /** Countdown all reaction frames counter for all attributables currently being tracked.
@@ -103,6 +107,33 @@ object ReactionManager extends Initializable:
         playReactionSlash(entity)
         tracked += target
 
+  private def rotateEntityToFace(entity: LivingEntity, target: LivingEntity): Unit =
+    val direction = target.getLocation.getDirection
+    val rotation = target.getLocation.setDirection(direction.clone().multiply(-1))
+    entity.setRotation(rotation.getYaw, rotation.getPitch)
+
+  private def playReactionSlash(target: LivingEntity): Unit =
+    val middle = target.getLocation.add(0, target.getHeight, 0)
+    val direction = target.getLocation.getDirection
+
+    val from = middle.clone().add(MathUtils.getLeftUnit(direction)).add(0, 1, 0)
+    val to = middle.clone().add(MathUtils.getRightUnit(direction)).add(0, -1, 0)
+
+    val dustOptions = DustOptions(Color.RED, 1)
+    Raytracing.startNew().origin(from).direction(to.subtract(from).toVector.normalize()).step(0.1).ignoresBlocks()
+      .eachStep(loc => loc.getWorld.spawnParticle(Particle.REDSTONE, loc, 1, 0, 0, 0, 0.1, dustOptions)).raytrace()
+
+  private def callEvent(attacker: (LivingEntity, Attributable), target: (LivingEntity, Attributable), reaction: ArtReaction): Boolean =
+    val event = EntityReactionEvent(attacker._1, target._1, attacker._2, target._2, reaction)
+    Bukkit.getPluginManager.callEvent(event)
+    event.isCancelled || event.canResist
+
+  private def callReactionEvent(attacker: Attributable, target: Attributable, reaction: ArtReaction): EntityComboReactionEvent =
+    val event = EntityComboReactionEvent(target, attacker, reaction)
+    Bukkit.getPluginManager.callEvent(event)
+    target.reaction = Some(reaction)
+    event
+
   /** Checks and returns the result whether [[target]] can be inflicted with [[reaction]] at this moment in time.
     *
     * '''KNOCKBACK''' and '''BLOWDOWN''' are always available.
@@ -125,31 +156,6 @@ object ReactionManager extends Initializable:
     case ArtReaction.BURST                            => target.reaction.contains(ArtReaction.DAZE)
     case null                                         => false
 
-  private def rotateEntityToFace(entity: LivingEntity, target: LivingEntity): Unit =
-    val direction = target.getLocation.getDirection
-    val rotation = target.getLocation.setDirection(direction.clone().multiply(-1))
-    entity.setRotation(rotation.getYaw, rotation.getPitch)
-
-  private def playReactionSlash(target: LivingEntity): Unit =
-    val middle = target.getLocation.add(0, target.getHeight, 0)
-    val direction = target.getLocation.getDirection
-
-    val from = middle.clone().add(MathUtils.getLeftUnit(direction)).add(0, 1, 0)
-    val to = middle.clone().add(MathUtils.getRightUnit(direction)).add(0, -1, 0)
-    val effect = PredefParticles.getColoredParticle(from, 255, 0, 0)
-    PredefParticles.drawLine(from, to, 0.2, effect, Bukkit.getOnlinePlayers.asScala.toList.asJava)
-
-  private def callEvent(attacker: (LivingEntity, Attributable), target: (LivingEntity, Attributable), reaction: ArtReaction): Boolean =
-    val event = EntityReactionEvent(attacker._1, target._1, attacker._2, target._2, reaction)
-    Bukkit.getPluginManager.callEvent(event)
-    event.isCancelled || event.canResist
-
-  private def callReactionEvent(attacker: Attributable, target: Attributable, reaction: ArtReaction): EntityComboReactionEvent =
-    val event = EntityComboReactionEvent(target, attacker, reaction)
-    Bukkit.getPluginManager.callEvent(event)
-    target.reaction = Some(reaction)
-    event
-
   /** Inflicts smash on the [[target]] after [[attacker]] used a set of [[arts]].
     */
   def inflictSmash(target: Attributable, attacker: Attributable, arts: Iterable[ArtType]): Unit =
@@ -159,12 +165,18 @@ object ReactionManager extends Initializable:
     val smashEvent = EntitySmashReactionEvent(entity, attacker, arts)
     Bukkit.getPluginManager.callEvent(smashEvent)
 
-    entity.setVelocity(Vector(0, 1, 0))
+    target.reaction = None
+    target.reactionFrames = 0
+
+    Hologram.spawnAround(entity.getEyeLocation, 40, SMASH_TEXT)
+    entity.setFallDistance(100)
+    entity.setVelocity(Vector(0, -1, 0))
+
     Events.newSubscription(classOf[EntityDamageEvent]).filter(_.getEntity.getUniqueId == entity.getUniqueId)
       .filter(_.getCause == DamageCause.FALL).expiresAfterInvocations(1).handler(event => {
         event.setCancelled(true)
         if !entity.isDead then
-          BattlefieldManager.getAttributable(entity).foreach(attr => CombatManager.damage(attr, smashEvent.finalDamage))
-          entity.getNearbyEntities(5, 5, 5).asScala.filter(_.isInstanceOf[LivingEntity]).map(_.asInstanceOf[LivingEntity])
-            .flatMap(BattlefieldManager.getAttributable).foreach(attr => CombatManager.damage(attr, smashEvent.finalShockDamage))
+          BattlefieldManager.getAttributable(entity).foreach(attr => CombatManager.damage(attr, smashEvent.finalDamage, "&f&l"))
+          entity.getNearbyEntities(5, 5, 5).asScala.filter(_.isInstanceOf[Mob]).map(_.asInstanceOf[Mob])
+            .flatMap(BattlefieldManager.getAttributable).foreach(attr => CombatManager.damage(attr, smashEvent.finalShockDamage, "&f&l"))
       }).build(Xenocraft.getInstance)

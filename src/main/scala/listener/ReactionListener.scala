@@ -12,9 +12,9 @@ import org.bukkit.entity.{ArmorStand, LivingEntity}
 import org.bukkit.event.entity.EntityDeathEvent
 import org.bukkit.event.player.PlayerQuitEvent
 import org.bukkit.event.{EventHandler, EventPriority, Listener}
-import org.bukkit.scheduler.BukkitTask
+import org.bukkit.scheduler.{BukkitRunnable, BukkitTask}
 import org.bukkit.util.Vector
-import org.bukkit.{Bukkit, Particle}
+import org.bukkit.{Bukkit, Location, Particle}
 import org.spigotmc.event.entity.EntityDismountEvent
 
 import java.util.UUID
@@ -32,12 +32,12 @@ object ReactionListener extends Listener:
   @EventHandler
   private def onQuit(event: PlayerQuitEvent): Unit = cleanUp(event.getPlayer.getUniqueId)
 
+  @EventHandler
+  private def onDeath(event: EntityDeathEvent): Unit = cleanUp(event.getEntity.getUniqueId)
+
   private def cleanUp(uuid: UUID): Unit =
     effects.remove(uuid).foreach(_.cancel())
     cleanUps.remove(uuid).foreach(_())
-
-  @EventHandler
-  private def onDeath(event: EntityDeathEvent): Unit = cleanUp(event.getEntity.getUniqueId)
 
   @EventHandler
   private def onIncapacitate(event: PlayerIncapacitateEvent): Unit = cleanUp(event.getPlayer.getUniqueId)
@@ -47,12 +47,13 @@ object ReactionListener extends Listener:
     case ArtReaction.TOPPLE => startToppleTask(event.target)
     case ArtReaction.LAUNCH => startLaunchTask(event.target)
     case ArtReaction.DAZE   => startDazeTask(event.target)
-    case _                  => ()
+    case ArtReaction.SMASH  => println(Bukkit.getEntity(event.target.uuid).getFallDistance) // Smash is special.
+    case _                  => cleanUp(event.target.uuid)
 
   private def startToppleTask(target: Attributable): Unit =
     val entity = Bukkit.getEntity(target.uuid).asInstanceOf[LivingEntity]
     val stand: ArmorStand = entity.getWorld.spawn(
-      entity.getLocation.subtract(0, entity.getHeight, 0),
+      entity.getLocation.subtract(0, 0.5, 0),
       classOf[ArmorStand],
       as => {
         as.setVisible(false)
@@ -68,33 +69,36 @@ object ReactionListener extends Listener:
 
     schedule(
       target,
-      0, {
+      0,
+      runnable => {
         if entity.isDead || !target.reaction.contains(ArtReaction.TOPPLE) then
           listener.close()
-          cleanUp(target.uuid)
+          runnable.cancel()
       },
     )
+
+  private def schedule(entity: Attributable, delay: Long, action: BukkitRunnable => Unit): Unit =
+    effects.remove(entity.uuid).foreach(_.cancel())
+    val task = Tasks.run(runnable => action(runnable)).plugin(Xenocraft.getInstance).delay(delay).period(1).run()
+    effects.put(entity.uuid, task)
 
   private def startLaunchTask(target: Attributable): Unit =
     val entity = Bukkit.getEntity(target.uuid).asInstanceOf[LivingEntity]
-    entity.setVelocity(Vector(0.0, 1.5, 0.0))
 
-    val location = entity.getLocation.add(0.0, 2.0, 0.0)
+    val location = entity.getEyeLocation.add(0, 2, 0)
+    val eyeLocation = location.clone().add(0, entity.getEyeHeight, 0)
     var angle = 0.0
     schedule(
       target,
-      1, {
+      5,
+      runnable => {
+        if target.reactionFrames <= 0 || !target.reaction.contains(ArtReaction.LAUNCH) then runnable.cancel()
+
         entity.teleport(location)
-        entity.getWorld.spawnParticle(Particle.CRIT_MAGIC, location.clone().add(math.sin(angle), 0, math.cos(angle)), 1, 0, 0, 0, 0.1)
+        entity.getWorld.spawnParticle(Particle.CRIT_MAGIC, eyeLocation.clone().add(math.sin(angle), 0, math.cos(angle)), 1, 0, 0, 0, 0.1)
         angle += math.Pi / 20
       },
     )
-
-    scheduleCleanUp(target, entity.setFallDistance(0))
-
-  private def scheduleCleanUp(entity: Attributable, action: => Unit): Unit =
-    cleanUps.remove(entity.uuid).foreach(_())
-    cleanUps.put(entity.uuid, () => action)
 
   private def startDazeTask(target: Attributable): Unit =
     val entity = Bukkit.getEntity(target.uuid).asInstanceOf[LivingEntity]
@@ -103,17 +107,11 @@ object ReactionListener extends Listener:
     val oldLocation = entity.getLocation
     schedule(
       target,
-      1, {
+      1,
+      runnable => {
+        if target.reactionFrames <= 0 || !target.reaction.contains(ArtReaction.DAZE) then runnable.cancel()
+
         entity.getWorld.spawnParticle(Particle.CRIT, entity.getLocation, 100, 0.5, 0.5, 0.5, 0.1)
         entity.teleport(oldLocation)
       },
     )
-
-  private def schedule(entity: Attributable, delay: Long, action: => Unit): Unit =
-    effects.remove(entity.uuid).foreach(_.cancel())
-    val task = Tasks.run(_ => action).plugin(Xenocraft.getInstance).delay(delay).period(1).run()
-    effects.put(entity.uuid, task)
-
-  private def startSmashTask(target: Attributable, attacker: Attributable): Unit =
-    val entity = Bukkit.getEntity(target.uuid).asInstanceOf[LivingEntity]
-    entity.setVelocity(Vector(0.0, -2.0, 0.0))
