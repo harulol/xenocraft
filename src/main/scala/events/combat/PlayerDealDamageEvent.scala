@@ -30,6 +30,7 @@ class PlayerDealDamageEvent(
   val isPreemptive: Boolean = false,
   val isPiercing: Boolean = false,
   val isAoE: Boolean = false,
+  val masterArt: Boolean = false,
 ) extends PlayerEvent(player) with Cancellable with UserEvent(player.user.get):
 
   private val random = ThreadLocalRandom.current()
@@ -37,7 +38,9 @@ class PlayerDealDamageEvent(
   private val blockedHit = Formulas.canBlock(entity, direction)
   private val landedHit = entity.reaction.contains(ArtReaction.DAZE) || Formulas.canHit(user, entity, artHitChance) // Dazed enemies can't dodge.
 
-  private val _stabilityModifier = random.nextDouble(0.0, user.weapon.get.weaponAttack * user.weapon.get.weaponStability)
+  // Use the original weapon if used as a single master art.
+  private val weapon = if masterArt && artType.isDefined then artType.flatMap(_.cls).get.weaponType else user.weapon.get
+  private val _stabilityModifier = random.nextDouble(0.0, weapon.weaponAttack * weapon.weaponStability)
   private val _fusionDamageMultiplier = if fusion then Configuration.fusionBonus(ArtFusionBonus.DAMAGE) else 1.0
 
   // Only physical attacks can crit.
@@ -208,7 +211,7 @@ object PlayerDealDamageEvent:
 
   /** Represents a builder for building [[PlayerDealDamageEvent]].
     */
-  class Builder(val player: Player):
+  class Builder(private val player: Player):
 
     private var _direction: Option[Directional] = None
     private var _entity: Option[EnemyEntity] = None
@@ -220,6 +223,7 @@ object PlayerDealDamageEvent:
     private var _isPreemptive: Boolean = false
     private var _isPiercing: Boolean = false
     private var _isAoE: Boolean = false
+    private var _isMaster: Boolean = false
 
     def targeting(entity: Mob): Builder =
       _direction = Some(BattlefieldManager.calculateDirection(player, entity))
@@ -270,6 +274,10 @@ object PlayerDealDamageEvent:
     def setAoE(isAoE: Boolean): Builder =
       _isAoE = isAoE
       this
+      
+    def setMaster(isMaster: Boolean): Builder =
+      _isMaster = isMaster
+      this
 
     /** Builds the player deal damage event.
       */
@@ -285,4 +293,5 @@ object PlayerDealDamageEvent:
       _isPreemptive,
       _isPiercing,
       _isAoE,
+      _isMaster,
     )

@@ -13,7 +13,7 @@ import org.bukkit.entity.Player
   */
 object WideSlash extends Art(ArtType.WIDE_SLASH):
 
-  override def use(player: Player, user: User, fusion: Boolean): Boolean =
+  override def use(player: Player, user: User, fusion: Boolean, master: Boolean): Boolean =
     user.isEvading = true
     schedule(20, user.isEvading = false)
 
@@ -22,10 +22,9 @@ object WideSlash extends Art(ArtType.WIDE_SLASH):
 
     val events = generateEvents(2, getEvent(player).targeting(enemy.get).artCritMod(-0.8).fusion(fusion).build)
 
-    user.isInAnimation = true
     schedule(10, animateHit(events(0)))
     schedule(15, animateHit(events(1)))
-    schedule(20, user.isInAnimation = false)
+    scheduleAnimation(20, user)
     true
 
   private def animateHit(event: PlayerDealDamageEvent): Unit =

@@ -17,18 +17,17 @@ import java.util.concurrent.ThreadLocalRandom
  */
 object ButterflyBlade extends Art(ArtType.BUTTERFLY_BLADE):
 
-  override def use(player: Player, user: User, fusion: Boolean): Boolean =
+  override def use(player: Player, user: User, fusion: Boolean, master: Boolean): Boolean =
     val addition = user.artAggroGeneration * (if fusion then Configuration.fusionBonus(ArtFusionBonus.AGGRO) else 1.0)
     user.artAggroGeneration += addition
 
     val enemy = getEnemiesFront(player).headOption
     if enemy.isEmpty then return false
 
-    user.isInAnimation = true
     val events = generateEvents(2, getEvent(player).targeting(enemy.get).build)
     schedule(10, animateHit(enemy.get.entity, events(0)))
     schedule(20, animateHit(enemy.get.entity, events(1)))
-    schedule(30, user.isInAnimation = false)
+    scheduleAnimation(30, user)
     true
 
   private def animateHit(target: Mob, event: PlayerDealDamageEvent): Unit =

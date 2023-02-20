@@ -55,6 +55,12 @@ abstract class Art(val artType: ArtType):
     */
   final def generateEvents(count: Int, f: => PlayerDealDamageEvent): Array[PlayerDealDamageEvent] = Array.fill(count)(f)
 
+  /** Schedules to set the [[Attributable.isInAnimation]] to false after [[duration]].
+    */
+  final def scheduleAnimation(duration: Long, attr: Attributable): Unit =
+    attr.isInAnimation = true
+    Tasks.run(_ => attr.isInAnimation = false).delay(duration).plugin(Xenocraft.getInstance).run()
+
   /** Starts the animation for the art.
     *
     * @param player

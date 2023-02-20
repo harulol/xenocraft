@@ -47,6 +47,7 @@ object ReactionListener extends Listener:
     case ArtReaction.TOPPLE => startToppleTask(event.target)
     case ArtReaction.LAUNCH => startLaunchTask(event.target)
     case ArtReaction.DAZE   => startDazeTask(event.target)
+    case _                  => ()
 
   private def startToppleTask(target: Attributable): Unit =
     val entity = Bukkit.getEntity(target.uuid).asInstanceOf[LivingEntity]
@@ -98,12 +99,15 @@ object ReactionListener extends Listener:
   private def startDazeTask(target: Attributable): Unit =
     val entity = Bukkit.getEntity(target.uuid).asInstanceOf[LivingEntity]
     entity.setSwimming(true)
-    
+
     val oldLocation = entity.getLocation
-    schedule(target, 1, {
-      entity.getWorld.spawnParticle(Particle.CRIT, entity.getLocation, 100, 0.5, 0.5, 0.5, 0.1)
-      entity.teleport(oldLocation)
-    })
+    schedule(
+      target,
+      1, {
+        entity.getWorld.spawnParticle(Particle.CRIT, entity.getLocation, 100, 0.5, 0.5, 0.5, 0.1)
+        entity.teleport(oldLocation)
+      },
+    )
 
   private def schedule(entity: Attributable, delay: Long, action: => Unit): Unit =
     effects.remove(entity.uuid).foreach(_.cancel())

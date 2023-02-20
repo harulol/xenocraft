@@ -18,9 +18,7 @@ object SpeedDemon extends Art(ArtType.SPEED_DEMON):
 
   Events.registerEvents(Xenocraft.getInstance, SpeedDemonStance)
 
-  override def use(player: Player, user: User, fusion: Boolean): Boolean =
-    user.isInAnimation = true
-
+  override def use(player: Player, user: User, fusion: Boolean, master: Boolean): Boolean =
     schedule(35, StancesManager.applyStance(player, SpeedDemonStance, fusion))
-    schedule(40, user.isInAnimation = false)
+    scheduleAnimation(40, user)
     true

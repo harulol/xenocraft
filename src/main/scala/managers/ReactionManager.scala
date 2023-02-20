@@ -98,6 +98,7 @@ object ReactionManager extends Initializable:
           case ArtReaction.BURST =>
             Hologram.spawnAround(entity.getEyeLocation, 40, BURST_TEXT)
             target.reactionFrames = 0
+          case _ => ()
 
         playReactionSlash(entity)
         tracked += target
@@ -122,7 +123,7 @@ object ReactionManager extends Initializable:
     case ArtReaction.LAUNCH | ArtReaction.DAZE        => target.reaction.contains(ArtReaction.TOPPLE)
     case ArtReaction.SMASH                            => target.reaction.contains(ArtReaction.LAUNCH)
     case ArtReaction.BURST                            => target.reaction.contains(ArtReaction.DAZE)
-    case _                                            => false
+    case null                                         => false
 
   private def rotateEntityToFace(entity: LivingEntity, target: LivingEntity): Unit =
     val direction = target.getLocation.getDirection

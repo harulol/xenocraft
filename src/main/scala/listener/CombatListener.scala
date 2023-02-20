@@ -53,7 +53,7 @@ object CombatListener extends Listener:
       val art = event.artType.get
       val user = event.user
       
-      if user.artsDamage.contains(art) then user.artsDamage += art -> 0.0
+      if !user.artsDamage.contains(art) then user.artsDamage += art -> 0.0
       user.artsDamage += art -> (user.artsDamage(art) + event.finalDamage)
       
   @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)

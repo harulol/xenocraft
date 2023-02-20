@@ -129,7 +129,12 @@ case class User(private val _uuid: UUID, var cls: Option[ClassType] = None, var 
   def applyClass(clazz: Option[ClassType]): Unit =
     unapplySkills()
     unapplyGems()
+    
     cls = clazz
+    if cls.isDefined then
+      val memory = getClassMemory(cls.get)
+      if memory.arts.forall(_ == null) then ArtType.values.filter(_.cls.contains(cls.get)).take(3).copyToArray(memory.arts)
+    
     applySkills()
     applyGems()
 
@@ -137,9 +142,9 @@ case class User(private val _uuid: UUID, var cls: Option[ClassType] = None, var 
     */
   def unapplySkills(): Unit = if cls.isDefined then getAllSkills(cls.get).foreach(_.safeUnapply(this))
 
-  def unapplyGems(): Unit = if cls.isDefined then getClassMemory(cls.get).gems.foreach((g, lvl) => GemsManager.unapplyGem(this, g, lvl))
+  def unapplyGems(): Unit = if cls.isDefined then getClassMemory(cls.get).gems.filter(_ != null).foreach((g, lvl) => GemsManager.unapplyGem(this, g, lvl))
 
-  def applyGems(): Unit = if cls.isDefined then getClassMemory(cls.get).gems.foreach((g, lvl) => GemsManager.applyGem(this, g, lvl))
+  def applyGems(): Unit = if cls.isDefined then getClassMemory(cls.get).gems.filter(_ != null).foreach((g, lvl) => GemsManager.applyGem(this, g, lvl))
 
   /** Applies all skills.
     */

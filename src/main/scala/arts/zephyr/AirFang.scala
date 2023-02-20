@@ -16,12 +16,12 @@ import org.bukkit.entity.{Mob, Player}
 object AirFang extends Art(ArtType.AIR_FANG):
 
   // noinspection DuplicatedCode
-  override def use(player: Player, user: User, fusion: Boolean): Boolean =
+  override def use(player: Player, user: User, fusion: Boolean, master: Boolean): Boolean =
     if fusion then user.aggro *= Configuration.fusionBonus(ArtFusionBonus.AGGRO)
     val enemy = getEnemiesFront(player).headOption
     if enemy.isEmpty then return false
+    scheduleAnimation(45, user)
 
-    user.isInAnimation = true
     val hitsCount = if user.char.contains(Character.MIO) then 3 else 2
 
     // Generate events
@@ -35,7 +35,6 @@ object AirFang extends Art(ArtType.AIR_FANG):
       },
     )
     for i <- 0 until hitsCount do schedule(i * 15, animateHit(player, enemy.get.entity, events(i)))
-    schedule(45, user.isInAnimation = false)
     true
 
   private def animateHit(player: Player, entity: Mob, event: PlayerDealDamageEvent): Unit =

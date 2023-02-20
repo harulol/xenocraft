@@ -70,16 +70,17 @@ object EnemyManager extends Initializable:
   /** Syncs the [[mob]]'s bossbar with its health.
     */
   def syncBossbar(mob: Mob): Unit =
-    val entity = getEnemy(mob).get
-    val bossBarName =
-      if entity.reaction.isDefined && entity.reactionFrames > 0 then
-        s"&f${entity.name} &7| &c&l${entity.reaction.get.name(Locale.en_US)} &c${Strings.format(entity.reactionFrames / 20.0)}s"
-      else s"&f${entity.name}"
+    getEnemy(mob).foreach(entity => {
+      val bossBarName =
+        if entity.reaction.isDefined && entity.reactionFrames > 0 then
+          s"&f${entity.name} &7| &c&l${entity.reaction.get.name(Locale.en_US)} &c${Strings.format(entity.reactionFrames / 20.0)}s"
+        else s"&f${entity.name}"
 
-    getBossbar(mob).foreach(bar =>
-      bar.setProgress((entity.hp / entity.maxHp) min 1 max 0)
-      bar.setTitle(Strings.color(bossBarName))
-    )
+      getBossbar(mob).foreach(bar =>
+        bar.setProgress((entity.hp / entity.maxHp) min 1 max 0)
+        bar.setTitle(Strings.color(bossBarName))
+      )
+    })
 
   /** Returns the enemy instance from a mob.
     */
