@@ -1,0 +1,7 @@
+main: dev.hawu.plugins.xenocraft.Xenocraft
+name: Xenocraft
+version: 2.0-SNAPSHOT
+api-version: 1.19
+description: A close recreation of Xenoblade Chronicles 3 system intertwining with Minecraft SMP.
+author: Haru
+website: https://hawu.dev
