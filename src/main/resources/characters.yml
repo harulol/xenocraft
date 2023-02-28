@@ -1,0 +1,36 @@
+noah:
+  hp: 6994
+  atk: 388
+  healing: 368
+  dexterity: 310
+  agility: 215
+mio:
+  hp: 6754
+  atk: 361
+  healing: 341
+  dexterity: 306
+  agility: 234
+eunie:
+  hp: 6364
+  atk: 346
+  healing: 409
+  dexterity: 298
+  agility: 223
+taion:
+  hp: 6371
+  atk: 368
+  healing: 381
+  dexterity: 325
+  agility: 197
+lanz:
+  hp: 7755
+  atk: 392
+  healing: 329
+  dexterity: 297
+  agility: 204
+sena:
+  hp: 7125
+  atk: 398
+  healing: 346
+  dexterity: 282
+  agility: 216
